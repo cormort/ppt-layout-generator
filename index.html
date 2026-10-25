@@ -248,14 +248,19 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line);border-rad
   <div class="row outtools" id="outTools"></div>
   <div class="row" style="margin-top:8px"><button class="btn" id="install" hidden>安裝成 App</button></div>
   <p class="hintline" id="iosHint" hidden>iPhone／iPad：在 Safari 按「分享」→「加入主畫面」，就能像 App 一樣從桌面開啟、離線使用。</p>
-  <div class="row"><div><label for="pptText">PPTX 文字</label><select id="pptText"><option value="edit">可直接修改（文字框）</option><option value="image">轉成圖片（外觀完全一致）</option></select></div>
+  <div class="row"><div><label for="pptText">PPTX 文字</label><select id="pptText"><option value="edit">可修改・逐行（外觀最接近）</option><option value="flow">可修改・整段（改字會自動重排）</option><option value="image">轉成圖片（外觀完全一致）</option></select></div>
   <div><label for="pptQ">PPTX 底圖品質</label><select id="pptQ"><option value="std">標準（2 倍，清晰）</option><option value="small">精簡（1 倍，檔案約小一半）</option></select></div></div>
-  <p class="hintline">文字框的位置是依字型估算的；換到沒有相同字型的電腦（例如 Mac）若有偏移，可改選「轉成圖片」，但文字就不能再修改。逐字稿兩種都會保留。</p>
+  <p class="hintline">「逐行」每一行是一段，外觀與預覽最接近；「整段」把同一段接回去，改字時 PowerPoint 會自動換行，但換行位置可能和預覽略有不同。文字框位置依字型估算，換到沒有相同字型的電腦（例如 Mac）若有偏移，可改選「轉成圖片」。逐字稿三種都會保留。</p>
   <label for="fname">檔名（留空＝用標題）</label><input type="text" id="fname" placeholder="2026 提案">
   <div class="row" style="margin-top:8px"><button class="btn" id="zipAll">打包目前分類（ZIP）</button></div>
   <div class="row" style="margin-top:8px"><button class="btn" id="numBatch">章節頁連續編號輸出</button></div>
   <p class="hintline">用章節頁範本，把「項目清單」每一行做成一章：數字從「大數字」欄開始自動遞增（01、02、03…），標題換成該行文字、「|」後面是副標，每頁依序換下一張已選圖片。格式選 PPTX 會輸出成一份多頁簡報，其他格式輸出 ZIP。</p>
-  <h2><span><span class="n">7</span>大綱匯入／匯出（Markdown）</span></h2>
+  <h2><span><span class="n">7</span>匯入既有簡報（PPTX）</span></h2>
+  <div class="row"><button class="btn" id="pptxAppend">加在後面</button><button class="btn pri" id="pptxReplace">開啟 PPTX 取代全部頁面</button></div>
+  <label class="chk"><input type="checkbox" id="pptxImg" checked> 一併匯入投影片上的照片（小圖示與 Logo 會略過）</label>
+  <input type="file" id="pptxFile" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" hidden>
+  <p class="hintline">讀取每張投影片的標題、文字、表格、照片與備忘稿（逐字稿），自動判讀成頁面並套用版型；同一欄上下相疊的小框會合成一個項目。圖表、SmartArt 與動畫不會轉換。檔案只在瀏覽器裡處理。</p>
+  <h2><span><span class="n">8</span>大綱匯入／匯出（Markdown）</span></h2>
   <textarea id="mdIn" style="min-height:150px" placeholder="# 封面標題&#10;## 副標題&#10;&#10;---&#10;# 第二頁標題&#10;- 重點一|說明&#10;- 重點二|說明&#10;> 這一頁的逐字稿"></textarea>
   <div class="row" style="margin-top:6px"><button class="btn fix" id="mdOpen">開啟 .md 檔</button><button class="btn" id="mdAppend">加在後面</button><button class="btn pri" id="mdReplace">取代全部頁面</button></div>
   <div class="row" style="margin-top:6px"><button class="btn" id="mdExport">把目前的頁面匯出成大綱 .md</button></div>
@@ -737,9 +742,9 @@ def({id:'tList',cat:'text',name:'文字・條列重點',hint:'不用圖片；項
   const h=head(c),it=items(c).slice(0,24),k=FS,nc=it.length>6?2:1;let top=h.y;const cols=strip(120,1800,nc,90),per=Math.ceil(it.length/nc);
   const lay=sz=>cols.map(([a,b],ci)=>{let y=0;const rows=it.slice(ci*per,ci*per+per).map((o,j)=>{const w=b-a-76,al=wrap(o.a,w,sz,c.tf,700),bl=wrap([o.b,o.c].filter(Boolean).join('　'),w,sz*.72,c.bf),r={n:ci*per+j,al,bl,y};
     y+=al.length*sz*k*1.32+(bl.length?bl.length*sz*.72*k*1.5+6:0)+sz*k*.75;return r});return{a,rows,h:y}});
-  let sz=36,L=lay(sz);while(sz>18&&Math.max(...L.map(l=>l.h))>TBOT-top){sz-=2;L=lay(sz)}
-  /* 項目少時整組往中間移（略偏上，視覺比正中央穩），放滿時從頂端排 */
-  top+=Math.max(0,(TBOT-top-Math.max(...L.map(l=>l.h)))*.4);
+  /* 項目少時字放大一點；放滿時從頂端排，有空時整組往中間移（略偏上，視覺比正中央穩） */
+  let sz=it.length<=3?44:it.length<=5?40:36,L=lay(sz);while(sz>18&&Math.max(...L.map(l=>l.h))>TBOT-top){sz-=2;L=lay(sz)}
+  top+=Math.max(0,(TBOT-top-Math.max(...L.map(l=>l.h)))*.3);
   const bs=Math.max(30,sz*1.05)*k;let s='';
   for(const col of L)for(const r of col.rows){const y0=top+r.y;if(y0+sz*k>TBOT)break;
     const by=y0+sz*k*.95-bs*.72;
@@ -832,7 +837,7 @@ function sanitise(raw){
   if(!FOCAL.includes(s.focal))s.focal='xMidYMid';
   if(!['auto','light','dark'].includes(s.theme))s.theme='auto';
   if(!['png','jpeg','svg','pptx'].includes(s.fmt))s.fmt='png';
-  if(!['edit','image'].includes(s.pptText))s.pptText='edit';
+  if(!['edit','flow','image'].includes(s.pptText))s.pptText='edit';
   if(!['std','small'].includes(s.pptQ))s.pptQ='std';
   s.fs=clampNum(s.fs,70,140,100);
   s.scale=clampNum(s.scale,1,3,2);
@@ -893,6 +898,13 @@ async function libRestore(){
   }catch(e){console.warn('idb',e)}
 }
 addEventListener('pagehide',()=>{libFlush()});
+/* 同一個瀏覽器開了兩個分頁時，存檔是「最後寫的人贏」，互相提醒 */
+if('BroadcastChannel' in window){
+  const bc=new BroadcastChannel('layoutGen'),me=Math.random().toString(36).slice(2);let warned=false;
+  const warn=()=>{if(warned)return;warned=true;toast('這個工具在另一個分頁也開著；兩邊同時編輯會互相覆蓋，請只留一個分頁')};
+  bc.onmessage=e=>{const m=e.data||{};if(m.from===me)return;if(m.t==='hello')bc.postMessage({t:'here',from:me});warn()};
+  bc.postMessage({t:'hello',from:me});
+}
 
 let saveT=0,savePrev='',dirty=false;
 function flushSave(){
@@ -949,7 +961,13 @@ async function addFiles(files){
 const blobToData=b=>new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(b)});
 /* 移除的圖先放回收區（不釋放網址），按復原時才救得回來 */
 const TRASH=new Map();
-function dropItem(it){TRASH.set(it.id,it);libSave()}
+const TRASH_MAX=30;
+function dropItem(it){
+  TRASH.set(it.id,it);
+  /* 回收區只留最近 30 張，更早的才真正釋放（之後就無法再復原） */
+  for(const[id,old]of TRASH){if(TRASH.size<=TRASH_MAX)break;if(lib.includes(old))continue;TRASH.delete(id);URL.revokeObjectURL(old.full);URL.revokeObjectURL(old.thumb)}
+  libSave();
+}
 
 function cleanCrop(c){if(!c||typeof c!=='object')return null;return{z:clampNum(c.z,1,4,1),fx:clampNum(c.fx,0,1,.5),fy:clampNum(c.fy,0,1,.5)}}
 const imgOf=(it,src)=>({src,w:it.w,h:it.h,crop:it.crop||null});
@@ -1391,6 +1409,169 @@ $('mdFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f
   try{$('mdIn').value=await f.text();toast(`已讀入 ${f.name}，按「取代全部頁面」或「加在後面」`)}catch(err){toast('讀取失敗：'+err.message)}};
 $('mdExport').onclick=()=>{storePage();saveBlob(new Blob([outlineOf(S.pages)],{type:'text/markdown;charset=utf-8'}),`${deckName()}_大綱.md`);toast(`已匯出 ${S.pages.length} 頁大綱`)};
 
+/* ---------- 匯入既有 PPTX：解壓 → 讀每張投影片的文字框／表格／照片／備忘稿 → 判讀成頁面欄位 ---------- */
+async function unzipBytes(u8){
+  const dv=new DataView(u8.buffer,u8.byteOffset,u8.byteLength),dec=new TextDecoder();
+  let e=u8.length-22;while(e>=0&&dv.getUint32(e,true)!==0x06054b50)e--;
+  if(e<0)throw new Error('不是有效的 PPTX 檔（讀不到 ZIP 目錄）');
+  const files=new Map();let p=dv.getUint32(e+16,true);
+  for(let i=0,n=dv.getUint16(e+10,true);i<n&&dv.getUint32(p,true)===0x02014b50;i++){
+    const nl=dv.getUint16(p+28,true),name=dec.decode(u8.subarray(p+46,p+46+nl));
+    files.set(name,{method:dv.getUint16(p+10,true),size:dv.getUint32(p+20,true),off:dv.getUint32(p+42,true)});
+    p+=46+nl+dv.getUint16(p+30,true)+dv.getUint16(p+32,true);
+  }
+  const bytes=async name=>{const f=files.get(name);if(!f)return null;
+    const st=f.off+30+dv.getUint16(f.off+26,true)+dv.getUint16(f.off+28,true),raw=u8.subarray(st,st+f.size);
+    if(f.method===0)return raw;if(f.method!==8)throw new Error('PPTX 用了不支援的壓縮方式');
+    return new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer())};
+  const xml=async name=>{const b=await bytes(name);return b?new DOMParser().parseFromString(dec.decode(b),'application/xml'):null};
+  return{bytes,xml,has:n=>files.has(n)};
+}
+const kid=(el,n)=>el?[...el.children].find(c=>c.localName===n):undefined;
+const allNS=(el,n)=>el?[...el.getElementsByTagNameNS('*',n)]:[];
+const relAttr=(el,n)=>el?el.getAttributeNS(RELNS,n)||el.getAttribute('r:'+n):null;
+function partPath(base,target){
+  if(target.startsWith('/'))return target.slice(1);
+  const ps=base.split('/');ps.pop();for(const s of target.split('/')){if(s==='..')ps.pop();else if(s&&s!=='.')ps.push(s)}return ps.join('/');
+}
+async function relsOf(z,part){
+  const doc=await z.xml(part.replace(/[^/]+$/,'')+'_rels/'+part.split('/').pop()+'.rels'),m=new Map();
+  for(const r of allNS(doc,'Relationship'))m.set(r.getAttribute('Id'),{type:(r.getAttribute('Type')||'').split('/').pop(),target:r.getAttribute('TargetMode')==='External'?null:partPath(part,r.getAttribute('Target')||'')});
+  return m;
+}
+const boxOf=x=>{const o=kid(x,'off'),e=kid(x,'ext');return o&&e?{x:+o.getAttribute('x'),y:+o.getAttribute('y'),w:+e.getAttribute('cx'),h:+e.getAttribute('cy')}:null};
+const phOf=el=>{const nv=[...el.children].find(c=>/^nv/.test(c.localName)),ph=nv&&allNS(nv,'ph')[0];return ph?{type:ph.getAttribute('type')||'body',idx:ph.getAttribute('idx')||''}:null};
+function paraText(p){let s='';for(const c of p.children){if(c.localName==='r'||c.localName==='fld')s+=allNS(c,'t').map(t=>t.textContent).join('');else if(c.localName==='br')s+='\n'}return s}
+function textOf(tx){
+  const lines=allNS(tx,'p').map(paraText).flatMap(s=>s.split('\n')).map(s=>s.replace(/\s+/g,' ').trim()).filter(Boolean);
+  let sz=0,bold=false;for(const r of [...allNS(tx,'rPr'),...allNS(tx,'defRPr')]){const v=+r.getAttribute('sz');if(v)sz=Math.max(sz,v/100);if(r.getAttribute('b')==='1')bold=true}
+  return{lines,sz,bold};
+}
+/* 版面配置區沒寫位置時，從版面配置（layout）或母片（master）找同類型的位置 */
+async function phBoxes(z,part,cache){
+  if(cache.has(part))return cache.get(part);
+  const m=new Map(),doc=await z.xml(part);
+  for(const sp of allNS(doc,'sp')){const ph=phOf(sp),b=boxOf(kid(kid(sp,'spPr'),'xfrm'));if(ph&&b){m.set('t:'+ph.type,b);if(ph.idx)m.set('i:'+ph.idx,b)}}
+  const up=[...(await relsOf(z,part)).values()].find(r=>r.type==='slideMaster');
+  const parent=up?await phBoxes(z,up.target,cache):new Map();
+  for(const[k,v]of parent)if(!m.has(k))m.set(k,v);
+  cache.set(part,m);return m;
+}
+const PH_SZ={title:40,ctrTitle:44,subTitle:24,body:20};
+async function readSlide(z,part,cache){
+  const doc=await z.xml(part),rels=await relsOf(z,part),texts=[],tables=[],pics=[];
+  const layout=[...rels.values()].find(r=>r.type==='slideLayout'),phMap=layout?await phBoxes(z,layout.target,cache):new Map();
+  /* 群組內的座標要換算回投影片座標 */
+  const walk=(node,T)=>{for(const c of node.children){
+    const ln=c.localName,map=b=>b&&{x:T.dx+b.x*T.sx,y:T.dy+b.y*T.sy,w:b.w*T.sx,h:b.h*T.sy};
+    if(ln==='grpSp'){const x=kid(kid(c,'grpSpPr'),'xfrm'),b=boxOf(x),co=kid(x,'chOff'),ce=kid(x,'chExt');let N=T;
+      if(b&&co&&ce){const sx=b.w/(+ce.getAttribute('cx')||b.w||1),sy=b.h/(+ce.getAttribute('cy')||b.h||1);
+        N={sx:T.sx*sx,sy:T.sy*sy,dx:T.dx+T.sx*(b.x-+co.getAttribute('x')*sx),dy:T.dy+T.sy*(b.y-+co.getAttribute('y')*sy)}}
+      walk(c,N)}
+    else if(ln==='sp'){const tx=kid(c,'txBody');if(!tx)continue;const ph=phOf(c),t=textOf(tx);if(!t.lines.length)continue;
+      const b=map(boxOf(kid(kid(c,'spPr'),'xfrm'))||(ph&&(phMap.get('i:'+ph.idx)||phMap.get('t:'+ph.type))));
+      texts.push({...t,sz:t.sz||(ph&&PH_SZ[ph.type])||18,ph:ph&&ph.type,box:b})}
+    else if(ln==='graphicFrame'){const tbl=allNS(c,'tbl')[0];if(!tbl)continue;
+      tables.push({rows:allNS(tbl,'tr').map(tr=>allNS(tr,'tc').map(tc=>allNS(tc,'p').map(paraText).join(' ').replace(/\s+/g,' ').trim())),box:map(boxOf(kid(c,'xfrm')))})}
+    else if(ln==='pic'){const id=relAttr(allNS(c,'blip')[0],'embed'),r=id&&rels.get(id),b=map(boxOf(kid(kid(c,'spPr'),'xfrm')));if(r&&r.target&&b)pics.push({target:r.target,box:b})}
+    else if(ln==='AlternateContent'){const ch=kid(c,'Choice')||kid(c,'Fallback');if(ch)walk(ch,T)}
+  }};
+  const tree=allNS(doc,'spTree')[0];if(tree)walk(tree,{sx:1,sy:1,dx:0,dy:0});
+  let notes='';const nr=[...rels.values()].find(r=>r.type==='notesSlide');
+  if(nr){const nd=await z.xml(nr.target);for(const sp of allNS(nd,'sp')){const ph=phOf(sp);if(ph&&ph.type==='body'){const tx=kid(sp,'txBody');notes=allNS(tx,'p').map(paraText).join('\n').replace(/\n{3,}/g,'\n\n').trim();break}}}
+  return{texts,tables,pics,notes};
+}
+/* 把一張投影片的文字框判讀成標題、副標、大數字、項目（同欄上下相疊的框合成一張卡片＝一個項目）、表格 */
+function classifySlide(sl,i,W0,H0){
+  const k=1920/W0,pt=W0/12700/1920;/* pt→1920 畫布 px 的倍率是 1/pt */
+  const px=v=>v/pt;let T=sl.texts.map(t=>({...t,s:t.lines.join('\n'),fz:px(t.sz),x:t.box?t.box.x*k:0,y:t.box?t.box.y*k:i,w:t.box?t.box.w*k:1920,h:t.box?t.box.h*k:px(t.sz)*1.3*t.lines.length}));
+  const HH=H0*k;
+  /* 頁尾、頁碼、日期與太小的註記 */
+  T=T.filter(t=>!['sldNum','ftr','dt','hdr'].includes(t.ph)&&!(t.fz<21&&(t.y>HH*.88||/^\d+$/.test(t.s)))&&t.fz>=14);
+  const isNum=t=>/^\d{1,3}$/.test(t.s),big=T.find(t=>isNum(t)&&t.fz>=110),quote=T.some(t=>/^[“"”「『]$/.test(t.s)&&t.fz>=90);
+  T=T.filter(t=>t!==big&&!/^[“"”「『]$/.test(t.s));
+  const cand=T.filter(t=>!isNum(t));
+  const title=cand.find(t=>t.ph==='title'||t.ph==='ctrTitle')||cand.reduce((m,t)=>!m||t.fz>m.fz+.5||(Math.abs(t.fz-m.fz)<=.5&&t.y<m.y)?t:m,null);
+  let rest=T.filter(t=>t!==title);
+  const sub=rest.find(t=>t.ph==='subTitle')||(title&&rest.filter(t=>t.y>=title.y&&t.y<title.y+title.h+title.fz*2.2&&t.fz<title.fz*.85&&t.s.length>=6).sort((a,b)=>a.y-b.y)[0]);
+  const kicker=title&&rest.find(t=>t.y+t.h<=title.y+4&&t.fz<=title.fz*.6&&t.s.length<=40);
+  /* 去掉編號小圓標、箭頭等純符號框 */
+  rest=rest.filter(t=>t!==sub&&t!==kicker&&!(isNum(t)&&t.fz<80)&&/[\p{L}\p{N}]/u.test(t.s));
+  const p={title:title?title.lines.join(' '):'',subtitle:sub?sub.lines.join(' '):(kicker?kicker.lines.join(' '):''),body:'',items:'',number:big?big.s:'',notes:sl.notes};
+  let tpl='',table=false;
+  if(sl.tables.length){
+    const rows=sl.tables[0].rows.filter(r=>r.some(Boolean));p.items=rows.map(r=>r.map(c=>c.replace(/[|｜]/g,'／')).join('|')).join('\n');table=true;
+    p.body=rest.map(t=>t.lines.join(' ')).join('\n');
+  }else{
+    /* 卡片：水平重疊、垂直相鄰、寬度相近的框連成一組；
+       上方或左邊的短標籤（例如「痛點」「方案A」「Q5」「現況」）也併進旁邊那張卡片 */
+    const n=rest.length,up=[...Array(n).keys()],f=a=>up[a]===a?a:(up[a]=f(up[a]));
+    /* 標籤＝短、單行，而且字明顯比旁邊的內容小；同字級的短標題不算（否則相鄰兩欄會被串在一起） */
+    const label=(t,o)=>t.s.length<=6&&t.lines.length===1&&t.fz<o.fz*.85;
+    for(let a=0;a<n;a++)for(let b=0;b<n;b++){const A=rest[a],B=rest[b];if(a===b)continue;
+      const mw=Math.min(A.w,B.w),ov=Math.min(A.x+A.w,B.x+B.w)-Math.max(A.x,B.x);
+      if(B.y>=A.y+A.h*.5){const gap=B.y-(A.y+A.h),lab=label(A,B);
+        if(ov>mw*.5&&(lab||Math.max(A.w,B.w)/Math.max(1,mw)<2.6)&&gap<Math.max(16,lab?B.fz*1.6:Math.min(A.fz,B.fz)*.9))up[f(b)]=f(a)}
+      else if(label(A,B)&&B.x>=A.x+A.w-4&&B.x-(A.x+A.w)<A.fz*3){const vo=Math.min(A.y+A.h,B.y+B.h)-Math.max(A.y,B.y);if(vo>Math.min(A.h,B.h)*.5)up[f(a)]=f(b)}}
+    const groups=new Map();rest.forEach((t,a)=>{const r=f(a);if(!groups.has(r))groups.set(r,[]);groups.get(r).push(t)});
+    const G=[...groups.values()].map(g=>g.sort((a,b)=>a.y-b.y)).map(g=>({g,x:Math.min(...g.map(t=>t.x)),y:Math.min(...g.map(t=>t.y)),h:Math.max(...g.map(t=>t.y+t.h))-Math.min(...g.map(t=>t.y))}));
+    /* 由上而下、同一列由左而右 */
+    G.sort((a,b)=>Math.abs(a.y-b.y)<Math.min(a.h,b.h)*.5+8?a.x-b.x:a.y-b.y);
+    /* 句子接句子：前一句已有標點就直接接，否則補「；」 */
+    const joinS=a=>a.reduce((s,x)=>!s?x:s+(/[。！？；：，、.!?;:,]$/.test(s)?'':'；')+x,'');
+    const items=G.map(({g})=>{
+      const head=g.reduce((m,t)=>t.fz>m.fz+.5?t:m,g[0]);
+      const isPre=t=>t!==head&&label(t,head)&&(t.y<head.y-2||t.x+t.w<=head.x+4);
+      const pre=g.filter(isPre).map(t=>t.lines.join(' '));
+      const desc=[...head.lines.slice(1),...g.filter(t=>t!==head&&!isPre(t)).flatMap(t=>t.lines)];
+      return{a:(pre.length?pre.join('・')+'：':'')+head.lines[0],b:joinS(desc),one:g.length===1&&head.lines.length===1};
+    });
+    if(i===0){p.body=items.map(o=>o.b?o.a+'：'+o.b:o.a).slice(0,4).join('\n');tpl='split'}
+    else if(quote||(big&&items.length<=2))p.body=items.map(o=>o.b?o.a+'：'+o.b:o.a).join('\n');
+    else if(items.length<=2&&items.every(o=>o.one)&&items.reduce((s,o)=>s+o.a.length,0)>50)p.body=items.map(o=>o.a).join('\n');
+    else{p.items=items.map(o=>(o.a+(o.b?'|'+o.b:'')).replace(/\n/g,' ')).join('\n');
+      if(items.length>=2&&items.length<=8&&items.every(o=>o.b&&o.a.length<=16))tpl='tGrid'}
+    if(quote)tpl='tQuote';
+  }
+  return{...p,tpl:tpl||autoTpl(p,i,table)};
+}
+const IMG_MIME={png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',bmp:'image/bmp',webp:'image/webp'};
+/* 回傳頁面清單；withImages 時把投影片上的照片（占畫面 3% 以上）加入圖庫，同一張圖只加一次 */
+async function pagesFromPptx(u8,{withImages=true,onStep}={}){
+  const z=await unzipBytes(u8),pres=await z.xml('ppt/presentation.xml');if(!pres)throw new Error('這不是 PowerPoint 簡報檔');
+  const prels=await relsOf(z,'ppt/presentation.xml'),sz=allNS(pres,'sldSz')[0],W0=+(sz&&sz.getAttribute('cx'))||12192000,H0=+(sz&&sz.getAttribute('cy'))||6858000;
+  const ids=allNS(pres,'sldId').map(s=>prels.get(relAttr(s,'id'))).filter(r=>r&&r.target),cache=new Map(),media=new Map(),pages=[];let charts=0;
+  for(let i=0;i<ids.length;i++){
+    onStep&&onStep(i,ids.length);
+    const sl=await readSlide(z,ids[i].target,cache);
+    charts+=(await z.xml(ids[i].target)).getElementsByTagNameNS('*','chart').length;
+    const p=classifySlide(sl,i,W0,H0),sel=[];
+    if(withImages)for(const pic of sl.pics.filter(q=>q.box.w*q.box.h>=W0*H0*.03).sort((a,b)=>b.box.w*b.box.h-a.box.w*a.box.h).slice(0,6)){
+      const ext=pic.target.split('.').pop().toLowerCase();if(!IMG_MIME[ext])continue;
+      if(!media.has(pic.target)){let id=0;try{const b=new Blob([await z.bytes(pic.target)],{type:IMG_MIME[ext]}),bmp=await createImageBitmap(b);id=(await makeItem(pic.target.split('/').pop(),bmp)).id;if(bmp.close)bmp.close()}catch(e){console.warn('pptx image',pic.target,e)}media.set(pic.target,id)}
+      const id=media.get(pic.target);if(id&&!sel.includes(id))sel.push(id);
+    }
+    pages.push({...cleanPage(p),sel});
+  }
+  return{pages,charts,images:[...media.values()].filter(Boolean).length};
+}
+async function importPptx(file,mode){
+  try{
+    toast('讀取 PPTX 中…');
+    const r=await pagesFromPptx(new Uint8Array(await file.arrayBuffer()),{withImages:$('pptxImg').checked,onStep:(i,n)=>{if(i%10===0)toast(`讀取投影片… ${i+1}/${n}`)}});
+    if(!r.pages.length){toast('這份簡報沒有投影片');return}
+    storePage();
+    if(mode==='replace'){if(S.pages.length>1&&!confirm(`用這份簡報的 ${r.pages.length} 頁取代目前的 ${S.pages.length} 頁？（可按復原）`))return;S.pages=r.pages.slice(0,MAXPAGES);usePage(0)}
+    else{const at=S.pages.length;S.pages.push(...r.pages.slice(0,MAXPAGES-at));usePage(at)}
+    const nn=r.pages.filter(p=>p.notes.trim()).length;
+    pageChanged(`已匯入 ${r.pages.length} 頁（${nn} 頁有逐字稿${r.images?`、${r.images} 張照片`:''}${r.charts?`；${r.charts} 個圖表無法轉換，請另外處理`:''}）`);
+  }catch(e){console.error(e);toast('PPTX 讀取失敗：'+e.message)}
+}
+{let pmode='replace';
+  $('pptxReplace').onclick=()=>{pmode='replace';$('pptxFile').click()};
+  $('pptxAppend').onclick=()=>{pmode='append';$('pptxFile').click()};
+  $('pptxFile').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)importPptx(f,pmode)};}
+
 /* ---------- 輸出 ---------- */
 const safeName=s=>String(s||'').replace(/[\\/:*?"<>|\r\n\t]/g,'').trim().slice(0,60)||'排版';
 const baseName=()=>safeName(S.fname||S.title||'排版');
@@ -1564,10 +1745,18 @@ function textSp(r,id){
   }
   const rPr=`<a:rPr lang="zh-TW" altLang="en-US" sz="${sz}"${b} spc="${spc}" dirty="0">${pColor(r.fill,r.op)}${shadow}<a:latin typeface="${face}"/><a:ea typeface="${face}"/><a:cs typeface="${face}"/></a:rPr>`;
   const pPr=`<a:pPr algn="${algn}"><a:lnSpc><a:spcPts val="${Math.round(lnPt*100)}"/></a:lnSpc></a:pPr>`;
-  const paras=r.lines.map(l=>l.trim()?`<a:p>${pPr}<a:r>${rPr}<a:t>${xesc(l)}</a:t></a:r></a:p>`:`<a:p>${pPr}<a:endParaRPr lang="zh-TW" sz="${sz}" dirty="0"/></a:p>`).join('');
+  /* 「整段」模式：斷好的行接回同一段、由 PowerPoint 自動換行，改字時會重排；空行仍是段落分隔 */
+  const flow=S.pptText==='flow'&&!r.vertical&&r.lines.length>1;
+  let lines=r.lines;
+  if(flow){lines=[];let cur=null;for(const l of r.lines){if(!l.trim()){if(cur!==null)lines.push(cur);cur=null;lines.push('');continue}
+      cur=cur===null?l:cur+(/[A-Za-z0-9]$/.test(cur)&&/^[A-Za-z0-9]/.test(l)?' ':'')+l}
+    if(cur!==null)lines.push(cur);
+    /* 框稍微放寬，避免 PowerPoint 的字寬略大時多斷一行；置中／靠右的框要跟著平移 */
+    const dw=w*.03+r.size*.2;w+=dw;if(r.anchor==='middle')x-=dw/2;else if(r.anchor==='end')x-=dw}
+  const paras=lines.map(l=>l.trim()?`<a:p>${pPr}<a:r>${rPr}<a:t>${xesc(l)}</a:t></a:r></a:p>`:`<a:p>${pPr}<a:endParaRPr lang="zh-TW" sz="${sz}" dirty="0"/></a:p>`).join('');
   const E=v=>Math.round(v*EMU);
   return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="文字 ${id-2}"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${E(x)}" y="${E(y)}"/><a:ext cx="${E(w)}" cy="${E(h)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr>`+
-    `<p:txBody><a:bodyPr wrap="none" lIns="0" tIns="0" rIns="0" bIns="0" anchor="t"${vert}><a:noAutofit/></a:bodyPr><a:lstStyle/>${paras}</p:txBody></p:sp>`;
+    `<p:txBody><a:bodyPr wrap="${flow?'square':'none'}" lIns="0" tIns="0" rIns="0" bIns="0" anchor="t"${vert}><a:noAutofit/></a:bodyPr><a:lstStyle/>${paras}</p:txBody></p:sp>`;
 }
 function slideXml(texts){
   const pic=`<p:pic><p:nvPicPr><p:cNvPr id="2" name="版面底圖"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="rId2"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${W*EMU}" cy="${H*EMU}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;

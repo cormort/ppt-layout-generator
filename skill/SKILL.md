@@ -1,6 +1,6 @@
 ---
 name: ppt-outline-deck
-description: 把講稿、報告或筆記做成含逐字稿（備忘稿）的 16:9 PPTX 簡報。AI 只寫 Markdown 大綱，排版交給「圖片排版產生器」的命令列工具 pptgen，不要自己寫 python-pptx 之類的排版程式。當使用者要「做簡報」「把這份講稿／報告做成 PPT」「產生投影片」「簡報加逐字稿」「修改簡報大綱」時使用。
+description: 把講稿、報告或筆記做成含逐字稿（備忘稿）的 16:9 PPTX 簡報，或把既有 PPTX 讀成大綱後改寫、重新排版。AI 只寫 Markdown 大綱，排版交給「圖片排版產生器」的命令列工具 pptgen，不要自己寫 python-pptx 之類的排版程式，也不要直接解析 PPTX 的 XML。當使用者要「做簡報」「把這份講稿／報告做成 PPT」「產生投影片」「簡報加逐字稿」「修改／重新排版這份簡報」「修改簡報大綱」時使用。
 ---
 
 # 用 Markdown 大綱產生簡報（pptgen）
@@ -16,6 +16,13 @@ description: 把講稿、報告或筆記做成含逐字稿（備忘稿）的 16:
 3. **只修被點名的頁**：縮短文字、拆成兩頁，或換版型（見容量表）。改完再 check，直到顯示「✓ 所有頁面的文字都放得下」或剩下的提醒是使用者同意保留的。
 4. **產生**：`node "{{PPTGEN}}" build 大綱.md -o 簡報.pptx [--palette 商務藍]`
 5. 回報給使用者：頁數、幾頁有逐字稿、檔案路徑；若有封面／章節頁，提醒照片目前是示意圖（見「照片」）。
+
+### 修改既有的 PPTX
+
+1. `node "{{PPTGEN}}" from-pptx 舊簡報.pptx -o 大綱.md` —— 讀出每頁的標題、項目、表格與逐字稿（比直接讀 PPTX 省很多 token）。
+2. 只改使用者要求的頁，其他頁原樣保留；接著照上面的 check → build。
+3. 只想換版面、不改內容時，直接 `node "{{PPTGEN}}" build 舊簡報.pptx -o 新簡報.pptx`，原簡報的照片會一起帶過來。
+4. 圖表、SmartArt 無法轉換（工具會回報數量），提醒使用者另外處理。
 
 需要看某幾頁長相時才用：`node "{{PPTGEN}}" preview 大綱.md --pages 1,5 -d 預覽資料夾`，再讀 PNG。
 
@@ -73,6 +80,7 @@ description: 把講稿、報告或筆記做成含逐字稿（備忘稿）的 16:
 
 - `--palette` 商務配色：藏青金、商務藍、深灰橘、墨綠米、酒紅灰、科技紫；或 `--color #hex --accent #hex`
 - `--font 標楷體`（標題）、`--body-font`（內文）、`--scale 90`（全域字級 %）
+- `--text flow`：文字框改成整段（使用者之後要在 PowerPoint 大量改字時用，改字會自動重排）
 - `--text image`：文字轉成圖片（換電腦字型不同也不跑版，但不能改字）
 - `--quality small`：底圖 1 倍，檔案較小
 - `--project 簡報.pptgen.json`：另存網頁版專案檔，使用者可到 https://cormort.github.io/ppt-layout-generator/ 「載入專案」換照片、微調
