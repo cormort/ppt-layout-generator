@@ -25,6 +25,7 @@ const HELP = `排版產生器 CLI — Markdown 大綱 → 含逐字稿的 PPTX
   -d, --dir <資料夾>     preview 的 PNG 輸出資料夾（預設：大綱檔名_預覽）
   --pages <清單>         preview 要輸出的頁碼，例如 1,3,5-8；all＝全部
   --project <檔案>       另存成網頁版可載入的專案檔（.pptgen.json），可在網頁上微調
+  --html <檔案>          另存成單一 HTML 簡報（瀏覽器開啟即可播放；P 鍵開簡報者檢視含逐字稿與計時）
   --palette <名稱>       商務配色：藏青金、商務藍、深灰橘、墨綠米、酒紅灰、科技紫
   --color <#hex>         主色；--accent <#hex> 輔色；--bg <#hex> 底色
   --font <名稱>          標題字體（例如 標楷體）；--body-font <名稱> 內文字體
@@ -265,6 +266,11 @@ try {
         writeFileSync(f, Buffer.from(b64, 'base64')); result.files.png.push(f);
       }
     }
+    if (flags.html) {
+      const file = resolve(flags.html);
+      writeFileSync(file, await app.run(`(async()=>playerHtml(await deckSlides(),{title:deckName()}))()`));
+      result.files.html = file;
+    }
     if (flags.project) {
       const file = resolve(flags.project);
       /* 與網頁版「專案存檔」同格式：各頁用到的圖（從 PPTX 帶進來的照片）一起存，sel 改成 images 的索引 */
@@ -290,6 +296,7 @@ try {
       } else out('✓ 所有頁面的文字都放得下');
       if (result.files.pptx) out(`已產生：${result.files.pptx}（${result.seconds} 秒）`);
       if (result.files.png) out(`預覽：${result.files.png.join('\n      ')}`);
+      if (result.files.html) out(`HTML 簡報：${result.files.html}（瀏覽器開啟即可播放）`);
       if (result.files.project) out(`專案檔：${result.files.project}（網頁版「載入專案」可開啟微調）`);
     }
   }

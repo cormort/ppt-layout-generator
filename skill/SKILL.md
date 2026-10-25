@@ -83,6 +83,7 @@ description: 把講稿、報告或筆記做成含逐字稿（備忘稿）的 16:
 - `--text flow`：文字框改成整段（使用者之後要在 PowerPoint 大量改字時用，改字會自動重排）
 - `--text image`：文字轉成圖片（換電腦字型不同也不跑版，但不能改字）
 - `--quality small`：底圖 1 倍，檔案較小
+- `--html 簡報.html`：同時輸出單一 HTML 簡報（瀏覽器開啟即播，P 鍵簡報者檢視含逐字稿與計時）。使用者要「用瀏覽器播」「傳給別人看」「沒有 PowerPoint」時加上
 - `--project 簡報.pptgen.json`：另存網頁版專案檔，使用者可到 https://cormort.github.io/ppt-layout-generator/ 「載入專案」換照片、微調
 
 ## 照片
