@@ -91,7 +91,8 @@ input[type=color]{width:44px;height:36px;border:1px solid var(--line);border-rad
 .note{margin:0 0 0 auto;font-size:13px;color:var(--muted)}
 .note.warn{color:var(--warn)}
 .note.ok{color:var(--ok)}
-.stage{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 2px var(--shadow),0 8px 24px var(--shadow);max-width:1000px;width:100%}
+.stage{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 2px var(--shadow),0 8px 24px var(--shadow);width:100%;max-width:min(1000px,calc((100vh - 300px) * var(--ar,1.7778)));margin-inline:auto}
+.cbar,.notesbox{margin-inline:auto}
 .stage svg,.card svg,.pg svg,.tthumb svg{display:block;width:100%;height:auto}
 .notesbox{max-width:1000px;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .notesbox .nh{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px}
@@ -220,7 +221,7 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.35)}
   .cbar .tt small{display:none}
   .note{flex:0 0 100%;margin:0;font-size:12px}
   .note:empty{display:none}
-  .stage{border-radius:6px}
+  .stage{border-radius:6px;max-width:min(100%,calc(40vh * var(--ar,1.7778)))}
   .side,.insp{border:0;overflow:visible;padding-bottom:calc(84px + env(safe-area-inset-bottom))}
   .side{display:none;padding:12px}
   body[data-tab="pages"] .side{display:block}
@@ -346,6 +347,7 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.35)}
       <div class="ied" id="itemsEd"></div>
       <textarea id="items" hidden aria-label="項目（每行一項，用 | 分欄）" placeholder="每行一項，用「|」分欄：重點|說明"></textarea>
       <button class="btn ghost" id="itemAdd" style="width:100%;margin-top:6px">＋ 新增項目</button>
+      <p class="hintline">可直接貼上 Excel 表格（第一欄類別、其餘欄數字），會自動變成圖表。</p>
       <details class="more" id="moreFields">
         <summary>更多欄位：內文、大數字</summary>
         <label for="body">內文</label><textarea id="body"></textarea>
@@ -379,6 +381,9 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.35)}
 
     <section class="pn" data-pn="style">
       <p class="hintline" style="margin:0 0 4px">這裡的設定<b>整份共用</b>，每一頁都會套用。</p>
+      <span class="lab" id="ratioLab">版面尺寸</span>
+      <div class="seg" id="ratioSeg" role="group" aria-labelledby="ratioLab"></div>
+      <p class="hintline">16:9 是簡報；1:1、4:5、9:16 是社群貼文、LINE 公告、限時動態用的圖卡（可用圖卡、圖表版型）。</p>
       <span class="lab">主色</span>
       <div class="row"><input type="color" id="color" aria-label="主色"><button class="btn" id="pick">從第 1 張照片取色</button></div>
       <div class="sw" id="sw"></div>
@@ -424,7 +429,10 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.35)}
 </nav>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
-const W=1920,H=1080,LSKEY='layoutGen2',OLDLKEY='layoutGen';
+const LSKEY='layoutGen2',OLDLKEY='layoutGen';
+/* 畫布尺寸跟著整份簡報的「版面尺寸」走；renderSVG 每次都會依 S.ratio 設定 */
+const RATIOS={'16:9':[1920,1080],'1:1':[1080,1080],'4:5':[1080,1350],'9:16':[1080,1920]};
+let W=1920,H=1080;
 const FONTS=[
  ["微軟正黑體","'Microsoft JhengHei','PingFang TC','Noto Sans TC',sans-serif"],
  ["標楷體","'DFKai-SB','BiauKai','KaiTi','STKaiti',serif"],
@@ -437,10 +445,10 @@ const SWATCH=['#2f5d8a','#3f6b3a','#7a8f4e','#c2456b','#d9822b','#8a5a2b','#5b4b
 const BGS=[['白','#ffffff'],['米白','#f7f3ea'],['淺灰','#f1f2f4'],['暖灰','#e9e4dc'],['淡藍','#eef3f9'],['深藍','#14233a'],['炭黑','#1e1f22']];
 const DEF={title:'敦煌鳴沙山月牙泉',subtitle:'Dunhuang · Crescent Lake',body:'沙漠中的一彎清泉，千百年來不曾乾涸。駝鈴聲聲、沙丘連綿，日落時分整座山脊被染成金色，是絲路上最溫柔的風景。',items:'工作概述|Job Overview\n靈感來源|Source of Inspiration\n成果展示|Achievement\n目標規劃|Goals and Ideas',number:'01',color:'#2f5d8a',accent:'#c9a24a',tf:0,bf:0,single:false,tpl:'diamond',
   bgOn:false,bg:'#f7f3ea',company:'',date:'',page:'',footer:false,logo:'',logoAR:1,logoPos:'tr',logoBg:true,logoSize:70,
-  focal:'xMidYMid',theme:'auto',cat:'fit',fmt:'png',scale:2,fname:'',fs:100,notes:'',pages:[],cur:0,pptText:'edit',pptQ:'std'};
+  focal:'xMidYMid',theme:'auto',cat:'fit',fmt:'png',scale:2,fname:'',fs:100,notes:'',pages:[],cur:0,pptText:'edit',pptQ:'std',ratio:'16:9'};
 const BIZ=[['藏青金','#1f3a5f','#c9a24a'],['商務藍','#1d5fa8','#38b2e8'],['深灰橘','#3b3f46','#f08a24'],['墨綠米','#2f5a46','#d8b98a'],['酒紅灰','#7a2635','#a8a8a8'],['科技紫','#3b2f8f','#22c3c3']];
 const FOCAL=['xMinYMin','xMidYMin','xMaxYMin','xMinYMid','xMidYMid','xMaxYMid','xMinYMax','xMidYMax','xMaxYMax'];
-const CATS=[['fit','建議'],['all','全部'],['text','文字頁'],['cover','封面／標題'],['shape','形狀拼貼'],['sec','章節頁'],['toc','目錄'],['grid','圖文分格'],['biz','商務'],['cn','中國風']];
+const CATS=[['fit','建議'],['all','全部'],['text','文字頁'],['chart','圖表'],['card','圖卡'],['mag','雜誌風'],['cover','封面／標題'],['shape','形狀拼貼'],['sec','章節頁'],['toc','目錄'],['grid','圖文分格'],['biz','商務'],['cn','中國風']];
 
 /* ---------- helpers ---------- */
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -941,8 +949,284 @@ def({id:'tQuote',cat:'text',name:'文字・引言金句',hint:'不用圖片；�
    +T(bl,{x:302,y:y0+th+(sl.length?112+sl.length*42+30:80),size:24,lh:1.6,fill:c.col.mute,font:c.bf});
 }});
 
+/* ---------- 版面尺寸：16:9 簡報、1:1／4:5／9:16 圖卡。圖表與圖卡版型用 W、H 排版，其他版型只支援 16:9 ---------- */
+const ALLR=['16:9','1:1','4:5','9:16'],CARDR=['1:1','4:5','9:16'];
+const PAD=()=>W>H?120:80;
+/* 依尺寸調整的標題列（圖表、圖卡共用） */
+function hdr(c,{tMax=64}={}){
+  const k=FS,x=PAD(),w=W-2*x,top=W>H?70:84;let size=tMax;
+  while(size>36&&wrap(c.t.title,w,size,c.tf,700).length>2)size-=4;
+  const tl=wrap(c.t.title,w,size,c.tf,700).slice(0,2);let y=top+42+size*k*.85;
+  let s=`<rect x="${x}" y="${top}" width="80" height="8" rx="4" fill="${c.col.acc}"/>`+T(tl,{x,y,size,lh:1.2,fill:c.col.ink,font:c.tf,weight:700});
+  y+=(tl.length-1)*size*k*1.2;
+  if(c.t.subtitle){const sl=wrap(c.t.subtitle,w,26,c.bf,500).slice(0,2);y+=26*k+20;s+=T(sl,{x,y,size:26,lh:1.45,fill:c.col.mt,font:c.bf,weight:500});y+=(sl.length-1)*26*k*1.45}
+  return{s,y:y+40};
+}
+
+/* ---------- 數據圖表：項目第一欄是類別，其餘欄是數值；第一列不是數字時當系列名稱 ---------- */
+function numOf(s){
+  s=String(s??'').trim();if(!s||/^[-−－—]$/.test(s))return null;
+  const neg=/^\(.*\)$/.test(s)||/^[-−－]/.test(s),m=s.replace(/[,，\s]/g,'').match(/\d+(?:\.\d+)?/);
+  if(!m)return null;const v=parseFloat(m[0]);return neg?-v:v;
+}
+function chartRows(items){return String(items||'').split('\n').map(s=>s.trim()).filter(Boolean).map(l=>l.split(/[|｜]/).map(v=>v.trim()))}
+/* 「數字表格」：至少 2 列資料、最多 5 欄，第一欄以外八成以上是數字（第一列可以是欄名） */
+function isNumericTable(items){
+  let rows=chartRows(items);if(rows.length&&rows[0].slice(1).every(v=>numOf(v)===null))rows=rows.slice(1);
+  const cells=rows.flatMap(r=>r.slice(1));
+  return rows.length>=2&&cells.length>0&&Math.max(...rows.map(r=>r.length))<=5&&cells.filter(v=>numOf(v)!==null).length/cells.length>=.8;
+}
+/* 依資料挑圖表：第一欄像時間（年、月、季）且資料多→折線；只有一組數值、每列都是正數且 ≤8 列→可用環圈，但預設仍給長條 */
+function chartKind(items){
+  let rows=chartRows(items);if(rows.length&&rows[0].slice(1).every(v=>numOf(v)===null))rows=rows.slice(1);
+  const timeLike=rows.filter(r=>/(\d{2,4}\s*年|年度|^\d{2,4}$|月|Q[1-4]|季|週)/.test(r[0])).length>=rows.length*.7;
+  if(timeLike&&rows.length>=5)return 'cLine';
+  if(rows.some(r=>r[0].length>8)||rows.length>10)return 'cHbar';
+  return 'cBar';
+}
+function chartData(c){
+  let rows=chartRows(c.t.items);const isNum=r=>r.slice(1).some(v=>numOf(v)!==null);
+  let head=null;if(rows.length>1&&!isNum(rows[0]))head=rows.shift();
+  /* 沒有數字時用示意資料，版型縮圖才看得出是什麼圖 */
+  const sample=!rows.some(isNum);if(sample){head=null;rows=[['第一季','32'],['第二季','45'],['第三季','38'],['第四季','56']]}
+  const ns=Math.min(4,Math.max(1,...rows.map(r=>r.length-1)));
+  return{sample,axis:head?head[0]:'',cats:rows.map(r=>r[0]),
+    series:[...Array(ns)].map((_,j)=>({name:head?(head[j+1]||''):'',vals:rows.map(r=>numOf(r[j+1])),raw:rows.map(r=>r[j+1]||'')}))};
+}
+function niceScale(min,max,n=5){
+  if(min===max)max=min+1;const s0=(max-min)/n,mag=10**Math.floor(Math.log10(s0)),f=s0/mag;
+  const step=(f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*mag,lo=Math.floor(min/step)*step,hi=Math.ceil(max/step)*step,ticks=[];
+  for(let v=lo;v<=hi+step*1e-9;v+=step)ticks.push(+v.toFixed(10));return{lo,hi,ticks};
+}
+const fmtN=v=>Math.abs(v)>=1000?v.toLocaleString('en-US',{maximumFractionDigits:1}):String(+(+v).toFixed(2));
+const serCol=(c,i)=>[c.col.main,c.col.acc,mix(c.col.main,'#ffffff',.45),mix(c.col.acc,'#000000',.3),mix(c.col.main,'#000000',.35),mix(c.col.acc,'#ffffff',.45),mix(c.col.main,c.col.acc,.5),'#9a9a96'][i%8];
+/* 圖例、軸標題、註記（資料來源） */
+function chartLegend(c,d,y){
+  if(d.series.length<2)return'';let s='',x=PAD();const k=FS;
+  d.series.forEach((se,i)=>{const n=se.name||'系列 '+(i+1);s+=`<rect x="${x}" y="${f1(y-18)}" width="22" height="22" rx="4" fill="${serCol(c,i)}"/>`+T([n],{x:x+32,y,size:22,fill:c.col.ink,font:c.bf});x+=32+tw(n,22*k,c.bf)+40});
+  return s;
+}
+const chartNote=c=>c.t.body?T(wrap(c.t.body,W-2*PAD(),20,c.bf).slice(0,1),{x:PAD(),y:H-PAD()+(W>H?40:20),size:20,fill:c.col.mute,font:c.bf}):'';
+
+def({id:'cBar',cat:'chart',name:'圖表・直條圖',hint:'貼上表格：第一欄類別、其餘欄數值（最多 4 組）',ratios:ALLR,render(c){
+  const h=hdr(c),d=chartData(c),k=FS,P=PAD(),ns=d.series.length,nc=Math.max(1,d.cats.length);
+  const x0=P+90,x1=W-P,y0=h.y+(ns>1?60:10),y1=H-P-80-(d.axis?34:0)-(c.t.body?10:0);
+  const all=d.series.flatMap(s=>s.vals).filter(v=>v!==null),sc=niceScale(Math.min(0,...all),Math.max(0,...all));
+  const Y=v=>y1-(v-sc.lo)/(sc.hi-sc.lo)*(y1-y0),yz=Y(Math.min(Math.max(0,sc.lo),sc.hi));
+  let s=bg(c.col.paper||'#ffffff')+h.s+chartLegend(c,d,h.y+14);
+  for(const t of sc.ticks){const y=Y(t);s+=`<line x1="${x0}" y1="${f1(y)}" x2="${x1}" y2="${f1(y)}" stroke="${t===0?c.col.ink:'#d9dce1'}" stroke-width="${t===0?2:1}"${t===0?'':' stroke-dasharray="4 6"'}/>`+T([fmtN(t)],{x:x0-14,y:y+7,size:20,fill:c.col.mute,font:c.bf,anchor:'end'})}
+  const gw=(x1-x0)/nc,bw=Math.min(96,gw*.72/ns),ls=Math.max(16,Math.min(26,gw/4.2));
+  d.cats.forEach((cat,ci)=>{const cx=x0+gw*(ci+.5);
+    d.series.forEach((se,si)=>{const v=se.vals[ci];if(v===null)return;const bx=cx-bw*ns/2+si*bw,yv=Y(v);
+      s+=`<rect x="${f1(bx+2)}" y="${f1(Math.min(yv,yz))}" width="${f1(Math.max(1,bw-4))}" height="${f1(Math.max(1,Math.abs(yz-yv)))}" rx="3" fill="${serCol(c,si)}"/>`;
+      if(ns<=2&&nc<=12)s+=T([se.raw[ci]||fmtN(v)],{x:bx+bw/2,y:v>=0?yv-10:yv+ls+8,size:f1(ls*.9),fill:c.col.ink,font:c.bf,weight:700,anchor:'middle'})});
+    s+=T(wrap(cat,gw-8,ls,c.bf).slice(0,2),{x:cx,y:y1+ls+12,size:ls,lh:1.2,fill:c.col.ink,font:c.bf,anchor:'middle'})});
+  if(d.axis)s+=T([d.axis],{x:x1,y:y1+86,size:20,fill:c.col.mute,font:c.bf,anchor:'end'});
+  return s+chartNote(c);
+}});
+
+def({id:'cHbar',cat:'chart',name:'圖表・橫條圖',hint:'類別名稱長或要排名時用；貼上表格（類別｜數值）',ratios:ALLR,render(c){
+  const h=hdr(c),d=chartData(c),k=FS,P=PAD(),ns=d.series.length,nc=Math.max(1,d.cats.length);
+  const y0=h.y+(ns>1?50:0),y1=H-P-(c.t.body?40:0),rh=(y1-y0)/nc,ls=Math.max(16,Math.min(28,rh*.32));
+  const lw=Math.min(W*.36,Math.max(...d.cats.map(t=>tw(t,ls*k,c.bf)))+30),x0=P+lw,x1=W-P-130;
+  const all=d.series.flatMap(s=>s.vals).filter(v=>v!==null),sc=niceScale(Math.min(0,...all),Math.max(0,...all));
+  const X=v=>x0+(v-sc.lo)/(sc.hi-sc.lo)*(x1-x0),xz=X(Math.min(Math.max(0,sc.lo),sc.hi)),bh=Math.min(54,rh*.7/ns);
+  let s=bg(c.col.paper||'#ffffff')+h.s+chartLegend(c,d,h.y+4);
+  s+=`<line x1="${f1(xz)}" y1="${f1(y0)}" x2="${f1(xz)}" y2="${f1(y1)}" stroke="${c.col.ink}" stroke-width="2"/>`;
+  if(d.axis)s+=T([d.axis],{x:x0-18,y:y0-10,size:20,fill:c.col.mute,font:c.bf,anchor:'end'});
+  d.cats.forEach((cat,ci)=>{const cy=y0+rh*(ci+.5);
+    s+=T(wrap(cat,lw-24,ls,c.bf).slice(0,1),{x:x0-18,y:cy+ls*.35,size:ls,fill:c.col.ink,font:c.bf,anchor:'end'});
+    d.series.forEach((se,si)=>{const v=se.vals[ci];if(v===null)return;const by=cy-bh*ns/2+si*bh,xv=X(v);
+      s+=`<rect x="${f1(Math.min(xv,xz))}" y="${f1(by+2)}" width="${f1(Math.max(1,Math.abs(xv-xz)))}" height="${f1(Math.max(1,bh-4))}" rx="3" fill="${serCol(c,si)}"/>`;
+      s+=T([se.raw[ci]||fmtN(v)],{x:Math.max(xv,xz)+12,y:by+bh/2+ls*.32,size:f1(ls*.9),fill:c.col.ink,font:c.bf,weight:700})})});
+  return s+chartNote(c);
+}});
+
+def({id:'cLine',cat:'chart',name:'圖表・折線圖',hint:'看趨勢（年度、月份）；貼上表格，可多條線',ratios:ALLR,render(c){
+  const h=hdr(c),d=chartData(c),k=FS,P=PAD(),ns=d.series.length,nc=Math.max(1,d.cats.length);
+  const x0=P+100,x1=W-P-(ns>1?40:20),y0=h.y+(ns>1?70:20),y1=H-P-70-(d.axis?34:0)-(c.t.body?10:0);
+  const all=d.series.flatMap(s=>s.vals).filter(v=>v!==null),mn=Math.min(...all),mx=Math.max(...all);
+  const sc=niceScale(mn>=0&&mn<mx*.5?0:mn,mx),Y=v=>y1-(v-sc.lo)/(sc.hi-sc.lo)*(y1-y0),X=i=>nc>1?x0+i*(x1-x0)/(nc-1):(x0+x1)/2;
+  let s=bg(c.col.paper||'#ffffff')+h.s+chartLegend(c,d,h.y+14);
+  for(const t of sc.ticks){const y=Y(t);s+=`<line x1="${x0}" y1="${f1(y)}" x2="${x1}" y2="${f1(y)}" stroke="#d9dce1" stroke-dasharray="4 6"/>`+T([fmtN(t)],{x:x0-16,y:y+7,size:20,fill:c.col.mute,font:c.bf,anchor:'end'})}
+  const step=nc>12?Math.ceil(nc/12):1,ls=Math.max(16,Math.min(24,(x1-x0)/Math.min(nc,12)/4));
+  d.cats.forEach((cat,i)=>{if(i%step)return;s+=T([cat],{x:X(i),y:y1+ls+16,size:ls,fill:c.col.ink,font:c.bf,anchor:'middle'})});
+  d.series.forEach((se,si)=>{const col=serCol(c,si);let seg=[];const segs=[];
+    se.vals.forEach((v,i)=>{if(v===null){if(seg.length)segs.push(seg);seg=[]}else seg.push([X(i),Y(v)])});if(seg.length)segs.push(seg);
+    for(const g of segs)s+=`<polyline points="${g.map(p=>f1(p[0])+','+f1(p[1])).join(' ')}" fill="none" stroke="${col}" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>`;
+    se.vals.forEach((v,i)=>{if(v===null)return;s+=`<circle cx="${f1(X(i))}" cy="${f1(Y(v))}" r="8" fill="#fff" stroke="${col}" stroke-width="4"/>`;
+      if((ns===1&&nc<=12)||i===se.vals.length-1)s+=T([se.raw[i]||fmtN(v)],{x:X(i),y:Y(v)-20,size:f1(ls*.95),fill:col,font:c.bf,weight:700,anchor:'middle'})})});
+  if(d.axis)s+=T([d.axis],{x:x1,y:y1+80,size:20,fill:c.col.mute,font:c.bf,anchor:'end'});
+  return s+chartNote(c);
+}});
+
+def({id:'cPie',cat:'chart',name:'圖表・環圈圖',hint:'看比例；貼上表格（類別｜數值），超過 8 項合併成「其他」',ratios:ALLR,render(c){
+  const h=hdr(c),d=chartData(c),k=FS,P=PAD(),se=d.series[0];
+  let sl=d.cats.map((cat,i)=>({cat,v:se.vals[i],raw:se.raw[i]})).filter(o=>o.v!==null&&o.v>0);
+  if(sl.length>8){const rest=sl.slice(7).reduce((a,o)=>a+o.v,0);sl=[...sl.slice(0,7),{cat:'其他',v:rest,raw:fmtN(rest)}]}
+  const tot=sl.reduce((a,o)=>a+o.v,0)||1,land=W>H,top=h.y,bot=H-P-(c.t.body?30:0);
+  const R=land?Math.min((bot-top)/2,W*.2):Math.min(W/2-P,(bot-top)*.27),cx=land?P+R+20:W/2,cy=land?(top+bot)/2:top+R+10,r=R*.58;
+  let s=bg(c.col.paper||'#ffffff')+h.s,a=-Math.PI/2;
+  if(sl.length===1)s+=`<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1((R+r)/2)}" fill="none" stroke="${serCol(c,0)}" stroke-width="${f1(R-r)}"/>`;
+  else sl.forEach((o,i)=>{const b=a+o.v/tot*Math.PI*2;s+=annular(cx,cy,R,r,a,b).el.replace('<path ',`<path fill="${serCol(c,i)}" stroke="${c.col.paper||'#ffffff'}" stroke-width="4" `);a=b});
+  s+=T([fmtN(tot)],{x:cx,y:cy+12,size:f1(Math.min(64,r*.5)),fill:c.col.ink,font:c.tf,weight:800,anchor:'middle'})+T([se.name||d.axis||'合計'],{x:cx,y:cy+r*.5,size:22,fill:c.col.mute,font:c.bf,anchor:'middle'});
+  const lx=land?cx+R+90:P,ly0=land?cy-sl.length*30+20:cy+R+70,lh=land?Math.min(64,(bot-top)/Math.max(1,sl.length)):Math.min(60,(bot-ly0)/Math.max(1,sl.length)),lw=W-P-lx;
+  if(d.axis)s+=T([d.axis],{x:lx,y:ly0-lh*.9,size:20,fill:c.col.mute,font:c.bf});
+  sl.forEach((o,i)=>{const y=ly0+i*lh;
+    s+=`<rect x="${f1(lx)}" y="${f1(y-20)}" width="24" height="24" rx="5" fill="${serCol(c,i)}"/>`+T(wrap(o.cat,lw*.55,26,c.bf).slice(0,1),{x:lx+38,y,size:26,fill:c.col.ink,font:c.bf})
+     +T([Math.round(o.v/tot*1000)/10+'%'],{x:lx+lw,y,size:26,fill:c.col.ink,font:c.bf,weight:700,anchor:'end'})+T([o.raw||fmtN(o.v)],{x:lx+lw-120,y,size:22,fill:c.col.mute,font:c.bf,anchor:'end'})});
+  return s+chartNote(c);
+}});
+
+/* ---------- 圖卡（1:1、4:5、9:16）：社群貼文、LINE 公告、活動海報 ---------- */
+def({id:'kPhoto',cat:'card',name:'圖卡・照片公告',hint:'1 張照片滿版；副標當小標，標題、內文疊在下方',ratios:CARDR,render(c){
+  const g=c.id(),P=PAD(),k=FS,foot=[c.t.company,c.t.date].filter(Boolean).join('　');
+  let s=IMG(c.imgs[0],0,0,W,H)+`<defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset=".3" stop-color="${c.col.dark}" stop-opacity="0"/><stop offset=".95" stop-color="${c.col.dark}" stop-opacity=".94"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#${g})"/>`;
+  let y=H-P-(foot?60:0);
+  const bl=wrap(c.t.body,W-2*P,30,c.bf).slice(0,4),tl=wrap(c.t.title,W-2*P,84,c.tf,800).slice(0,3);
+  if(bl.length){const by=y-(bl.length-1)*30*k*1.6;s+=T(bl,{x:P,y:by,size:30,lh:1.6,fill:'#fff',op:.9,font:c.bf});y=by-30*k-34}
+  const ty=y-(tl.length-1)*84*k*1.15;s+=T(tl,{x:P,y:ty,size:84,lh:1.15,fill:'#fff',font:c.tf,weight:800});
+  if(c.t.subtitle)s+=T([c.t.subtitle],{x:P,y:ty-84*k-14,size:30,fill:c.col.acc,font:c.bf,weight:700,ls:3});
+  if(foot)s+=`<rect x="${P}" y="${H-P-34}" width="60" height="4" fill="${c.col.acc}"/>`+T([foot],{x:P,y:H-P+6,size:26,fill:'#fff',op:.8,font:c.bf});
+  return s;
+}});
+
+def({id:'kAnnounce',cat:'card',name:'圖卡・活動公告',hint:'上方色塊放標題；項目填「時間｜10/22 14:00」這類資訊',ratios:CARDR,render(c){
+  const P=PAD(),k=FS,bh=H*(H>W*1.4?.3:.36),it=items(c).slice(0,6),foot=[c.t.company,c.t.date].filter(Boolean).join('　');
+  let s=bg(c.col.paper||'#ffffff')+`<rect width="${W}" height="${f1(bh)}" fill="${c.col.main}"/>`;
+  const tl=wrap(c.t.title,W-2*P,80,c.tf,800).slice(0,3),ty=bh-P*.7-(tl.length-1)*80*k*1.15;
+  if(c.t.subtitle)s+=T([c.t.subtitle],{x:P,y:ty-80*k-16,size:28,fill:'#fff',op:.85,font:c.bf,weight:700,ls:3});
+  s+=T(tl,{x:P,y:ty,size:80,lh:1.15,fill:'#fff',font:c.tf,weight:800});
+  let y=bh+P*.9;const lab=Math.max(...it.map(o=>tw(o.a,32*k,c.tf,700)))+40;
+  for(const o of it){const bl=wrap(o.b||'',W-2*P-lab-24,32,c.bf).slice(0,2);
+    s+=`<rect x="${P}" y="${f1(y-26)}" width="8" height="34" rx="4" fill="${c.col.acc}"/>`+T([o.a],{x:P+26,y,size:32,fill:c.col.ink,font:c.tf,weight:700})+T(bl,{x:P+26+lab,y,size:32,lh:1.35,fill:c.col.ink,font:c.bf});
+    y+=Math.max(1,bl.length)*32*k*1.35+30}
+  const bd=wrap(c.t.body,W-2*P,28,c.bf);const room=Math.floor((H-P-(foot?80:0)-y)/(28*k*1.7));
+  if(bd.length&&room>0)s+=T(bd.slice(0,room),{x:P,y:y+20,size:28,lh:1.7,fill:c.col.mute,font:c.bf});
+  if(foot)s+=`<line x1="${P}" y1="${H-P-40}" x2="${W-P}" y2="${H-P-40}" stroke="${c.col.light}" stroke-width="2"/>`+T([foot],{x:P,y:H-P+4,size:26,fill:c.col.mute,font:c.bf,weight:600});
+  return s;
+}});
+
+def({id:'kList',cat:'card',name:'圖卡・重點清單',hint:'3–6 個重點；項目填「重點｜說明」，自動縮字',ratios:CARDR,render(c){
+  const h=hdr(c,{tMax:72}),it=items(c).slice(0,8),k=FS,P=PAD(),top=h.y,bot=H-P;
+  const lay=sz=>{let y=0;return it.map((o,i)=>{const al=wrap(o.a,W-2*P-90,sz,c.tf,700),bl=wrap(o.b,W-2*P-90,sz*.72,c.bf),r={i,al,bl,y};y+=al.length*sz*k*1.3+(bl.length?bl.length*sz*.72*k*1.5+6:0)+sz*k*.9;r.end=y;return r})};
+  let sz=52,L=lay(sz);while(sz>24&&L.length&&L[L.length-1].end>bot-top){sz-=2;L=lay(sz)}
+  const off=Math.max(0,(bot-top-(L.length?L[L.length-1].end:0))*.35);let s=bg(c.col.paper||c.col.light)+h.s;
+  for(const r of L){const y0=top+off+r.y;if(y0+sz*k>bot)break;
+    s+=`<circle cx="${P+28}" cy="${f1(y0+sz*k*.6)}" r="28" fill="${c.col.main}"/>`+T([String(r.i+1)],{x:P+28,y:y0+sz*k*.6+11,size:30,fill:'#fff',font:c.bf,weight:800,anchor:'middle',fixed:true})
+     +T(r.al,{x:P+90,y:y0+sz*k*.95,size:sz,lh:1.3,fill:c.col.ink,font:c.tf,weight:700})
+     +T(r.bl,{x:P+92,y:y0+r.al.length*sz*k*1.3+sz*.72*k*1.05,size:f1(sz*.72),lh:1.5,fill:c.col.mute,font:c.bf})}
+  return s;
+}});
+
+def({id:'kNumber',cat:'card',name:'圖卡・數據亮點',hint:'大數字填「大數字」欄（例如 85%），標題是說明',ratios:CARDR,render(c){
+  const P=PAD(),k=FS,num=c.t.number||items(c)[0].a||'85%',w=W-2*P;
+  let ns=Math.min(H*.3,360);while(ns>80&&tw(num,ns*k,c.tf,800)>w)ns-=10;
+  const tl=wrap(c.t.title,w,64,c.tf,700).slice(0,3),bl=wrap(c.t.body,w,30,c.bf).slice(0,4);
+  const tot=ns*k+40+tl.length*64*k*1.2+(bl.length?40+bl.length*30*k*1.6:0),y0=(H-tot)/2+ns*k*.8;
+  let s=bg(c.col.paper||'#ffffff')+`<rect x="0" y="0" width="${W}" height="18" fill="${c.col.main}"/>`;
+  if(c.t.subtitle)s+=T([c.t.subtitle],{x:W/2,y:y0-ns*k*.85-30,size:30,fill:c.col.mt,font:c.bf,weight:700,anchor:'middle',ls:3});
+  s+=T([num],{x:W/2,y:y0,size:ns,fill:c.col.acc,font:c.tf,weight:800,anchor:'middle'});
+  s+=`<rect x="${W/2-50}" y="${f1(y0+30)}" width="100" height="6" rx="3" fill="${c.col.main}"/>`+T(tl,{x:W/2,y:y0+40+64*k,size:64,lh:1.2,fill:c.col.ink,font:c.tf,weight:700,anchor:'middle'});
+  s+=T(bl,{x:W/2,y:y0+40+tl.length*64*k*1.2+50,size:30,lh:1.6,fill:c.col.mute,font:c.bf,anchor:'middle'});
+  return s;
+}});
+
+def({id:'kQuote',cat:'card',name:'圖卡・金句',hint:'標題放金句，副標題放出處',ratios:CARDR,render(c){
+  const P=PAD(),k=FS,w=W-2*P;let sz=80;while(sz>44&&wrap(c.t.title,w,sz,c.tf,700).length>(H>W?7:5))sz-=4;
+  const tl=wrap(c.t.title,w,sz,c.tf,700).slice(0,H>W?8:6),th=(tl.length-1)*sz*k*1.4,y0=H/2-th/2-20;
+  const qm=x=>`<g transform="rotate(180 ${x} ${f1(y0-sz*k-60)})"><circle cx="${x}" cy="${f1(y0-sz*k-60)}" r="30"/><path d="M${x+30},${f1(y0-sz*k-60)}C${x+30},${f1(y0-sz*k-10)} ${x+6},${f1(y0-sz*k+18)} ${x-26},${f1(y0-sz*k+26)}L${x-30},${f1(y0-sz*k+14)}C${x-8},${f1(y0-sz*k+4)} ${x+6},${f1(y0-sz*k-14)} ${x+4},${f1(y0-sz*k-32)}Z"/></g>`;
+  let s=bg(c.col.paper||c.col.light)+`<g fill="${c.col.acc}" opacity=".6">${qm(P+30)+qm(P+106)}</g>`;
+  s+=T(tl,{x:P,y:y0,size:sz,lh:1.4,fill:c.col.ink,font:c.tf,weight:700});
+  if(c.t.subtitle)s+=`<rect x="${P}" y="${f1(y0+th+50)}" width="80" height="6" rx="3" fill="${c.col.acc}"/>`+T([c.t.subtitle],{x:P,y:y0+th+110,size:32,fill:c.col.mt,font:c.bf,weight:600});
+  return s;
+}});
+
+/* ---------- 雜誌風（16:9）：襯線字、暖紙底、不對稱與留白 ---------- */
+const SERIF="'Noto Serif TC','Source Han Serif TC','Songti TC','PMingLiU',serif";
+const magPaper=c=>c.col.paper||'#f4efe6',magInk=c=>c.col.dk?c.col.ink:'#2b2621',magMute=c=>c.col.dk?c.col.mute:'#6d655c';
+/* 首字放大：中文開頭時第一個字佔三行高、前三行縮排；英數開頭不放大（避免把單字拆開） */
+function capLines(c,str,w,size){
+  const txt=String(str||'').replace(/\s+/g,' ').trim();if(!txt)return{lines:[],n0:0,ch:'',dw:0};
+  if(!/^[^\x00-\x7f]/.test(txt))return{lines:wrap(txt,w,size,c.bf),n0:0,ch:'',dw:0};
+  const ch=[...txt][0],dw=size*4.6,l3=[];let rem=txt.slice(ch.length);
+  for(let i=0;i<3&&rem;i++){const l=wrap(rem,w-dw,size,c.bf)[0]||'';if(!l)break;l3.push(l);rem=rem.slice(l.length).replace(/^\s/,'')}
+  return{lines:[...l3,...(rem?wrap(rem,w,size,c.bf):[])],n0:l3.length,ch,dw};
+}
+/* 畫第 from～to 行；從第 0 行開始時連同放大的首字一起畫 */
+function capDraw(c,cl,{x,y,size,from=0,to}){
+  const k=FS,lh=size*k*1.75,L=cl.lines.slice(from,to),cut=from===0?Math.min(cl.n0,L.length):0;let s='';
+  if(from===0&&cl.ch&&L.length)s+=T([cl.ch],{x,y:y+size*k+2*lh,size:f1(size*4.2),fill:c.col.acc,font:SERIF,weight:700});
+  if(cut)s+=T(L.slice(0,cut),{x:x+cl.dw,y:y+size*k,size,lh:1.75,fill:magInk(c),font:c.bf});
+  if(L.length>cut)s+=T(L.slice(cut),{x,y:y+size*k+cut*lh,size,lh:1.75,fill:magInk(c),font:c.bf});
+  return s;
+}
+
+def({id:'mCover',cat:'mag',name:'雜誌風・封面',hint:'1 張照片；大數字當期數，副標題當專題名',render(c){
+  const k=FS,x=130,w=900,ink=magInk(c);let sz=120;while(sz>72&&wrap(c.t.title,w,sz,SERIF,700).length>3)sz-=6;
+  const tl=wrap(c.t.title,w,sz,SERIF,700).slice(0,3),bl=wrap(c.t.body,760,26,c.bf).slice(0,4),lh=sz*k*1.12;
+  /* 標題＋短線＋內文整組放在版心下半，彼此不重疊 */
+  const block=(tl.length-1)*lh+110+bl.length*26*k*1.8,ty=Math.max(260+sz*k,(H-block)/2+80),yEnd=ty+(tl.length-1)*lh;
+  let s=bg(magPaper(c))+T([`NO.${c.t.number||'01'}`+(c.t.subtitle?`　—　${c.t.subtitle}`:'')],{x,y:150,size:24,fill:c.col.acc,font:c.bf,weight:700,ls:6});
+  s+=`<line x1="${x}" y1="182" x2="${x+w}" y2="182" stroke="${ink}" stroke-width="1.5"/>`+T(tl,{x,y:ty,size:sz,lh:1.12,fill:ink,font:SERIF,weight:700});
+  s+=`<line x1="${x}" y1="${f1(yEnd+48)}" x2="${x+120}" y2="${f1(yEnd+48)}" stroke="${c.col.acc}" stroke-width="4"/>`;
+  s+=T(bl,{x,y:yEnd+110,size:26,lh:1.8,fill:magMute(c),font:c.bf});
+  if(c.t.company||c.t.date)s+=T([[c.t.company,c.t.date].filter(Boolean).join('　')],{x,y:990,size:20,fill:magMute(c),font:c.bf,ls:4});
+  s+=`<rect x="1196" y="96" width="644" height="888" fill="none" stroke="${ink}" stroke-width="1.5"/>`+IMG(c.imgs[0],1170,70,644,888);
+  return s;
+}});
+
+def({id:'mFeature',cat:'mag',name:'雜誌風・專題',hint:'左側滿版照片；右側小標、標題、首字放大的內文',render(c){
+  const k=FS,x=1080,w=700,ink=magInk(c);let sz=72;while(sz>48&&wrap(c.t.title,w,sz,SERIF,700).length>3)sz-=4;
+  const tl=wrap(c.t.title,w,sz,SERIF,700).slice(0,3);
+  let s=bg(magPaper(c))+IMG(c.imgs[0],0,0,960,H)+T([(c.t.subtitle||'FEATURE').toUpperCase()],{x,y:170,size:22,fill:c.col.acc,font:c.bf,weight:700,ls:6});
+  s+=T(tl,{x,y:170+40+sz*k,size:sz,lh:1.18,fill:ink,font:SERIF,weight:700});
+  let y=170+40+sz*k+(tl.length-1)*sz*k*1.18+50;s+=`<line x1="${x}" y1="${f1(y)}" x2="${x+w}" y2="${f1(y)}" stroke="${ink}" stroke-width="1"/>`;
+  s+=capDraw(c,capLines(c,c.t.body,w,24),{x,y:y+40,size:24,to:Math.max(3,Math.floor((960-y-40)/(24*k*1.75)))});
+  return s;
+}});
+
+def({id:'mColumns',cat:'mag',name:'雜誌風・兩欄文章',hint:'不用圖片；長內文分兩欄、首字放大，副標題當引言',render(c){
+  const k=FS,ink=magInk(c),x=150,cw=760,gap=100;
+  const tl=wrap(c.t.title,1500,64,SERIF,700).slice(0,2);let s=bg(magPaper(c));
+  s+=`<line x1="${x}" y1="96" x2="${W-x}" y2="96" stroke="${ink}" stroke-width="3"/><line x1="${x}" y1="104" x2="${W-x}" y2="104" stroke="${ink}" stroke-width="1"/>`;
+  s+=T(tl,{x:W/2,y:180+64*k*.2,size:64,lh:1.2,fill:ink,font:SERIF,weight:700,anchor:'middle'});
+  let y=180+(tl.length)*64*k*1.2;
+  if(c.t.subtitle){const ql=wrap(c.t.subtitle,1200,28,SERIF,400).slice(0,2);s+=T(ql,{x:W/2,y:y+20,size:28,lh:1.5,fill:c.col.acc,font:SERIF,anchor:'middle'});y+=20+ql.length*28*k*1.5}
+  y+=30;s+=`<line x1="${x}" y1="${f1(y)}" x2="${W-x}" y2="${f1(y)}" stroke="${ink}" stroke-width="1"/>`;
+  /* 內文平均分到兩欄（第一欄最多放滿一欄） */
+  const per=Math.max(3,Math.floor((990-y-40)/(23*k*1.75))),cl=capLines(c,c.t.body,cw,23),n=cl.lines.length,c1=n>2*per?per:Math.ceil(n/2);
+  s+=capDraw(c,cl,{x,y:y+40,size:23,to:c1});
+  if(n>c1)s+=capDraw(c,cl,{x:x+cw+gap,y:y+40,size:23,from:c1,to:c1+per});
+  s+=`<line x1="${x+cw+gap/2}" y1="${f1(y+30)}" x2="${x+cw+gap/2}" y2="980" stroke="${magMute(c)}" stroke-opacity=".4"/>`;
+  return s;
+}});
+
+def({id:'mIndex',cat:'mag',name:'雜誌風・目錄',hint:'不用圖片；項目填「標題｜說明」，最多 8 項',render(c){
+  const k=FS,ink=magInk(c),it=items(c).slice(0,8),two=it.length>4,cols=two?[[760,1800],[1290,1800]]:[[760,1800]];
+  let s=bg(magPaper(c))+T([c.t.title||'目錄'],{x:130,y:300,size:96,fill:ink,font:SERIF,weight:700});
+  s+=`<line x1="130" y1="340" x2="560" y2="340" stroke="${c.col.acc}" stroke-width="4"/>`+T(wrap(c.t.subtitle,430,26,c.bf).slice(0,3),{x:130,y:400,size:26,lh:1.6,fill:magMute(c),font:c.bf});
+  const per=two?Math.ceil(it.length/2):it.length,colW=two?470:1040,rh=Math.min(200,780/per);
+  it.forEach((o,i)=>{const ci=two&&i>=per?1:0,x=two?(ci?1290:760):760,y=160+(i%per)*rh;
+    s+=`<line x1="${x}" y1="${f1(y)}" x2="${x+colW}" y2="${f1(y)}" stroke="${ink}" stroke-opacity=".35"/>`;
+    s+=T([pad2(i)],{x,y:y+64,size:44,fill:c.col.acc,font:SERIF,weight:700})+T(wrap(o.a,colW-100,34,SERIF,700).slice(0,1),{x:x+100,y:y+58,size:34,fill:ink,font:SERIF,weight:700})
+     +T(wrap(o.b,colW-100,22,c.bf).slice(0,2),{x:x+100,y:y+100,size:22,lh:1.5,fill:magMute(c),font:c.bf})});
+  return s;
+}});
+
 /* ---------- state ---------- */
 const TPLBY=Object.fromEntries(TPL.map(t=>[t.id,t]));
+/* 版型是否支援目前的版面尺寸；不支援時換成相近的版型（16:9 ↔ 圖卡） */
+const tplOK=t=>(t.ratios||['16:9']).includes(S.ratio);
+/* 會用到照片的版型（沒選照片時以示意圖代替） */
+const usesPhoto=t=>!(t.cat==='text'||t.cat==='chart'||['kAnnounce','kList','kNumber','kQuote','mColumns','mIndex'].includes(t.id));
+const TO_CARD={text:'kList',cover:'kPhoto',shape:'kPhoto',sec:'kNumber',toc:'kList',grid:'kPhoto',biz:'kAnnounce',cn:'kPhoto',mag:'kPhoto'};
+const TO_WIDE={kList:'tList',kPhoto:'split',kNumber:'bignum',kQuote:'tQuote',kAnnounce:'tText'};
+function tplFor(id){
+  const t=TPLBY[id];if(t&&tplOK(t))return id;
+  const alt=!t?null:id==='tQuote'?'kQuote':S.ratio==='16:9'?TO_WIDE[id]:TO_CARD[t.cat];
+  return alt&&TPLBY[alt]&&tplOK(TPLBY[alt])?alt:TPL.find(tplOK).id;
+}
 /* 把任意來源（localStorage／專案檔）的資料洗成合法狀態 */
 function sanitise(raw){
   raw=raw&&typeof raw==='object'?raw:{};
@@ -960,6 +1244,7 @@ function sanitise(raw){
   if(!FOCAL.includes(s.focal))s.focal='xMidYMid';
   if(!['auto','light','dark'].includes(s.theme))s.theme='auto';
   if(!['png','jpeg','svg','pptx'].includes(s.fmt))s.fmt='png';
+  if(!RATIOS[s.ratio])s.ratio='16:9';
   if(!['edit','flow','image'].includes(s.pptText))s.pptText='edit';
   if(!['std','small'].includes(s.pptQ))s.pptQ='std';
   s.fs=clampNum(s.fs,70,140,100);
@@ -1125,7 +1410,7 @@ function chrome(c){
   return s;
 }
 function renderSVG(tpl,imgs,pre){
-  FS=S.fs/100;
+  FS=S.fs/100;[W,H]=RATIOS[S.ratio]||RATIOS['16:9'];
   let k=0;const c={imgs,t:S,col:colors(),tf:FONTS[S.tf][1],bf:FONTS[S.bf][1],single:S.single,id:()=>pre+'x'+(k++),sh:pre+'sh',ts:pre+'ts'};
   const inner=tpl.render(c);
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}"><defs><clipPath id="${pre}frame"><rect width="${W}" height="${H}"/></clipPath>`+
@@ -1147,11 +1432,12 @@ function overflowNote(svg){
     if(flat.includes(head))miss.push(label);
   };
   check('標題',S.title);check('副標題',S.subtitle);check('內文',S.body);
-  const lines=String(S.items||'').split('\n').map(s=>s.trim()).filter(Boolean);
+  /* 第一欄空白的列（例如圖表的表頭）不列入檢查 */
+  const lines=String(S.items||'').split('\n').map(s=>s.trim()).filter(l=>l.split(/[|｜]/)[0].replace(/\s+/g,'').length>=1);
   let shown=0;
   for(const l of lines){
     const head=l.split(/[|｜]/)[0].replace(/\s+/g,'').toLowerCase();
-    if(head.length>=2&&flat.includes(head))shown++;
+    if(flat.includes(head))shown++;
   }
   if(lines.length&&shown>0&&shown<lines.length)miss.push('項目清單');
   if(!miss.length)return '';
@@ -1225,7 +1511,9 @@ $('file').onchange=e=>{addFiles(e.target.files);e.target.value=''};
 ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over')}));
 ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over')}));
 drop.addEventListener('drop',e=>addFiles(e.dataTransfer.files));
-document.addEventListener('paste',e=>{const fs=[...(e.clipboardData?.files||[])];if(fs.length)addFiles(fs)});
+/* 貼上：圖片檔進照片庫；不在輸入框時貼上的 Excel 表格放進這一頁的項目（數字表格自動變圖表） */
+document.addEventListener('paste',e=>{const fs=[...(e.clipboardData?.files||[])];if(fs.length){addFiles(fs);return}
+  const t=e.target,tag=t&&t.tagName;if(tag==='INPUT'||tag==='TEXTAREA'||(t&&t.isContentEditable))return;pasteTable(e)});
 
 for(const k of['title','subtitle','body','items','number','notes','company','date','page','fname']){$(k).value=S[k];$(k).oninput=()=>{S[k]=$(k).value;save();refresh()}}
 const fo=FONTS.map((f,i)=>`<option value="${i}">${f[0]}</option>`).join('');
@@ -1294,16 +1582,20 @@ for(const k of['pptText','pptQ']){$(k).value=S[k];$(k).onchange=()=>{S[k]=$(k).v
 /* 「建議」：用這一頁的內容把每個版型試排一次，只列出放得下的；項目多、內文長或沒放照片時文字頁排前面 */
 let fitCache={sig:'',list:TPL};
 function fitList(){
-  const sig=galSignature();if(fitCache.sig===sig)return fitCache.list;
+  const sig=contentSig();if(fitCache.sig===sig)return fitCache.list;
   const th=chosen('thumb'),n=String(S.items||'').split('\n').filter(s=>s.trim()).length,wordy=n>=4||String(S.body||'').length>80||!sel.length;
-  const ok=TPL.filter(t=>!overflowNote(renderSVG(t,th,'f'+t.id+'_')));
-  const rank=t=>t.cat==='text'?(wordy?0:2):1;
-  fitCache={sig,list:(ok.length?ok:TPL).slice().sort((a,b)=>rank(a)-rank(b))};
+  const pool=TPL.filter(tplOK),ok=pool.filter(t=>!overflowNote(renderSVG(t,th,'f'+t.id+'_')));
+  /* 項目是數字表格時圖表排最前面 */
+  const numeric=isNumericTable(S.items);
+  const rank=t=>numeric&&t.cat==='chart'?-1:(t.cat==='text'||t.cat==='card')?(wordy?0:2):t.cat==='chart'?3:1;
+  fitCache={sig,list:(ok.length?ok:pool).slice().sort((a,b)=>rank(a)-rank(b))};
   return fitCache.list;
 }
-function tplList(){return S.cat==='fit'?fitList():S.cat==='all'?TPL:TPL.filter(t=>t.cat===S.cat)}
+const ofCat=v=>v==='fit'?fitList():TPL.filter(t=>tplOK(t)&&(v==='all'||t.cat===v));
+function tplList(){return ofCat(S.cat)}
 function drawFilters(){
-  $('filters').innerHTML=CATS.map(([v,n])=>{const c=v==='fit'?fitList().length:v==='all'?TPL.length:TPL.filter(t=>t.cat===v).length;
+  if(S.cat!=='fit'&&!ofCat(S.cat).length)S.cat='fit';
+  $('filters').innerHTML=CATS.map(([v,n])=>{const c=ofCat(v).length;if(!c&&v!==S.cat)return'';
     return`<button data-v="${v}" class="${S.cat===v?'on':''}" aria-pressed="${S.cat===v}">${n} ${c}</button>`}).join('');
 }
 $('filters').onclick=e=>{
@@ -1355,23 +1647,26 @@ function histGo(d){
 }
 $('undo').onclick=()=>histGo(-1);$('redo').onclick=()=>histGo(1);
 function drawStage(){
-  const tpl=TPLBY[S.tpl]||TPL[0];S.tpl=tpl.id;
+  const tpl=TPLBY[tplFor(S.tpl)];S.tpl=tpl.id;
+  [W,H]=RATIOS[S.ratio];$('stage').style.setProperty('--ar',String(W/H));
   $('curName').innerHTML=`第 ${S.cur+1} / ${S.pages.length} 頁<small>${esc(tpl.name)}</small>`;
   const svg=renderSVG(tpl,chosen('full'),'m_');
   $('stage').innerHTML=svg;
   /* 屬性面板上方的「目前版型」卡片 */
   $('tplName').textContent=tpl.name;$('tplHint').textContent=tpl.hint;$('tplThumb').innerHTML=renderSVG(tpl,chosen('thumb'),'tc_');
-  const n=overflowNote(svg),photo=tpl.cat!=='text'&&!sel.length;
+  const n=overflowNote(svg),photo=usesPhoto(tpl)&&!sel.length;
   $('note').textContent=n||(photo?'目前用示意圖：到「照片」上傳並點選照片就會換上。':'✓ 文字都放得下');
   $('note').classList.toggle('warn',!!n);$('note').classList.toggle('ok',!n&&!photo);
 }
 let galSig='';
-function galSignature(){
-  return [sel.join(','),S.cat,S.title,S.subtitle,S.body,S.items,S.number,S.color,S.accent,S.bgOn,S.bg,S.single,S.focal,S.tf,S.bf,S.logo,S.logoSize,S.logoPos,S.logoBg,S.footer,S.company,S.date,S.page,S.fs,
+/* 內容＋樣式的簽章（不含分類）：建議清單用；縮圖牆再加上分類 */
+function contentSig(){return galSignature(true)}
+function galSignature(noCat){
+  return [sel.join(','),noCat?'':S.cat,S.ratio,S.title,S.subtitle,S.body,S.items,S.number,S.color,S.accent,S.bgOn,S.bg,S.single,S.focal,S.tf,S.bf,S.logo,S.logoSize,S.logoPos,S.logoBg,S.footer,S.company,S.date,S.page,S.fs,
     sel.map(id=>JSON.stringify(lib.find(x=>x.id===id)?.crop||0)).join()].join('\u0001');
 }
 function drawGallery(force){
-  const tpl=TPLBY[S.tpl]||TPL[0];S.tpl=tpl.id;
+  const tpl=TPLBY[tplFor(S.tpl)];S.tpl=tpl.id;
   const sig=galSignature();
   if(!force&&sig===galSig){
     $('gal').querySelectorAll('.card').forEach(c=>c.classList.toggle('on',c.dataset.id===tpl.id));
@@ -1423,16 +1718,16 @@ function movePage(i,j){
 const pgCache=new Map();
 function pageSVG(p,i){
   const ids=p.sel.filter(id=>lib.some(x=>x.id===id));
-  const sig=[JSON.stringify(ovOf(p)),ids.join(),ids.map(id=>JSON.stringify(lib.find(x=>x.id===id).crop||0)).join(),
+  const sig=[S.ratio,JSON.stringify(ovOf(p)),ids.join(),ids.map(id=>JSON.stringify(lib.find(x=>x.id===id).crop||0)).join(),
     S.color,S.accent,S.bgOn,S.bg,S.single,S.focal,S.tf,S.bf,S.logo,S.logoSize,S.logoPos,S.logoBg,S.footer,S.company,S.date,S.page,S.fs].join('\u0001');
   const c=pgCache.get(i);if(c&&c.sig===sig)return c.svg;
-  const svg=withState({...ovOf(p),pageNo:i},()=>renderSVG(TPLBY[p.tpl]||TPL[0],imgsOf(ids,'thumb'),'pg'+i+'_'));
+  const svg=withState({...ovOf(p),pageNo:i},()=>renderSVG(TPLBY[tplFor(p.tpl)],imgsOf(ids,'thumb'),'pg'+i+'_'));
   pgCache.set(i,{sig,svg});return svg;
 }
 function drawPages(){
   storePage();
   $('pgCount').textContent=S.pages.length;
-  $('docTitle').textContent=deckName();$('docStat').textContent=`${S.pages.length} 頁・自動存在這台電腦`;$('expDeckHd').textContent=`整份簡報（${S.pages.length} 頁）`;
+  $('docTitle').textContent=deckName();$('docStat').textContent=`${S.pages.length} 頁・${S.ratio}・自動存在這台電腦`;$('expDeckHd').textContent=`整份簡報（${S.pages.length} 頁）`;
   $('pages').innerHTML=S.pages.map((p,i)=>`<div class="pg${i===S.cur?' on':''}" data-i="${i}" draggable="${FINE.matches}" role="button" tabindex="0" aria-current="${i===S.cur}" aria-label="第 ${i+1} 頁：${esc(p.title||TPLBY[p.tpl]?.name)}">${pageSVG(p,i)}<span class="b">${i+1}</span>${p.notes.trim()?'<span class="nt" title="這一頁有逐字稿">稿</span>':''}`+
     `<div class="ctl"><button data-a="l" aria-label="往前移" title="往前移">↑</button><button data-a="d" aria-label="複製這一頁" title="複製這一頁">⧉</button><button data-a="x" aria-label="刪除這一頁" title="刪除這一頁">✕</button><button data-a="r" aria-label="往後移" title="往後移">↓</button></div></div>`).join('')+
     '<button class="pgadd" id="pgAdd" title="在目前這一頁後面新增">＋<br>新增頁</button>';
@@ -1454,7 +1749,7 @@ $('pages').onkeydown=e=>{if(e.key!=='Enter'&&e.key!==' ')return;const d=e.target
   P.addEventListener('dragend',()=>{if(dragP!=null){dragP=null;drawPages()}});}
 async function deckPages(){
   storePage();
-  return Promise.all(S.pages.map(async(p,i)=>({tpl:TPLBY[p.tpl]||TPL[0],imgs:await pageImages(p.sel),ov:{...ovOf(p),pageNo:i},notes:p.notes})));
+  return Promise.all(S.pages.map(async(p,i)=>({tpl:TPLBY[tplFor(p.tpl)],imgs:await pageImages(p.sel),ov:{...ovOf(p),pageNo:i},notes:p.notes})));
 }
 const deckName=()=>safeName(S.fname||S.pages[0]?.title||'簡報');
 $('deckOut').onclick=async()=>{
@@ -1615,16 +1910,20 @@ $('htmlOut').onclick=async()=>{
 };
 
 /* ---------- Markdown 大綱：匯入成頁面、把頁面匯出成大綱 ---------- */
-const TPL_ALIAS={封面:'split',章節:'bignum',條列:'tList',方格:'tGrid',表格:'tTable',段落:'tText',內文:'tText',引言:'tQuote',金句:'tQuote',大標題:'ocean'};
+const TPL_ALIAS={封面:'split',章節:'bignum',條列:'tList',方格:'tGrid',表格:'tTable',段落:'tText',內文:'tText',引言:'tQuote',金句:'tQuote',大標題:'ocean',
+  圖表:'cBar',長條:'cBar',直條:'cBar',長條圖:'cBar',直條圖:'cBar',橫條:'cHbar',橫條圖:'cHbar',折線:'cLine',折線圖:'cLine',圓餅:'cPie',圓餅圖:'cPie',環圈:'cPie',環圈圖:'cPie',
+  雜誌:'mCover',雜誌封面:'mCover',專題:'mFeature',文章:'mColumns',兩欄:'mColumns',目錄:'mIndex',
+  圖卡:'kAnnounce',公告:'kAnnounce',照片公告:'kPhoto',重點卡:'kList',數據卡:'kNumber',金句卡:'kQuote'};
 function tplFrom(v){
   v=String(v||'').trim();if(!v)return '';
   if(TPLBY[v])return v;if(TPL_ALIAS[v])return TPL_ALIAS[v];
   const t=TPL.find(t=>t.id.toLowerCase()===v.toLowerCase())||TPL.find(t=>t.name.includes(v));return t?t.id:'';
 }
-/* 沒指定版型時依內容挑：章節數字→大數字、表格→表格、第一頁→封面、只有標題→大標題、有項目→條列、只有內文→段落 */
-function autoTpl(p,i,table){
+/* 沒指定版型時依內容挑：章節數字→大數字、數字表格→圖表、表格→表格、第一頁→封面、只有標題→大標題、有項目→條列、只有內文→段落 */
+function autoTpl(p,i,table,{chart=true}={}){
   const n=p.items.split('\n').filter(s=>s.trim()).length;
   if(p.number&&n<=1)return 'bignum';
+  if(table&&chart&&isNumericTable(p.items))return chartKind(p.items);
   if(table)return 'tTable';
   if(i===0&&!n)return 'split';
   if(!n&&!p.body)return 'ocean';
@@ -1672,7 +1971,7 @@ function outlineOf(pages){
   }).join('\n\n---\n\n')+'\n';
 }
 function importOutline(src,mode){
-  let ps=parseOutline(src);
+  let ps=parseOutline(src);for(const p of ps)p.tpl=tplFor(p.tpl);
   if(!ps.length){toast('沒有讀到任何頁面：每頁用「# 標題」開頭，或用 --- 分頁');return}
   storePage();
   const room=MAXPAGES-(mode==='replace'?0:S.pages.length);
@@ -1747,7 +2046,7 @@ async function phBoxes(z,part,cache){
 }
 const PH_SZ={title:40,ctrTitle:44,subTitle:24,body:20};
 async function readSlide(z,part,cache){
-  const doc=await z.xml(part),rels=await relsOf(z,part),texts=[],tables=[],pics=[];
+  const doc=await z.xml(part),rels=await relsOf(z,part),texts=[],tables=[],pics=[],charts=[];
   const layout=[...rels.values()].find(r=>r.type==='slideLayout'),phMap=layout?await phBoxes(z,layout.target,cache):new Map();
   /* 群組內的座標要換算回投影片座標 */
   const walk=(node,T)=>{for(const c of node.children){
@@ -1759,15 +2058,33 @@ async function readSlide(z,part,cache){
     else if(ln==='sp'){const tx=kid(c,'txBody');if(!tx)continue;const ph=phOf(c),t=textOf(tx);if(!t.lines.length)continue;
       const b=map(boxOf(kid(kid(c,'spPr'),'xfrm'))||(ph&&(phMap.get('i:'+ph.idx)||phMap.get('t:'+ph.type))));
       texts.push({...t,sz:t.sz||(ph&&PH_SZ[ph.type])||18,ph:ph&&ph.type,box:b})}
-    else if(ln==='graphicFrame'){const tbl=allNS(c,'tbl')[0];if(!tbl)continue;
+    else if(ln==='graphicFrame'){
+      const ch=allNS(c,'chart').find(e=>relAttr(e,'id'));
+      if(ch){const r=rels.get(relAttr(ch,'id'));charts.push({target:r&&r.target,box:map(boxOf(kid(c,'xfrm')))});continue}
+      const tbl=allNS(c,'tbl')[0];if(!tbl)continue;
       tables.push({rows:allNS(tbl,'tr').map(tr=>allNS(tr,'tc').map(tc=>allNS(tc,'p').map(paraText).join(' ').replace(/\s+/g,' ').trim())),box:map(boxOf(kid(c,'xfrm')))})}
     else if(ln==='pic'){const id=relAttr(allNS(c,'blip')[0],'embed'),r=id&&rels.get(id),b=map(boxOf(kid(kid(c,'spPr'),'xfrm')));if(r&&r.target&&b)pics.push({target:r.target,box:b})}
     else if(ln==='AlternateContent'){const ch=kid(c,'Choice')||kid(c,'Fallback');if(ch)walk(ch,T)}
   }};
   const tree=allNS(doc,'spTree')[0];if(tree)walk(tree,{sx:1,sy:1,dx:0,dy:0});
+  for(const ch of charts)Object.assign(ch,ch.target?await readChart(z,ch.target).catch(()=>null)||{}:{});
   let notes='';const nr=[...rels.values()].find(r=>r.type==='notesSlide');
   if(nr){const nd=await z.xml(nr.target);for(const sp of allNS(nd,'sp')){const ph=phOf(sp);if(ph&&ph.type==='body'){const tx=kid(sp,'txBody');notes=allNS(tx,'p').map(paraText).join('\n').replace(/\n{3,}/g,'\n\n').trim();break}}}
-  return{texts,tables,pics,notes};
+  return{texts,tables,pics,notes,charts:charts.filter(c=>c.rows),chartsFailed:charts.filter(c=>!c.rows).length};
+}
+/* PowerPoint 圖表：從圖表 XML 的快取值讀出類別、系列與數值，對應成直條／橫條／折線／環圈 */
+async function readChart(z,part){
+  const doc=await z.xml(part),pa=doc&&allNS(doc,'plotArea')[0];if(!pa)return null;
+  const typ=[...pa.children].find(e=>/Chart$/.test(e.localName));if(!typ)return null;
+  const kind=/pie|doughnut/i.test(typ.localName)?'cPie':/line|area|scatter|radar/i.test(typ.localName)?'cLine':(kid(typ,'barDir')?.getAttribute('val')==='bar'?'cHbar':'cBar');
+  const pts=el=>{const m=new Map();for(const p of allNS(el,'pt'))m.set(+p.getAttribute('idx'),(kid(p,'v')?.textContent||'').trim());return m};
+  const sers=allNS(typ,'ser').slice(0,4).map(s=>({name:allNS(kid(s,'tx'),'v').map(v=>v.textContent).join(' ').trim()||allNS(kid(s,'tx'),'t').map(v=>v.textContent).join('').trim(),cat:pts(kid(s,'cat')||kid(s,'xVal')),val:pts(kid(s,'val')||kid(s,'yVal'))}));
+  if(!sers.length)return null;
+  const n=Math.max(...sers.map(s=>Math.max(s.cat.size,s.val.size)));if(!n)return null;
+  const rows=[['',...sers.map((s,i)=>s.name||'系列 '+(i+1))]];
+  for(let i=0;i<n;i++)rows.push([sers[0].cat.get(i)||String(i+1),...sers.map(s=>s.val.get(i)??'')]);
+  const ct=kid(allNS(doc,'chart')[0],'title');
+  return{kind,rows,title:ct?allNS(ct,'t').map(t=>t.textContent).join('').trim():''};
 }
 /* 把一張投影片的文字框判讀成標題、副標、大數字、項目（同欄上下相疊的框合成一張卡片＝一個項目）、表格 */
 function classifySlide(sl,i,W0,H0){
@@ -1789,9 +2106,17 @@ function classifySlide(sl,i,W0,H0){
   rest=rest.filter(t=>t!==sub&&t!==kicker&&!(isNum(t)&&t.fz<80)&&/[\p{L}\p{N}]/u.test(t.s));
   const p={title:title?title.lines.join(' '):'',subtitle:sub?sub.lines.join(' '):(kicker?kicker.lines.join(' '):''),body:'',items:'',number:big?big.s:'',notes:sl.notes};
   let tpl='',table=false;
+  /* 有圖表時：其餘文字不多就整頁做成圖表頁；文字多就保留文字頁，圖表另外接一頁在後面 */
+  const chartPage=sl.charts.length>0&&!sl.tables.length&&rest.reduce((a,t)=>a+t.s.length,0)<=80;
+  const extra=sl.charts.length&&!chartPage?sl.charts.map(ch=>({title:p.title,subtitle:ch.title||'圖表',body:'',number:'',notes:'',tpl:ch.kind,
+    items:ch.rows.map(r=>r.map(v=>String(v).replace(/[|｜]/g,'／')).join('|')).join('\n')})):[];
   if(sl.tables.length){
     const rows=sl.tables[0].rows.filter(r=>r.some(Boolean));p.items=rows.map(r=>r.map(c=>c.replace(/[|｜]/g,'／')).join('|')).join('\n');table=true;
     p.body=rest.map(t=>t.lines.join(' ')).join('\n');
+  }else if(chartPage){
+    /* 圖表頁：圖表資料放進項目、其餘文字當註記 */
+    const ch=sl.charts[0];p.items=ch.rows.map(r=>r.map(v=>String(v).replace(/[|｜]/g,'／')).join('|')).join('\n');tpl=ch.kind;
+    p.body=rest.map(t=>t.lines.join(' ')).join('\n');if(!p.title&&ch.title)p.title=ch.title;
   }else{
     /* 卡片：水平重疊、垂直相鄰、寬度相近的框連成一組；
        上方或左邊的短標籤（例如「痛點」「方案A」「Q5」「現況」）也併進旁邊那張卡片 */
@@ -1837,7 +2162,8 @@ function classifySlide(sl,i,W0,H0){
       if(items.length>=2&&items.length<=8&&items.every(o=>o.b&&o.a.length<=16))tpl='tGrid'}
     if(quote)tpl='tQuote';
   }
-  return{...p,tpl:tpl||autoTpl(p,i,table)};
+  /* PowerPoint 表格保持表格（使用者可在「版型」改成圖表）；Markdown 的數字表格才自動變圖表 */
+  return{...p,tpl:tpl||autoTpl(p,i,table,{chart:false}),extra};
 }
 const IMG_MIME={png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',bmp:'image/bmp',webp:'image/webp'};
 /* 回傳頁面清單；withImages 時把投影片上的照片（占畫面 3% 以上）加入圖庫，同一張圖只加一次 */
@@ -1848,14 +2174,15 @@ async function pagesFromPptx(u8,{withImages=true,onStep}={}){
   for(let i=0;i<ids.length;i++){
     onStep&&onStep(i,ids.length);
     const sl=await readSlide(z,ids[i].target,cache);
-    charts+=(await z.xml(ids[i].target)).getElementsByTagNameNS('*','chart').length;
+    charts+=sl.chartsFailed;
     const p=classifySlide(sl,i,W0,H0),sel=[];
     if(withImages)for(const pic of sl.pics.filter(q=>q.box.w*q.box.h>=W0*H0*.03).sort((a,b)=>b.box.w*b.box.h-a.box.w*a.box.h).slice(0,6)){
       const ext=pic.target.split('.').pop().toLowerCase();if(!IMG_MIME[ext])continue;
       if(!media.has(pic.target)){let id=0;try{const b=new Blob([await z.bytes(pic.target)],{type:IMG_MIME[ext]}),bmp=await createImageBitmap(b);id=(await makeItem(pic.target.split('/').pop(),bmp)).id;if(bmp.close)bmp.close()}catch(e){console.warn('pptx image',pic.target,e)}media.set(pic.target,id)}
       const id=media.get(pic.target);if(id&&!sel.includes(id))sel.push(id);
     }
-    pages.push({...cleanPage(p),sel});
+    const cp=cleanPage(p);cp.tpl=tplFor(cp.tpl);pages.push({...cp,sel});
+    for(const x of p.extra||[]){const xp=cleanPage(x);xp.tpl=tplFor(xp.tpl);pages.push({...xp,sel:[]})}
   }
   return{pages,charts,images:[...media.values()].filter(Boolean).length};
 }
@@ -2194,7 +2521,7 @@ function syncUI(){
   $('logoPos').value=S.logoPos;$('logoSize').value=S.logoSize;$('fmt').value=S.fmt;$('pptText').value=S.pptText;$('pptQ').value=S.pptQ;$('scale').value=S.scale;$('fs').value=S.fs;showFs();fmtUI();
   for(const k of['footer','logoBg','bgOn','single'])$(k).checked=S[k];
   showLogo();showLogoSize();applyTheme();applyFocal();drawFilters();
-  renderItemsEd();notesCount();
+  renderItemsEd();notesCount();applyRatioUI();
   if(S.body.trim()||S.number.trim())$('moreFields').open=true;
 }
 
@@ -2204,26 +2531,48 @@ const COLN=['重點','說明','補充','第 4 欄','第 5 欄'];
 const itemRows=()=>String(S.items||'').split('\n').map(l=>l.split(/[|｜]/));
 function itemsCount(){const n=String(S.items||'').split('\n').filter(s=>s.trim()).length;$('itemsN').textContent=n?String(n):''}
 function setItems(rows){
-  S.items=rows.map(r=>{const c=r.map(v=>String(v).replace(/[|｜\n]/g,' '));while(c.length>1&&!c[c.length-1].trim())c.pop();return c.join('|')}).join('\n');
+  /* 只收掉真正空的結尾欄；只打了空白的欄位要留著，否則下一個字會被吃掉 */
+  S.items=rows.map(r=>{const c=r.map(v=>String(v).replace(/[|｜\n]/g,' '));while(c.length>1&&c[c.length-1]==='')c.pop();return c.join('|')}).join('\n');
   $('items').value=S.items;itemsCount();save();refresh();
 }
 function renderItemsEd(){
   $('itemsEd').hidden=itemsRaw;$('items').hidden=!itemsRaw;$('itemAdd').hidden=itemsRaw;
   $('itemsMode').textContent=itemsRaw?'清單模式':'文字模式';$('itemsMode').setAttribute('aria-pressed',String(itemsRaw));
   itemsCount();if(itemsRaw)return;
-  const rows=itemRows(),nc=Math.min(5,Math.max(2,...rows.map(r=>r.length)));
+  /* 項目空白時畫布顯示「項目一／二／三」示意，編輯器也給三列同樣的提示，兩邊對得上 */
+  const blank=!String(S.items||'').trim(),rows=blank?[[''],[''],['']]:itemRows(),nc=Math.min(5,Math.max(2,...rows.map(r=>r.length)));
   $('itemsEd').innerHTML=rows.map((r,i)=>`<div class="r" data-i="${i}"><span class="no">${i+1}</span>`+
-    '<div class="fs">'+[...Array(nc)].map((_,j)=>`<input type="text" class="${j?'cn':'c0'}" data-j="${j}" value="${esc(r[j]||'')}" placeholder="${COLN[j]}" aria-label="第 ${i+1} 項・${COLN[j]}">`).join('')+'</div>'+
+    '<div class="fs">'+[...Array(nc)].map((_,j)=>`<input type="text" class="${j?'cn':'c0'}" data-j="${j}" value="${esc(r[j]||'')}" placeholder="${blank&&!j?'項目'+'一二三'[i]:COLN[j]}" aria-label="第 ${i+1} 項・${COLN[j]}">`).join('')+'</div>'+
     `<div class="bt"><button type="button" data-a="u" aria-label="第 ${i+1} 項上移">↑</button><button type="button" data-a="d" aria-label="第 ${i+1} 項下移">↓</button><button type="button" data-a="x" aria-label="刪除第 ${i+1} 項">✕</button></div></div>`).join('');
 }
 $('itemsEd').addEventListener('input',e=>{const inp=e.target.closest('input');if(!inp)return;
-  const rows=itemRows(),i=+inp.closest('.r').dataset.i,j=+inp.dataset.j;while(rows[i].length<=j)rows[i].push('');rows[i][j]=inp.value;setItems(rows)});
-$('itemsEd').onclick=e=>{const b=e.target.closest('button');if(!b)return;const rows=itemRows(),i=+b.closest('.r').dataset.i;
+  const rows=itemRows(),i=+inp.closest('.r').dataset.i,j=+inp.dataset.j;while(rows.length<=i)rows.push(['']);while(rows[i].length<=j)rows[i].push('');rows[i][j]=inp.value;setItems(rows)});
+$('itemsEd').onclick=e=>{const b=e.target.closest('button');if(!b)return;const rows=itemRows(),i=+b.closest('.r').dataset.i;while(rows.length<=i)rows.push(['']);
   if(b.dataset.a==='x'){rows.splice(i,1);if(!rows.length)rows.push([''])}else{const j=b.dataset.a==='u'?i-1:i+1;if(j<0||j>=rows.length)return;[rows[i],rows[j]]=[rows[j],rows[i]]}
   setItems(rows);renderItemsEd()};
 $('itemAdd').onclick=()=>{const rows=itemRows();rows.push(['']);setItems(rows);renderItemsEd();const ins=$('itemsEd').querySelectorAll('.r:last-child input');if(ins[0])ins[0].focus()};
 $('itemsMode').onclick=()=>{itemsRaw=!itemsRaw;renderItemsEd()};
 $('items').addEventListener('input',itemsCount);
+/* 從 Excel／試算表貼上：Tab 分欄、換行分列 → 每列一項、「|」分欄；數字表格自動換成圖表版型 */
+function tableFromClip(txt){
+  const lines=String(txt||'').replace(/\r/g,'').split('\n');while(lines.length&&!lines[lines.length-1].trim())lines.pop();
+  if(!lines.some(l=>l.includes('\t')))return null;
+  return lines.map(l=>l.split('\t').map(v=>v.trim().replace(/^"(.*)"$/,'$1').replace(/[|｜]/g,'／')).join('|')).join('\n');
+}
+function pasteTable(e){
+  const t=tableFromClip(e.clipboardData&&e.clipboardData.getData('text/plain'));if(!t)return false;e.preventDefault();
+  S.items=t;$('items').value=t;let msg=`已貼上 ${t.split('\n').length} 列`;
+  if(isNumericTable(t)&&TPLBY[S.tpl].cat!=='chart'){S.tpl=tplFor(chartKind(t));msg+=`，套用「${TPLBY[S.tpl].name}」；可到「版型」換成其他圖表`}
+  storePage();save();renderItemsEd();drawAll();histLater();toast(msg);return true;
+}
+$('itemsEd').addEventListener('paste',pasteTable);$('items').addEventListener('paste',pasteTable);
+/* 版面尺寸（整份）：切換時，不支援的版型換成這個尺寸能用的相近版型 */
+const RATIO_NAMES=[['16:9','16:9 簡報'],['1:1','1:1'],['4:5','4:5'],['9:16','9:16']];
+$('ratioSeg').innerHTML=RATIO_NAMES.map(([v,n])=>`<button type="button" data-v="${v}">${n}</button>`).join('');
+function applyRatioUI(){[...$('ratioSeg').children].forEach(b=>{const on=b.dataset.v===S.ratio;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on))})}
+$('ratioSeg').onclick=e=>{const b=e.target.closest('button');if(!b||b.dataset.v===S.ratio)return;
+  storePage();S.ratio=b.dataset.v;let n=0;for(const p of S.pages){const t=tplFor(p.tpl);if(t!==p.tpl){p.tpl=t;n++}}
+  usePage(S.cur);pgCache.clear();pageChanged(`版面改成 ${S.ratio}`+(n?`，${n} 頁換成這個尺寸能用的版型（可按復原）`:''))};
 /* 逐字稿字數與唸稿時間（約每分鐘 250 字） */
 function notesCount(){const n=String(S.notes||'').replace(/\s/g,'').length,sec=Math.max(1,Math.round(n/250*60));$('notesCount').textContent=n?`${n} 字・約 ${sec>=60?Math.floor(sec/60)+' 分 ':''}${sec%60} 秒`:''}
 $('notes').addEventListener('input',notesCount);

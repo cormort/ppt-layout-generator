@@ -30,6 +30,7 @@ const HELP = `排版產生器 CLI — Markdown 大綱 → 含逐字稿的 PPTX
   --color <#hex>         主色；--accent <#hex> 輔色；--bg <#hex> 底色
   --font <名稱>          標題字體（例如 標楷體）；--body-font <名稱> 內文字體
   --scale <70-140>       全域字級（%）
+  --ratio <尺寸>         16:9（預設，簡報）、1:1、4:5、9:16（社群圖卡）；不支援的版型會換成相近的圖卡版型
   --text <模式>          PPTX 文字：edit＝可修改・逐行（預設，外觀最接近）、flow＝可修改・整段（改字會自動重排）、
                          image＝轉成圖片（外觀完全一致，但不能改字）
   --quality small        PPTX 底圖用 1 倍（檔案約小一半）；預設 std＝2 倍
@@ -185,7 +186,7 @@ try {
     if (flags.json) out(JSON.stringify(r, null, 1));
     else {
       for (const [c, cn] of r.cats) {
-        if (c === 'all') continue;
+        if (c === 'all' || c === 'fit') continue;
         out(`\n【${cn}】`);
         for (const t of r.tpls.filter(t => t.cat === c)) out(`  ${t.id.padEnd(10)} ${t.name} — ${t.hint}`);
       }
@@ -203,6 +204,8 @@ try {
     if (flags.scale) style.fs = +flags.scale;
     if (flags.text && !['edit', 'flow', 'image'].includes(flags.text)) fail('--text 只能是 edit、flow 或 image');
     if (flags.quality && !['std', 'small'].includes(flags.quality)) fail('--quality 只能是 std 或 small');
+    if (flags.ratio && !['16:9', '1:1', '4:5', '9:16'].includes(flags.ratio)) fail('--ratio 只能是 16:9、1:1、4:5 或 9:16');
+    if (flags.ratio) style.ratio = flags.ratio;
     if (flags.text) style.pptText = flags.text;
     if (flags.quality) style.pptQ = flags.quality;
     const setup = await app.run(`(()=>{
@@ -215,7 +218,7 @@ try {
       if(st.font){const i=fi(st.font);if(i>=0)ov.tf=i;else bad.push('字體「'+st.font+'」不存在')}
       if(st.bodyFont){const i=fi(st.bodyFont);if(i>=0)ov.bf=i;else bad.push('字體「'+st.bodyFont+'」不存在')}
       if(st.fs)ov.fs=st.fs;
-      if(st.pptText)ov.pptText=st.pptText;if(st.pptQ)ov.pptQ=st.pptQ;
+      if(st.pptText)ov.pptText=st.pptText;if(st.pptQ)ov.pptQ=st.pptQ;if(st.ratio)ov.ratio=st.ratio;
       Object.assign(S,sanitise({...S,...ov}));
       /* 記下大綱裡不認得的版型名稱 */
       const orig=tplFrom,unknown=[];
@@ -243,7 +246,7 @@ try {
     const report = JSON.parse(await app.run(`JSON.stringify(S.pages.map((p,i)=>{
       const svg=withState(ovOf(p),()=>renderSVG(TPLBY[p.tpl],imgsOf(p.sel,'thumb'),'c'+i+'_'));
       const msg=withState(ovOf(p),()=>overflowNote(svg)),m=msg.match(/⚠\\s*(.+?)\\s*超出/);
-      return{page:i+1,tpl:p.tpl,name:TPLBY[p.tpl].name,title:p.title,notes:!!p.notes.trim(),overflow:m?m[1].split('、'):[],sample:TPLBY[p.tpl].cat!=='text'&&!p.sel.some(id=>lib.some(x=>x.id===id))};
+      return{page:i+1,tpl:p.tpl,name:TPLBY[p.tpl].name,title:p.title,notes:!!p.notes.trim(),overflow:m?m[1].split('、'):[],sample:usesPhoto(TPLBY[p.tpl])&&!p.sel.some(id=>lib.some(x=>x.id===id))};
     }))`));
     if (!report.length) fail('大綱裡沒有讀到任何頁面：每頁用「# 標題」開頭，或用 --- 分頁');
     const result = { pages: report.length, withNotes: report.filter(p => p.notes).length, unknownTemplates: unknown, overflow: report.filter(p => p.overflow.length).map(p => ({ page: p.page, tpl: p.tpl, fields: p.overflow, title: p.title })), files: {} };
