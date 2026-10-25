@@ -93,6 +93,9 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line);border-rad
   <div class="sw" id="sw"></div>
   <label>輔色（商務範本的強調色）</label>
   <div class="row"><input type="color" id="accent"><span class="empty">數字、線條、色塊點綴</span></div>
+  <label class="chk"><input type="checkbox" id="bgOn"> 自訂底色（不勾選＝各範本預設的淡色底）</label>
+  <div class="row" style="margin-top:6px"><input type="color" id="bg"><div class="sw" id="bgSw" style="margin:0"></div></div>
+  <p class="empty" style="margin:4px 0 0">照片滿版的範本（例如數據亮點、層疊色帶、直排）以照片為底，不受影響；選深色底時文字會自動變淺色。</p>
   <label>商務配色組（一鍵套用主色＋輔色）</label>
   <div class="biz" id="biz"></div>
   <label>標題字體</label><select id="tf"></select>
@@ -133,7 +136,7 @@ const FONTS=[
  ["Arial Black（英文粗體）","'Arial Black','Arial','Microsoft JhengHei',sans-serif"]];
 const SWATCH=['#2f5d8a','#3f6b3a','#7a8f4e','#c2456b','#d9822b','#8a5a2b','#5b4b8a','#1f7a7a','#b03a2e','#3a3a3a'];
 const DEF={title:'敦煌鳴沙山月牙泉',subtitle:'Dunhuang · Crescent Lake',body:'沙漠中的一彎清泉，千百年來不曾乾涸。駝鈴聲聲、沙丘連綿，日落時分整座山脊被染成金色，是絲路上最溫柔的風景。',items:'工作概述|Job Overview\n靈感來源|Source of Inspiration\n成果展示|Achievement\n目標規劃|Goals and Ideas',number:'01',color:'#2f5d8a',accent:'#c9a24a',tf:0,bf:0,single:false,tpl:'diamond',
-  company:'',date:'',page:'',footer:false,logo:'',logoAR:1,logoPos:'tr',logoBg:true};
+  bgOn:false,bg:'#f7f3ea',company:'',date:'',page:'',footer:false,logo:'',logoAR:1,logoPos:'tr',logoBg:true};
 const BIZ=[['藏青金','#1f3a5f','#c9a24a'],['商務藍','#1d5fa8','#38b2e8'],['深灰橘','#3b3f46','#f08a24'],['墨綠米','#2f5a46','#d8b98a'],['酒紅灰','#7a2635','#a8a8a8'],['科技紫','#3b2f8f','#22c3c3']];
 
 /* ---------- helpers ---------- */
@@ -186,7 +189,7 @@ function mosaic(c,shapes,{shadow=true,box=null,attr=''}={}){
   return `<defs>${defs}</defs><g ${shadow?`filter="url(#${c.sh})"`:''} ${attr}>${body}</g>`;
 }
 /* left/centered text stack, vertically centred on cy */
-function stack(c,{x,cy,w,anchor='start',tSize=84,tColor,sColor,bColor='#4a4a4a',bSize=26,line=true,tWeight=700,sSize=30,maxBody=8}){
+function stack(c,{x,cy,w,anchor='start',tSize=84,tColor,sColor,bColor=c.col.mute,bSize=26,line=true,tWeight=700,sSize=30,maxBody=8}){
   let s='',y=0;const tl=wrap(c.t.title,w,tSize,c.tf,tWeight);
   s+=T(tl,{x,y,size:tSize,lh:1.18,fill:tColor,font:c.tf,weight:tWeight,anchor});y+=(tl.length-1)*tSize*1.18;
   if(c.t.subtitle){y+=sSize+26;const sl=wrap(c.t.subtitle,w,sSize,c.bf,600);s+=T(sl,{x,y,size:sSize,lh:1.3,fill:sColor,font:c.bf,weight:600,ls:2,anchor});y+=(sl.length-1)*sSize*1.3}
@@ -212,9 +215,9 @@ def({id:'diamond',name:'菱形拼貼',hint:'多張循環（共 21 格）',render
   const a=150,D=a*Math.SQRT2,st=(D+18)/2,cx=960,cy=548;
   const cells=[[-4,-2],[2,-2],[-5,-1],[-3,-1],[1,-1],[3,-1],[-6,0],[-4,0],[-2,0],[0,0],[2,0],[4,0],[6,0],[-5,1],[-3,1],[-1,1],[1,1],[3,1],[5,1],[-2,2],[4,2]];
   const sh=cells.map(([i,j])=>{const x=cx+i*st,y=cy+j*st;return{el:`<rect x="${-a/2}" y="${-a/2}" width="${a}" height="${a}" rx="22" transform="translate(${f1(x)} ${f1(y)}) rotate(45)"/>`,b:[x-D/2,y-D/2,D,D]}});
-  return bg(c.col.light)+T(wrap(c.t.title,1600,74,c.tf,700).slice(0,1),{x:960,y:138,size:74,fill:c.col.dark,font:c.tf,weight:700,anchor:'middle'})
-   +T([c.t.subtitle],{x:960,y:192,size:26,fill:c.col.main,font:c.bf,weight:600,ls:6,anchor:'middle'})
-   +mosaic(c,sh)+T(wrap(c.t.body,1400,25,c.bf).slice(0,2),{x:960,y:950,size:25,lh:1.7,fill:'#555',font:c.bf,anchor:'middle'});
+  return bg(c.col.paper||c.col.light)+T(wrap(c.t.title,1600,74,c.tf,700).slice(0,1),{x:960,y:138,size:74,fill:c.col.ink,font:c.tf,weight:700,anchor:'middle'})
+   +T([c.t.subtitle],{x:960,y:192,size:26,fill:c.col.mt,font:c.bf,weight:600,ls:6,anchor:'middle'})
+   +mosaic(c,sh)+T(wrap(c.t.body,1400,25,c.bf).slice(0,2),{x:960,y:950,size:25,lh:1.7,fill:c.col.mute,font:c.bf,anchor:'middle'});
 }});
 
 def({id:'heart',name:'心形拼貼',hint:'多張循環（約 45 格）',render(c){
@@ -223,8 +226,8 @@ def({id:'heart',name:'心形拼貼',hint:'多張循環（約 45 格）',render(c
   const inside=(x,y)=>{let o=false;for(let i=0,j=71;i<72;j=i++){const[a,b]=outline[i],[p,q]=outline[j];if((b>y)!==(q>y)&&x<(p-a)*(y-b)/(q-b)+a)o=!o}return o};
   for(let gy=cy-476;gy<=cy+476;gy+=st)for(let gx=cx-476;gx<=cx+476;gx+=st)
     if(inside(gx,gy))sh.push({el:`<rect x="${gx-s/2}" y="${gy-s/2}" width="${s}" height="${s}" rx="14"/>`,b:[gx-s/2,gy-s/2,s,s]});
-  return bg(mix(c.col.light,'#ffffff',.4))+`<circle cx="${cx}" cy="${cy}" r="430" fill="${c.col.light}"/>`+mosaic(c,sh)
-   +stack(c,{x:150,cy:540,w:640,tSize:80,tColor:c.col.dark,sColor:c.col.main});
+  return bg(c.col.paper||mix(c.col.light,'#ffffff',.4))+`<circle cx="${cx}" cy="${cy}" r="430" fill="${c.col.paper?mix(c.col.paper,c.col.main,.12):c.col.light}"/>`+mosaic(c,sh)
+   +stack(c,{x:150,cy:540,w:640,tSize:80,tColor:c.col.ink,sColor:c.col.mt});
 }});
 
 def({id:'hex',name:'六邊形蜂巢',hint:'多張循環（約 20 格）',render(c){
@@ -234,7 +237,7 @@ def({id:'hex',name:'六邊形蜂巢',hint:'多張循環（約 20 格）',render(
     if(((x-cx)/520)**2+((y-cy)/390)**2>1)continue;
     const pts=[...Array(6)].map((_,k)=>{const a=(60*k-90)*Math.PI/180;return[x+dr*Math.cos(a),y+dr*Math.sin(a)]});sh.push(polyShape(pts));
   }
-  return bg(c.col.light)+mosaic(c,sh)+stack(c,{x:140,cy:540,w:560,tSize:82,tColor:c.col.dark,sColor:c.col.main});
+  return bg(c.col.paper||c.col.light)+mosaic(c,sh)+stack(c,{x:140,cy:540,w:560,tSize:82,tColor:c.col.ink,sColor:c.col.mt});
 }});
 
 def({id:'tree',name:'葉形大樹',hint:'1 張最佳（也可多張）',render(c){
@@ -242,29 +245,29 @@ def({id:'tree',name:'葉形大樹',hint:'1 張最佳（也可多張）',render(c
   const leaf=(L,h,ang,x,y)=>{const pts=rot([[0,0],[L,0],[L/2,-h/2],[L/2,h/2]],ang,x,y);return{el:`<path d="M0,0Q${f1(L/2)},${f1(-h)} ${f1(L)},0Q${f1(L/2)},${f1(h)} 0,0Z" transform="translate(${f1(x)} ${f1(y)}) rotate(${ang})"/>`,b:bbox(pts)}};
   for(let k=0;k<7;k++){const y=905-k*105,L=330-k*30,h=L*.42;sh.push(leaf(L,h,205,tx-6,y),leaf(L,h,335,tx+6,y-40))}
   sh.push(leaf(170,80,270,tx,250));
-  return bg(mix(c.col.light,'#ffffff',.5))+`<line x1="${tx}" y1="990" x2="${tx}" y2="260" stroke="${c.col.dark}" stroke-width="7" stroke-linecap="round" opacity=".55"/>`
-   +mosaic(c,sh)+stack(c,{x:150,cy:540,w:640,tSize:80,tColor:c.col.dark,sColor:c.col.main});
+  return bg(c.col.paper||mix(c.col.light,'#ffffff',.5))+`<line x1="${tx}" y1="990" x2="${tx}" y2="260" stroke="${c.col.dark}" stroke-width="7" stroke-linecap="round" opacity=".55"/>`
+   +mosaic(c,sh)+stack(c,{x:150,cy:540,w:640,tSize:80,tColor:c.col.ink,sColor:c.col.mt});
 }});
 
 def({id:'triangle',name:'封面・三角切割',hint:'1 張',render(c){
   const white=[[0,0],[1080,0],[660,540],[1080,1080],[0,1080]],acc=[[1080,0],[1170,0],[750,540],[1170,1080],[1080,1080],[660,540]];
-  return IMG(c.imgs[0],0,0,W,H)+`<path d="${P(white)}" fill="#fff"/><path d="${P(acc)}" fill="${c.col.main}" opacity=".88"/>`
+  return IMG(c.imgs[0],0,0,W,H)+`<path d="${P(white)}" fill="${c.col.paper||'#fff'}"/><path d="${P(acc)}" fill="${c.col.main}" opacity=".88"/>`
    +`<path d="${P([[0,1080],[0,820],[260,1080]])}" fill="${c.col.main}" opacity=".9"/>`
-   +stack(c,{x:130,cy:520,w:500,tSize:80,tColor:c.col.dark,sColor:c.col.main,bSize:24});
+   +stack(c,{x:130,cy:520,w:500,tSize:80,tColor:c.col.ink,sColor:c.col.mt,bSize:24});
 }});
 
 def({id:'curve',name:'封面・弧形半版',hint:'1 張',render(c){
   const cv=dx=>`M${900+dx},0C${1180+dx},320 ${760+dx},700 ${1060+dx},1080L1920,1080L1920,0Z`;const id=c.id();
-  return bg('#fff')+`<path d="${cv(-46)}" fill="${c.col.main}"/><path d="${cv(-22)}" fill="${c.col.soft}"/>`
+  return bg(c.col.paper||'#fff')+`<path d="${cv(-46)}" fill="${c.col.main}"/><path d="${cv(-22)}" fill="${c.col.soft}"/>`
    +`<defs><clipPath id="${id}"><path d="${cv(0)}"/></clipPath></defs><g filter="url(#${c.sh})">${IMG(c.imgs[0],760,0,1160,1080,`clip-path="url(#${id})"`)}</g>`
-   +stack(c,{x:150,cy:540,w:600,tSize:84,tColor:c.col.dark,sColor:c.col.main});
+   +stack(c,{x:150,cy:540,w:600,tSize:84,tColor:c.col.ink,sColor:c.col.mt});
 }});
 
 def({id:'pills',name:'封面・膠囊豎條',hint:'1 張最佳',render(c){
   const g=c.id(),tops=[430,300,200,330,150,260,380,220,320,460],bots=[760,880,700,940,820,980,760,900,700,860],sh=[];
   tops.forEach((t,i)=>{const x=980+i*86;sh.push({el:`<rect x="${x}" y="${t}" width="64" height="${bots[i]-t}" rx="32"/>`,b:[x,t,64,bots[i]-t]})});
-  return IMG(c.imgs[0],0,0,W,H)+`<defs><linearGradient id="${g}"><stop offset="0" stop-color="#fff"/><stop offset=".45" stop-color="#fff" stop-opacity=".93"/><stop offset="1" stop-color="#fff" stop-opacity=".6"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#${g})"/>`
-   +mosaic(c,sh,{box:[0,0,W,H]})+stack(c,{x:150,cy:540,w:680,tSize:84,tColor:c.col.dark,sColor:c.col.main});
+  return IMG(c.imgs[0],0,0,W,H)+`<defs><linearGradient id="${g}"><stop offset="0" stop-color="${c.col.paper||'#fff'}"/><stop offset=".45" stop-color="${c.col.paper||'#fff'}" stop-opacity=".93"/><stop offset="1" stop-color="${c.col.paper||'#fff'}" stop-opacity=".6"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#${g})"/>`
+   +mosaic(c,sh,{box:[0,0,W,H]})+stack(c,{x:150,cy:540,w:680,tSize:84,tColor:c.col.ink,sColor:c.col.mt});
 }});
 
 def({id:'waves',name:'封面・層疊色帶',hint:'1 張',render(c){
@@ -278,12 +281,12 @@ def({id:'knockout',name:'大字鏤空＋豎條',hint:'1 張',render(c){
   const tops=[380,250,320,180,290,420,260,350],bots=[700,820,640,860,760,900,700,800],sh=[];
   tops.forEach((y,i)=>{const x=1220+i*76;sh.push({el:`<rect x="${x}" y="${y}" width="56" height="${bots[i]-y}" rx="28"/>`,b:[x,y,56,bots[i]-y]})});
   const tt=`<text x="130" y="560" font-size="${f1(size)}" font-family="${esc(c.tf)}" font-weight="800">${esc(t)}</text>`;
-  return IMG(c.imgs[0],0,0,W,H)+`<rect width="${W}" height="${H}" fill="#fff" opacity=".8"/>`+mosaic(c,sh,{box:[0,0,W,H]})
+  return IMG(c.imgs[0],0,0,W,H)+`<rect width="${W}" height="${H}" fill="${c.col.paper||'#fff'}" opacity=".8"/>`+mosaic(c,sh,{box:[0,0,W,H]})
    +`<defs><clipPath id="${id}">${tt}</clipPath><filter id="${bl}"><feGaussianBlur stdDeviation="5"/></filter></defs>`
    +`<g opacity=".22" fill="${c.col.dark}" filter="url(#${bl})" transform="translate(5 8)">${tt}</g>`+IMG(c.imgs[0],0,0,W,H,`clip-path="url(#${id})"`)
    +`<g fill="none" stroke="${c.col.dark}" stroke-opacity=".35" stroke-width="2">${tt}</g>`
-   +T([c.t.subtitle],{x:136,y:560+64,size:48,fill:c.col.dark,font:c.bf,weight:700})
-   +T(wrap(c.t.body,900,24,c.bf).slice(0,3),{x:136,y:700,size:24,lh:1.7,fill:'#555',font:c.bf});
+   +T([c.t.subtitle],{x:136,y:560+64,size:48,fill:c.col.ink,font:c.bf,weight:700})
+   +T(wrap(c.t.body,900,24,c.bf).slice(0,3),{x:136,y:700,size:24,lh:1.7,fill:c.col.mute,font:c.bf});
 }});
 
 def({id:'fanToc',name:'目錄・半環扇形',hint:'每個項目 1 張',render(c){
@@ -292,9 +295,9 @@ def({id:'fanToc',name:'目錄・半環扇形',hint:'每個項目 1 張',render(c
     const lx=cx+(R+r)/2*Math.cos(am)*1.04,ly=cy+(R+r)/2*Math.sin(am)*1.04;
     lab+=T([it[i]?.a||''],{x:lx,y:ly,size:36,fill:'#fff',font:c.tf,weight:700,anchor:'middle',extra:`filter="url(#${c.ts})"`})
        +T([it[i]?.b||''],{x:lx,y:ly+34,size:18,fill:'#fff',font:c.bf,anchor:'middle',ls:1,extra:`filter="url(#${c.ts})"`});}
-  return IMG(c.imgs[0],0,0,W,H)+`<rect width="${W}" height="${H}" fill="#fff" opacity=".86"/>`+mosaic(c,sh)+lab
-   +T([c.t.title],{x:960,y:180,size:84,fill:c.col.dark,font:c.tf,weight:700,anchor:'middle',ls:8})
-   +T([c.t.subtitle],{x:960,y:236,size:24,fill:c.col.main,font:c.bf,weight:600,anchor:'middle',ls:6});
+  return IMG(c.imgs[0],0,0,W,H)+`<rect width="${W}" height="${H}" fill="${c.col.paper||'#fff'}" opacity=".86"/>`+mosaic(c,sh)+lab
+   +T([c.t.title],{x:960,y:180,size:84,fill:c.col.ink,font:c.tf,weight:700,anchor:'middle',ls:8})
+   +T([c.t.subtitle],{x:960,y:236,size:24,fill:c.col.mt,font:c.bf,weight:600,anchor:'middle',ls:6});
 }});
 
 def({id:'glass',name:'目錄・霧面豎板',hint:'1 張背景',render(c){
@@ -312,35 +315,35 @@ def({id:'glass',name:'目錄・霧面豎板',hint:'1 張背景',render(c){
 def({id:'screens',name:'目錄・弧面屏',hint:'1 張連續 / 多張分屏',render(c){
   const it=items(c),n=Math.max(2,Math.min(6,it.length)),u=x=>(x-960)/810,top=x=>300-100*u(x)**2,bot=x=>820+100*u(x)**2;let lab='';
   const sh=strip(150,1770,n,30).map(([a,b],i)=>{const xc=(a+b)/2;
-    lab+=T([pad2(i)],{x:xc,y:bot(xc)+58,size:40,fill:c.col.main,font:c.tf,weight:800,anchor:'middle'})+T([it[i]?.a||''],{x:xc,y:bot(xc)+100,size:28,fill:c.col.dark,font:c.tf,weight:700,anchor:'middle'});
+    lab+=T([pad2(i)],{x:xc,y:bot(xc)+58,size:40,fill:c.col.mt,font:c.tf,weight:800,anchor:'middle'})+T([it[i]?.a||''],{x:xc,y:bot(xc)+100,size:28,fill:c.col.ink,font:c.tf,weight:700,anchor:'middle'});
     return polyShape(band(a,b,top,bot));});
-  return IMG(c.imgs[0],0,0,W,H)+`<rect width="${W}" height="${H}" fill="#fff" opacity=".84"/>`+mosaic(c,sh,{box:[150,180,1620,760]})+lab
-   +T([c.t.title],{x:960,y:140,size:68,fill:c.col.dark,font:c.tf,weight:700,anchor:'middle',ls:6})
-   +T([c.t.subtitle],{x:960,y:190,size:22,fill:c.col.main,font:c.bf,weight:600,anchor:'middle',ls:5});
+  return IMG(c.imgs[0],0,0,W,H)+`<rect width="${W}" height="${H}" fill="${c.col.paper||'#fff'}" opacity=".84"/>`+mosaic(c,sh,{box:[150,180,1620,760]})+lab
+   +T([c.t.title],{x:960,y:140,size:68,fill:c.col.ink,font:c.tf,weight:700,anchor:'middle',ls:6})
+   +T([c.t.subtitle],{x:960,y:190,size:22,fill:c.col.mt,font:c.bf,weight:600,anchor:'middle',ls:5});
 }});
 
 def({id:'waveBand',name:'波浪分格',hint:'3–6 張（或 1 張連續）',render(c){
   const n=nOf(c,2,6,4),top=x=>230+60*Math.sin((x-120)/1680*Math.PI*2+.6),bot=x=>top(x)+420,g=c.id();
   const sh=strip(120,1800,n,16).map(([a,b])=>polyShape(band(a,b,top,bot)));
-  return `<defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="${c.col.light}"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#${g})"/>`
+  return `<defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.col.paper||'#fff'}"/><stop offset="1" stop-color="${c.col.paper?mix(c.col.paper,c.col.main,.12):c.col.light}"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#${g})"/>`
    +mosaic(c,sh)+T(['›››'],{x:1790,y:150,size:90,fill:c.col.soft,font:'Arial',weight:700,anchor:'end'})
-   +T([c.t.title],{x:960,y:830,size:62,fill:c.col.main,font:c.tf,weight:700,anchor:'middle'})
-   +T(wrap(c.t.body,1350,24,c.bf).slice(0,3),{x:960,y:890,size:24,lh:1.7,fill:'#555',font:c.bf,anchor:'middle'});
+   +T([c.t.title],{x:960,y:830,size:62,fill:c.col.mt,font:c.tf,weight:700,anchor:'middle'})
+   +T(wrap(c.t.body,1350,24,c.bf).slice(0,3),{x:960,y:890,size:24,lh:1.7,fill:c.col.mute,font:c.bf,anchor:'middle'});
 }});
 
 def({id:'arch',name:'弧頂分格',hint:'3–6 張（或 1 張連續）',render(c){
   const n=nOf(c,2,6,4),top=x=>410+120*(1-((x-960)/840)**2),bot=()=>990,g=c.id();
   const sh=strip(120,1800,n,14).map(([a,b])=>polyShape(band(a,b,top,bot)));
-  return `<defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.col.light}"/><stop offset="1" stop-color="#fff"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#${g})"/>`
-   +mosaic(c,sh)+T([c.t.title],{x:960,y:180,size:66,fill:c.col.main,font:c.tf,weight:700,anchor:'middle'})
-   +T(wrap(c.t.body,1300,24,c.bf).slice(0,3),{x:960,y:250,size:24,lh:1.7,fill:'#555',font:c.bf,anchor:'middle'});
+  return `<defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.col.paper?mix(c.col.paper,c.col.main,.12):c.col.light}"/><stop offset="1" stop-color="${c.col.paper||'#fff'}"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#${g})"/>`
+   +mosaic(c,sh)+T([c.t.title],{x:960,y:180,size:66,fill:c.col.mt,font:c.tf,weight:700,anchor:'middle'})
+   +T(wrap(c.t.body,1300,24,c.bf).slice(0,3),{x:960,y:250,size:24,lh:1.7,fill:c.col.mute,font:c.bf,anchor:'middle'});
 }});
 
 def({id:'fan',name:'扇形畫廊',hint:'3–6 張（或 1 張連續）',render(c){
   const n=nOf(c,2,7,5),cx=960,cy=1650,R=1250,r=760,A0=236*Math.PI/180,A1=304*Math.PI/180,g=.006,sh=[];
   for(let i=0;i<n;i++)sh.push(annular(cx,cy,R,r,A0+(A1-A0)*i/n+g/2,A0+(A1-A0)*(i+1)/n-g/2));
-  return bg(mix(c.col.light,'#ffffff',.3))+mosaic(c,sh)+T([c.t.title],{x:960,y:170,size:66,fill:c.col.main,font:c.tf,weight:700,anchor:'middle'})
-   +T(wrap(c.t.body,1300,24,c.bf).slice(0,3),{x:960,y:240,size:24,lh:1.7,fill:'#555',font:c.bf,anchor:'middle'});
+  return bg(c.col.paper||mix(c.col.light,'#ffffff',.3))+mosaic(c,sh)+T([c.t.title],{x:960,y:170,size:66,fill:c.col.mt,font:c.tf,weight:700,anchor:'middle'})
+   +T(wrap(c.t.body,1300,24,c.bf).slice(0,3),{x:960,y:240,size:24,lh:1.7,fill:c.col.mute,font:c.bf,anchor:'middle'});
 }});
 
 def({id:'bignum',name:'大數字鏤空',hint:'1 張',render(c){
@@ -357,11 +360,11 @@ def({id:'ring',name:'目錄・圓環',hint:'1 張',render(c){
   const ring=`M${cx-R},${cy}a${R},${R} 0 1,0 ${2*R},0a${R},${R} 0 1,0 ${-2*R},0ZM${cx-r},${cy}a${r},${r} 0 1,0 ${2*r},0a${r},${r} 0 1,0 ${-2*r},0Z`;
   const ch=[...String(c.t.title||'')],ts=Math.min(120,440/Math.max(1,ch.length*1.12));let list='';
   it.slice(0,n).forEach((o,i)=>{const y=y0+i*st;list+=`<circle cx="270" cy="${f1(y)}" r="42" fill="${c.col.main}"/>`+T([pad2(i)],{x:270,y:y+12,size:34,fill:'#fff',font:c.bf,weight:700,anchor:'middle'})
-    +T([o.a],{x:350,y:y+(o.b?4:16),size:50,fill:c.col.dark,font:c.tf,weight:700})+T([o.b],{x:352,y:y+44,size:24,fill:'#777',font:c.bf,ls:1})});
-  return bg('#fff')+`<circle cx="${cx}" cy="${cy}" r="${R+36}" fill="none" stroke="${c.col.soft}" stroke-width="4" stroke-dasharray="2 14" stroke-linecap="round"/>`
+    +T([o.a],{x:350,y:y+(o.b?4:16),size:50,fill:c.col.ink,font:c.tf,weight:700})+T([o.b],{x:352,y:y+44,size:24,fill:c.col.mute,font:c.bf,ls:1})});
+  return bg(c.col.paper||'#fff')+`<circle cx="${cx}" cy="${cy}" r="${R+36}" fill="none" stroke="${c.col.soft}" stroke-width="4" stroke-dasharray="2 14" stroke-linecap="round"/>`
    +`<defs><clipPath id="${id}"><path d="${ring}" clip-rule="evenodd"/></clipPath></defs><g filter="url(#${c.sh})">${IMG(c.imgs[0],cx-R,cy-R,2*R,2*R,`clip-path="url(#${id})"`)}</g>`
-   +VT(c.t.title,{x:cx-30,y:cy-ch.length*ts*1.12/2+ts*.85,size:ts,fill:c.col.main,font:c.tf,weight:700})
-   +T([c.t.subtitle],{x:230,y:140,size:24,fill:c.col.main,font:c.bf,weight:700,ls:6})+list;
+   +VT(c.t.title,{x:cx-30,y:cy-ch.length*ts*1.12/2+ts*.85,size:ts,fill:c.col.mt,font:c.tf,weight:700})
+   +T([c.t.subtitle],{x:230,y:140,size:24,fill:c.col.mt,font:c.bf,weight:700,ls:6})+list;
 }});
 
 def({id:'vertical',name:'中國風・直排',hint:'1 張',render(c){
@@ -378,15 +381,15 @@ def({id:'circles',name:'圓形拼貼',hint:'多張循環（約 20 格）',render
   const r=92,cx=1440,cy=540,sh=[];
   for(let j=-3;j<=3;j++)for(let i=-4;i<=4;i++){const x=cx+(i+(j&1)*.5)*176,y=cy+j*152;if(((x-cx)/450)**2+((y-cy)/430)**2<=1)sh.push({el:`<circle cx="${f1(x)}" cy="${y}" r="${r}"/>`,b:[x-r,y-r,2*r,2*r],x,y})}
   let rings=sh.map(s=>`<circle cx="${f1(s.x)}" cy="${s.y}" r="${r+7}" fill="#fff"/>`).join('');
-  return bg(c.col.light)+`<g filter="url(#${c.sh})">${rings}</g>`+mosaic(c,sh,{shadow:false})
-   +stack(c,{x:150,cy:540,w:600,tSize:104,tColor:c.col.dark,sColor:c.col.main});
+  return bg(c.col.paper||c.col.light)+`<g filter="url(#${c.sh})">${rings}</g>`+mosaic(c,sh,{shadow:false})
+   +stack(c,{x:150,cy:540,w:600,tSize:104,tColor:c.col.ink,sColor:c.col.mt});
 }});
 
 def({id:'ocean',name:'大標題・漸層淡出',hint:'1 張',render(c){
   const g=c.id(),t=c.t.title||' ',size=Math.min(190,100*1500/Math.max(1,tw(t,100,c.tf,700)));
-  return IMG(c.imgs[0],0,0,W,H)+`<defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".7" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#fff"/></linearGradient></defs><rect y="420" width="${W}" height="660" fill="url(#${g})"/>`
-   +`<text x="960" y="880" font-size="${f1(size)}" font-family="${esc(c.tf)}" font-weight="700" fill="${c.col.main}" stroke="#fff" stroke-width="10" paint-order="stroke" text-anchor="middle" letter-spacing="6">${esc(t)}</text>`
-   +T([c.t.subtitle],{x:960,y:960,size:28,fill:c.col.dark,op:.75,font:c.bf,anchor:'middle',ls:6})
+  return IMG(c.imgs[0],0,0,W,H)+`<defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.col.paper||'#fff'}" stop-opacity="0"/><stop offset=".7" stop-color="${c.col.paper||'#fff'}" stop-opacity=".95"/><stop offset="1" stop-color="${c.col.paper||'#fff'}"/></linearGradient></defs><rect y="420" width="${W}" height="660" fill="url(#${g})"/>`
+   +`<text x="960" y="880" font-size="${f1(size)}" font-family="${esc(c.tf)}" font-weight="700" fill="${c.col.dk?c.col.ink:c.col.main}" stroke="${c.col.paper||'#fff'}" stroke-width="10" paint-order="stroke" text-anchor="middle" letter-spacing="6">${esc(t)}</text>`
+   +T([c.t.subtitle],{x:960,y:960,size:28,fill:c.col.ink,op:.75,font:c.bf,anchor:'middle',ls:6})
    +`<line x1="560" y1="950" x2="680" y2="950" stroke="${c.col.dark}" stroke-opacity=".4"/><line x1="1240" y1="950" x2="1360" y2="950" stroke="${c.col.dark}" stroke-opacity=".4"/>`;
 }});
 
@@ -395,9 +398,9 @@ def({id:'pixel',name:'方塊溶解',hint:'1 張（人像很適合）',render(c){
   for(let col=0;col<6;col++)for(let row=0;row<14;row++){const x=520+col*80,y=row*80,p=(col+1)/7;
     if(rnd()<p){const v=Math.round(255*(.3+.7*rnd()));sq+=`<rect x="${x+4}" y="${y+4}" width="72" height="72" fill="rgb(${v},${v},${v})"/>`}
     else if(rnd()<.18)acc+=`<rect x="${x+4}" y="${y+4}" width="72" height="72" fill="${c.col.main}" opacity=".18"/>`}
-  return bg('#fff')+`<defs><mask id="${m}" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}"><rect x="1000" width="920" height="${H}" fill="#fff"/>${sq}</mask></defs>`
+  return bg(c.col.paper||'#fff')+`<defs><mask id="${m}" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}"><rect x="1000" width="920" height="${H}" fill="#fff"/>${sq}</mask></defs>`
    +acc+IMG(c.imgs[0],520,0,1400,H,`mask="url(#${m})"`)
-   +T([String(c.t.subtitle||'').toUpperCase()],{x:90,y:1040,size:190,fill:c.col.main,op:.09,font:'Arial Black,Arial',weight:900})
+   +T([String(c.t.subtitle||'').toUpperCase()],{x:90,y:1040,size:190,fill:c.col.mt,op:.09,font:'Arial Black,Arial',weight:900})
    +stack(c,{x:130,cy:500,w:420,tSize:110,tColor:c.col.main,sColor:c.col.dark,bSize:24});
 }});
 
@@ -414,13 +417,13 @@ def({id:'bullets',name:'商務・左圖右文條列',hint:'1 張；項目填「�
   const it=items(c).slice(0,6),n=it.length,cl=c.id(),x0=980,st=Math.min(150,620/n),y0=380+(620-st*n)/2;let rows='';
   it.forEach((o,i)=>{const y=y0+i*st;rows+=`<rect x="${x0}" y="${f1(y-40)}" width="56" height="56" rx="12" fill="${c.col.main}"/>`
     +T([pad2(i)],{x:x0+28,y:y-2,size:26,fill:'#fff',font:c.bf,weight:700,anchor:'middle'})
-    +T([o.a],{x:x0+84,y,size:36,fill:c.col.dark,font:c.tf,weight:700})
-    +T(wrap(o.b,780,22,c.bf).slice(0,st>=130?2:1),{x:x0+86,y:y+38,size:22,lh:1.5,fill:'#666',font:c.bf})});
+    +T([o.a],{x:x0+84,y,size:36,fill:c.col.ink,font:c.tf,weight:700})
+    +T(wrap(o.b,780,22,c.bf).slice(0,st>=130?2:1),{x:x0+86,y:y+38,size:22,lh:1.5,fill:c.col.mute,font:c.bf})});
   const img=[[0,0],[860,0],[760,1080],[0,1080]];
-  return bg('#fff')+`<defs><clipPath id="${cl}"><path d="${P(img)}"/></clipPath></defs>`+IMG(c.imgs[0],0,0,900,H,`clip-path="url(#${cl})"`)
+  return bg(c.col.paper||'#fff')+`<defs><clipPath id="${cl}"><path d="${P(img)}"/></clipPath></defs>`+IMG(c.imgs[0],0,0,900,H,`clip-path="url(#${cl})"`)
    +`<path d="${P([[860,0],[892,0],[792,1080],[760,1080]])}" fill="${c.col.acc}"/>`
    +T([c.t.subtitle],{x:x0,y:150,size:24,fill:c.col.acc,font:c.bf,weight:700,ls:4})
-   +T(wrap(c.t.title,820,62,c.tf,700).slice(0,1),{x:x0,y:228,size:62,fill:c.col.dark,font:c.tf,weight:700})
+   +T(wrap(c.t.title,820,62,c.tf,700).slice(0,1),{x:x0,y:228,size:62,fill:c.col.ink,font:c.tf,weight:700})
    +`<rect x="${x0}" y="262" width="820" height="2" fill="${c.col.light}"/><rect x="${x0}" y="261" width="90" height="4" fill="${c.col.main}"/>`+rows;
 }});
 
@@ -441,12 +444,12 @@ def({id:'timeline',name:'商務・時間軸',hint:'每節點 1 張；項目填�
   it.forEach((o,i)=>{const x=n===1?960:x0+(x1-x0)*i/(n-1),id=c.id(),bl=wrap(o.b,w,28,c.tf,700).slice(0,2);
     defs+=`<clipPath id="${id}"><circle cx="${f1(x)}" cy="${ly}" r="${r}"/></clipPath>`;
     s+=`<circle cx="${f1(x)}" cy="${ly}" r="${r+12}" fill="#fff" stroke="${c.col.main}" stroke-width="4"/>`+IMG(c.imgs[i%c.imgs.length],x-r,ly-r,2*r,2*r,`clip-path="url(#${id})"`)
-      +T([o.a],{x,y:ly+175,size:44,fill:c.col.main,font:c.tf,weight:800,anchor:'middle'})
-      +T(bl,{x,y:ly+228,size:28,lh:1.3,fill:c.col.dark,font:c.tf,weight:700,anchor:'middle'})
-      +T(wrap(o.c,w,20,c.bf).slice(0,4),{x,y:ly+228+bl.length*36+20,size:20,lh:1.5,fill:'#777',font:c.bf,anchor:'middle'})});
-  return bg('#fff')+`<rect y="${ly}" width="${W}" height="${H-ly}" fill="${c.col.light}" opacity=".6"/><defs>${defs}</defs>`
-   +T([c.t.title],{x:960,y:160,size:64,fill:c.col.dark,font:c.tf,weight:700,anchor:'middle'})
-   +T([c.t.subtitle],{x:960,y:215,size:24,fill:c.col.main,font:c.bf,weight:600,anchor:'middle',ls:5})+`<g filter="url(#${c.sh})">${s}</g>`;
+      +T([o.a],{x,y:ly+175,size:44,fill:c.col.mt,font:c.tf,weight:800,anchor:'middle'})
+      +T(bl,{x,y:ly+228,size:28,lh:1.3,fill:c.col.ink,font:c.tf,weight:700,anchor:'middle'})
+      +T(wrap(o.c,w,20,c.bf).slice(0,4),{x,y:ly+228+bl.length*36+20,size:20,lh:1.5,fill:c.col.mute,font:c.bf,anchor:'middle'})});
+  return bg(c.col.paper||'#fff')+`<rect y="${ly}" width="${W}" height="${H-ly}" fill="${c.col.paper?mix(c.col.paper,c.col.main,.15):c.col.light}" opacity=".6"/><defs>${defs}</defs>`
+   +T([c.t.title],{x:960,y:160,size:64,fill:c.col.ink,font:c.tf,weight:700,anchor:'middle'})
+   +T([c.t.subtitle],{x:960,y:215,size:24,fill:c.col.mt,font:c.bf,weight:600,anchor:'middle',ls:5})+`<g filter="url(#${c.sh})">${s}</g>`;
 }});
 
 def({id:'steps',name:'商務・流程步驟',hint:'每步 1 張（或 1 張連續）；項目填「步驟|說明」',render(c){
@@ -454,10 +457,10 @@ def({id:'steps',name:'商務・流程步驟',hint:'每步 1 張（或 1 張連�
   it.forEach((o,i)=>{const x=120+i*(w+gap),pts=[[x,y],[x+w,y],[x+w+d,y+h/2],[x+w,y+h],[x,y+h]];if(i)pts.push([x+d,y+h/2]);
     sh.push(polyShape(pts));const xc=x+w/2+d/2;
     ov+=`<path d="${P(pts)}" fill="${i%2?c.col.dark:c.col.main}" opacity=".38"/>`+T([pad2(i)],{x:xc,y:y+h/2+30,size:86,fill:'#fff',font:c.tf,weight:800,anchor:'middle',extra:`filter="url(#${c.ts})"`});
-    lab+=T(wrap(o.a,w,34,c.tf,700).slice(0,1),{x:xc,y:710,size:34,fill:c.col.dark,font:c.tf,weight:700,anchor:'middle'})+`<rect x="${f1(xc-22)}" y="735" width="44" height="4" rx="2" fill="${c.col.acc}"/>`
-      +T(wrap(o.b,w-10,21,c.bf).slice(0,5),{x:xc,y:785,size:21,lh:1.55,fill:'#666',font:c.bf,anchor:'middle'})});
-  return bg('#fff')+mosaic(c,sh)+ov+lab+T([c.t.title],{x:960,y:170,size:64,fill:c.col.dark,font:c.tf,weight:700,anchor:'middle'})
-   +T([c.t.subtitle],{x:960,y:225,size:24,fill:c.col.main,font:c.bf,weight:600,anchor:'middle',ls:5});
+    lab+=T(wrap(o.a,w,34,c.tf,700).slice(0,1),{x:xc,y:710,size:34,fill:c.col.ink,font:c.tf,weight:700,anchor:'middle'})+`<rect x="${f1(xc-22)}" y="735" width="44" height="4" rx="2" fill="${c.col.acc}"/>`
+      +T(wrap(o.b,w-10,21,c.bf).slice(0,5),{x:xc,y:785,size:21,lh:1.55,fill:c.col.mute,font:c.bf,anchor:'middle'})});
+  return bg(c.col.paper||'#fff')+mosaic(c,sh)+ov+lab+T([c.t.title],{x:960,y:170,size:64,fill:c.col.ink,font:c.tf,weight:700,anchor:'middle'})
+   +T([c.t.subtitle],{x:960,y:225,size:24,fill:c.col.mt,font:c.bf,weight:600,anchor:'middle',ls:5});
 }});
 
 def({id:'cards',name:'商務・圖文卡片',hint:'每張卡片 1 張（2–4 欄）；項目填「標題|說明」',render(c){
@@ -468,8 +471,8 @@ def({id:'cards',name:'商務・圖文卡片',hint:'每張卡片 1 張（2–4 �
      +`<rect x="${f1(a+36)}" y="${top+ih+40}" width="50" height="5" rx="2.5" fill="${c.col.acc}"/>`
      +T(tl,{x:a+36,y:top+ih+100,size:36,lh:1.25,fill:c.col.dark,font:c.tf,weight:700})
      +T(wrap(o.b,w-72,22,c.bf).slice(0,6-tl.length),{x:a+36,y:top+ih+100+tl.length*45+18,size:22,lh:1.6,fill:'#666',font:c.bf})});
-  return bg(c.col.light)+`<defs>${defs}</defs>`+T([c.t.title],{x:960,y:170,size:64,fill:c.col.dark,font:c.tf,weight:700,anchor:'middle'})
-   +T([c.t.subtitle],{x:960,y:225,size:24,fill:c.col.main,font:c.bf,weight:600,anchor:'middle',ls:5})+s;
+  return bg(c.col.paper||c.col.light)+`<defs>${defs}</defs>`+T([c.t.title],{x:960,y:170,size:64,fill:c.col.ink,font:c.tf,weight:700,anchor:'middle'})
+   +T([c.t.subtitle],{x:960,y:225,size:24,fill:c.col.mt,font:c.bf,weight:600,anchor:'middle',ls:5})+s;
 }});
 
 /* ---------- state ---------- */
@@ -501,7 +504,10 @@ const blobToData=b=>new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr
 
 function chosen(kind){const L=sel.map(id=>lib.find(x=>x.id===id)).filter(Boolean);
   if(!L.length)return samples.map(s=>({src:s.src}));return L.map(x=>({src:x[kind]}))}
-function colors(){const m=S.color;return{main:m,acc:S.accent||m,dark:mix(m,'#000000',.45),soft:mix(m,'#ffffff',.55),light:mix(m,'#ffffff',.9)}}
+function colors(){const m=S.color,dark=mix(m,'#000000',.45),paper=S.bgOn&&S.bg?S.bg:null;
+  const[r,g,b]=paper?hex2rgb(paper):[255,255,255],dk=(.299*r+.587*g+.114*b)/255<.5;
+  return{main:m,acc:S.accent||m,dark,soft:mix(m,'#ffffff',.55),light:mix(m,'#ffffff',.9),paper,dk,mt:dk&&(.299*hex2rgb(m)[0]+.587*hex2rgb(m)[1]+.114*hex2rgb(m)[2])/255<.55?mix(m,'#ffffff',.5):m,
+    ink:dk?mix(m,'#ffffff',.88):dark,mute:dk?'rgba(255,255,255,.72)':'#555'}}
 /* logo + footer drawn on top of every template */
 function chrome(c){
   let s='';const pos=S.logoPos||'tr';
@@ -554,7 +560,11 @@ $('sw').onclick=e=>{const c=e.target.dataset.c;if(!c)return;S.color=c;$('color')
 $('accent').value=S.accent;$('accent').oninput=()=>{S.accent=$('accent').value;save();refresh()};
 $('biz').innerHTML=BIZ.map(([n,m,a],i)=>`<button data-i="${i}"><i style="background:${m}"></i><i style="background:${a}"></i>${n}</button>`).join('');
 $('biz').onclick=e=>{const b=e.target.closest('button');if(!b)return;const[,m,a]=BIZ[+b.dataset.i];S.color=m;S.accent=a;$('color').value=m;$('accent').value=a;save();refresh()};
-for(const k of['footer','logoBg']){$(k).checked=!!S[k];$(k).onchange=()=>{S[k]=$(k).checked;save();refresh()}}
+const BGS=[['白','#ffffff'],['米白','#f7f3ea'],['淺灰','#f1f2f4'],['暖灰','#e9e4dc'],['淡藍','#eef3f9'],['深藍','#14233a'],['炭黑','#1e1f22']];
+$('bg').value=S.bg;$('bg').oninput=()=>{S.bg=$('bg').value;S.bgOn=true;$('bgOn').checked=true;save();refresh()};
+$('bgSw').innerHTML=BGS.map(([n,v])=>`<button style="background:${v}" data-c="${v}" title="${n}"></button>`).join('');
+$('bgSw').onclick=e=>{const v=e.target.dataset.c;if(!v)return;S.bg=v;S.bgOn=true;$('bg').value=v;$('bgOn').checked=true;save();refresh()};
+for(const k of['footer','logoBg','bgOn']){$(k).checked=!!S[k];$(k).onchange=()=>{S[k]=$(k).checked;save();refresh()}}
 $('logoPos').value=S.logoPos;$('logoPos').onchange=()=>{S.logoPos=$('logoPos').value;save();refresh()};
 const showLogo=()=>{$('logoPrev').src=S.logo||'';$('logoPrev').style.display=S.logo?'':'none'};showLogo();
 $('logoBtn').onclick=()=>$('logoFile').click();
