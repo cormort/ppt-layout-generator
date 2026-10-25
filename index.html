@@ -15,24 +15,151 @@
 <title>圖片排版產生器 · 16:9 簡報排版</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232f5d8a'/%3E%3Crect x='6' y='11' width='20' height='11' rx='2' fill='%23fff'/%3E%3Crect x='6' y='24' width='12' height='2.5' rx='1.2' fill='%23fff'/%3E%3C/svg%3E">
 <style>
-:root{--bg:#f3f1ed;--panel:#fff;--ink:#222;--muted:#7a756d;--line:#e3dfd8;--acc:#2f5d8a;--chip:#f6f4f0;--warn:#a35a00;--shadow:rgba(0,0,0,.12);color-scheme:light}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#1a1b1d;--panel:#24262a;--ink:#ececec;--muted:#9a9a9a;--line:#3a3d42;--acc:#86b4e4;--chip:#2c2f34;--warn:#e8b060;--shadow:rgba(0,0,0,.5);color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#1a1b1d;--panel:#24262a;--ink:#ececec;--muted:#9a9a9a;--line:#3a3d42;--acc:#86b4e4;--chip:#2c2f34;--warn:#e8b060;--shadow:rgba(0,0,0,.5);color-scheme:dark}
+/* 克制的灰階＋一個主色；主要按鈕只有「播放」。深色模式用同一組變數 */
+:root{--bg:#f4f4f2;--panel:#fff;--ink:#1d1d1f;--muted:#5f5f5c;--line:#e3e3e0;--line2:#eeeeec;--acc:#2f5d8a;--acc2:#234a70;--soft:#eef3f8;--chip:#f7f7f5;--warn:#9a5200;--ok:#2b6b3f;--shadow:rgba(0,0,0,.08);color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#18191b;--panel:#222326;--ink:#ececec;--muted:#a3a3a3;--line:#36383c;--line2:#2d2f33;--acc:#86b4e4;--acc2:#a5c8ee;--soft:#233040;--chip:#2a2c30;--warn:#e8b060;--ok:#7fcf98;--shadow:rgba(0,0,0,.45);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#18191b;--panel:#222326;--ink:#ececec;--muted:#a3a3a3;--line:#36383c;--line2:#2d2f33;--acc:#86b4e4;--acc2:#a5c8ee;--soft:#233040;--chip:#2a2c30;--warn:#e8b060;--ok:#7fcf98;--shadow:rgba(0,0,0,.45);color-scheme:dark}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 'Microsoft JhengHei','PingFang TC',system-ui,sans-serif;-webkit-text-size-adjust:100%}
-.app{display:grid;grid-template-columns:376px 1fr;height:100vh}
-aside{overflow:auto;overscroll-behavior:contain;background:var(--panel);border-right:1px solid var(--line);padding:16px 16px 40px}
-main{overflow:auto;padding:18px 22px 40px;min-width:0}
-.hd{display:flex;align-items:center;justify-content:space-between;gap:10px}
-h1{font-size:18px;margin:0}
-.sub{color:var(--muted);font-size:12px;margin:4px 0 8px}
-h2{font-size:13px;color:var(--muted);margin:20px 0 8px;letter-spacing:.04em;display:flex;justify-content:space-between;align-items:center;gap:8px}
-h2 .n{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--acc);color:var(--panel);font-size:12px;margin-right:6px;flex:none}
-.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex:none}
-.seg button{border:0;background:var(--chip);color:var(--muted);font:inherit;font-size:11px;padding:3px 8px;cursor:pointer;line-height:1.6}
-.seg button.on{background:var(--acc);color:var(--panel);font-weight:700}
-.drop{border:2px dashed var(--line);border-radius:10px;padding:16px;text-align:center;color:var(--muted);cursor:pointer;transition:border-color .15s,color .15s}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 'Microsoft JhengHei','PingFang TC','Noto Sans TC',system-ui,sans-serif;-webkit-text-size-adjust:100%}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+[hidden]{display:none!important}
+
+/* ---------- 基本元件 ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:0 12px;cursor:pointer;font:inherit;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn:disabled{opacity:.55;cursor:progress}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:var(--panel);font-weight:700}
+.btn.pri:hover{background:var(--acc2);border-color:var(--acc2)}
+.btn.ghost{border-style:dashed;background:transparent;color:var(--muted)}
+.btn.ico{width:36px;padding:0}
+.btn svg,.mi svg{width:16px;height:16px;flex:none}
+.mini{min-height:30px;font-size:12px;padding:0 10px}
+label,.lab{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:12px 0 5px}
+input[type=text],textarea,select{width:100%;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:8px 10px;font:inherit}
+input[type=text],select{min-height:38px}
+textarea{resize:vertical;min-height:72px;line-height:1.6}
+input[type=range]{width:100%;accent-color:var(--acc)}
+input[type=color]{width:44px;height:36px;border:1px solid var(--line);border-radius:8px;padding:2px;background:var(--panel);flex:none}
+.row{display:flex;gap:8px;align-items:center}
+.row>*{flex:1}
+.row>.fix{flex:none}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:13px;font-weight:400;color:var(--ink);margin:10px 0 0;line-height:1.45}
+.chk input{margin:3px 0 0;flex:none;accent-color:var(--acc)}
+.empty,.hintline{color:var(--muted);font-size:12px}
+.hintline{margin:6px 0 0;line-height:1.6}
+.sec{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.04em;margin:18px 0 6px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sec:first-child{margin-top:0}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{flex:1;border:0;background:var(--panel);color:var(--muted);font:inherit;font-size:12px;padding:6px 10px;cursor:pointer}
+.seg button.on{background:var(--soft);color:var(--acc);font-weight:700}
+
+/* ---------- 上方列 ---------- */
+.top{display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--line);position:relative;z-index:20}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;margin-right:6px}
+.brand svg{width:28px;height:28px;flex:none}
+.doc{display:flex;flex-direction:column;line-height:1.25;min-width:0}
+.doc b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:34vw}
+.doc span{font-size:12px;color:var(--muted);white-space:nowrap}
+.top .grow{flex:1}
+.menuwrap{position:relative}
+.menu{position:absolute;top:calc(100% + 6px);left:0;min-width:300px;max-width:min(380px,92vw);max-height:calc(100vh - 80px);overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px var(--shadow);padding:8px;z-index:30}
+.menu.right{left:auto;right:0}
+.menu .mh{display:block;padding:8px 10px 4px;font-size:12px;font-weight:700;color:var(--muted)}
+.mi{display:flex;align-items:center;gap:12px;width:100%;min-height:44px;border:0;background:transparent;border-radius:8px;padding:6px 10px;font:inherit;color:var(--ink);text-align:left;cursor:pointer}
+.mi:hover,.mi:focus-visible{background:var(--chip)}
+.mi .tag{width:34px;height:34px;border-radius:8px;color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;flex:none}
+.mi .tx{display:flex;flex-direction:column;line-height:1.35}
+.mi .tx small{font-size:12px;color:var(--muted)}
+.mi .kbd{margin-left:auto;font-size:12px;color:var(--muted)}
+.menu hr{border:0;border-top:1px solid var(--line2);margin:6px 4px}
+.menu .pad{padding:4px 10px 8px}
+.menu details summary{cursor:pointer;padding:10px;border-radius:8px;font-size:13px}
+.menu details summary:hover{background:var(--chip)}
+
+/* ---------- 三欄：頁面｜畫布＋逐字稿｜屬性 ---------- */
+.work{display:grid;grid-template-columns:200px minmax(0,1fr) 360px;height:calc(100vh - 53px)}
+.side,.insp{background:var(--panel);overflow:auto;overscroll-behavior:contain}
+.side{border-right:1px solid var(--line);padding:12px}
+.insp{border-left:1px solid var(--line);display:flex;flex-direction:column}
+.center{overflow:auto;padding:16px 24px 32px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:12px;color:var(--muted)}
+.cbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-width:1000px}
+.cbar .tt{font-weight:700}
+.cbar .tt small{font-weight:400;color:var(--muted);font-size:13px;margin-left:8px}
+.cbar .mob{display:none}
+.note{margin:0 0 0 auto;font-size:13px;color:var(--muted)}
+.note.warn{color:var(--warn)}
+.note.ok{color:var(--ok)}
+.stage{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 2px var(--shadow),0 8px 24px var(--shadow);max-width:1000px;width:100%}
+.stage svg,.card svg,.pg svg,.tthumb svg{display:block;width:100%;height:auto}
+.notesbox{max-width:1000px;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.notesbox .nh{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.notesbox .nh label{margin:0;color:var(--ink);font-size:13px}
+.notesbox .nh .cnt{margin-left:auto;font-size:12px;color:var(--muted)}
+.notesbox textarea{min-height:96px;background:var(--chip)}
+
+/* 頁面清單（直式） */
+.pages{display:flex;flex-direction:column;gap:10px}
+.pg{position:relative;cursor:pointer;border-radius:7px;border:1px solid var(--line);background:var(--panel);overflow:hidden;margin-left:20px}
+.pg.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+.pg.drag{opacity:.4}
+.pg svg{pointer-events:none}
+.pg .b{position:absolute;top:2px;left:-20px;width:18px;text-align:right;color:var(--muted);font-size:12px}
+.pg.on .b{color:var(--acc);font-weight:700}
+.pg{overflow:visible}.pg>svg{border-radius:6px 6px 0 0}
+.pg .nt{position:absolute;top:4px;right:4px;background:var(--soft);color:var(--acc);font-size:10px;border-radius:5px;padding:0 5px}
+.pg .ctl{display:none;gap:2px;padding:3px}
+.pg.on .ctl{display:flex}
+.pg .ctl button{border:0;background:var(--chip);color:var(--ink);border-radius:5px;font-size:12px;min-height:28px;cursor:pointer;flex:1}
+.pgadd{margin-left:20px;min-height:40px;border:1px dashed var(--line);border-radius:8px;background:none;color:var(--muted);font:inherit;cursor:pointer}
+.pgadd:hover{border-color:var(--acc);color:var(--acc)}
+
+/* 屬性面板 */
+.itabs{display:flex;border-bottom:1px solid var(--line);padding:0 8px;position:sticky;top:0;background:var(--panel);z-index:2}
+.itabs button{flex:1;min-height:44px;border:0;border-bottom:2px solid transparent;background:transparent;font:inherit;color:var(--muted);cursor:pointer}
+.itabs button.on{border-bottom-color:var(--acc);color:var(--ink);font-weight:700}
+.pn{padding:16px;display:none}
+.pn.on{display:block}
+.tplcard{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);border-radius:10px}
+.tthumb{width:72px;flex:none;border-radius:4px;overflow:hidden;border:1px solid var(--line2)}
+.tplcard .tx{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.35}
+.tplcard .tx b{font-size:14px}
+.tplcard .tx span,.card .hint{font-size:12px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+details.more{margin-top:14px;border-top:1px solid var(--line2);padding-top:6px}
+details.more summary{cursor:pointer;font-size:13px;padding:6px 0}
+
+/* 項目編輯器 */
+.ied{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.ied .r{display:flex;align-items:flex-start;gap:6px;padding:6px 8px;border-bottom:1px solid var(--line2)}
+.ied .r:last-child{border-bottom:0}
+.ied .r .no{width:18px;font-size:12px;color:var(--muted);flex:none;text-align:right;padding-top:8px}
+.ied .r .fs{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.ied .r .bt{display:flex;flex:none}
+.ied .r input{min-height:34px;padding:5px 8px;border-color:transparent;background:var(--chip)}
+.ied .r input:focus{border-color:var(--acc);background:var(--panel)}
+.ied .r .c0{font-weight:700}.ied .r .cn{font-size:13px}
+.ied .r button{width:28px;min-height:30px;border:0;background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;font-size:13px;flex:none}
+.ied .r button:hover{background:var(--chip);color:var(--ink)}
+.ied:empty{display:none}
+
+/* 版型 */
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters button{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;min-height:32px;padding:0 12px;font:inherit;font-size:12px;cursor:pointer}
+.filters button.on{background:var(--ink);border-color:var(--ink);color:var(--panel);font-weight:700}
+.gal{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.card{position:relative;background:var(--panel);border-radius:8px;overflow:hidden;cursor:pointer;border:1px solid var(--line)}
+.card:hover{border-color:var(--muted)}
+.card.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+.card .meta{padding:5px 8px 7px}
+.card .nm{font-weight:700;font-size:12px}
+.card .hint{font-size:11px;line-height:1.4}
+.card .ov{position:absolute;top:4px;right:4px;background:var(--panel);color:var(--warn);border:1px solid var(--line);font-size:10px;border-radius:5px;padding:0 5px}
+
+/* 照片 */
+.drop{border:2px dashed var(--line);border-radius:10px;padding:16px;text-align:center;color:var(--muted);cursor:pointer}
 .drop:hover,.drop.over,.drop:focus-visible{border-color:var(--acc);color:var(--acc)}
+.drop .mob{display:none}
 .lib{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
 .lib .it{position:relative;aspect-ratio:3/4;border-radius:6px;overflow:hidden;cursor:pointer;outline:2px solid transparent;background:var(--chip)}
 .lib .it img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
@@ -43,7 +170,7 @@ h2 .n{display:inline-grid;place-items:center;width:20px;height:20px;border-radiu
 .order .o img{width:74px;height:56px;object-fit:cover;border-radius:6px;display:block;pointer-events:none}
 .order .o .b{position:absolute;top:2px;left:2px;background:rgba(0,0,0,.65);color:#fff;font-size:11px;border-radius:8px;padding:0 6px}
 .order .o .ctl{display:flex;justify-content:space-between;margin-top:2px;gap:2px}
-.order .o button{border:0;background:var(--chip);color:var(--ink);border-radius:4px;font-size:11px;padding:1px 5px;cursor:pointer;flex:1}
+.order .o button{border:0;background:var(--chip);color:var(--ink);border-radius:4px;font-size:11px;padding:2px 5px;cursor:pointer;flex:1}
 .order .o.drag{opacity:.4}
 .order .o.cut img{outline:2px solid var(--acc);outline-offset:-2px}
 .order .o.edit .b{background:var(--acc);color:var(--panel)}
@@ -52,252 +179,248 @@ h2 .n{display:inline-grid;place-items:center;width:20px;height:20px;border-radiu
 .cropwrap{position:relative;margin-top:8px;cursor:crosshair;touch-action:none;user-select:none;line-height:0}
 .cropwrap img{width:100%;max-height:260px;object-fit:contain;display:block;border-radius:6px;pointer-events:none}
 .cropwrap i{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px var(--acc),0 2px 6px rgba(0,0,0,.5);pointer-events:none}
-.empty{color:var(--muted);font-size:12px}
-label{display:block;font-size:12px;color:var(--muted);margin:8px 0 3px}
-input[type=text],textarea,select{width:100%;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:7px;padding:7px 9px;font:inherit}
-textarea{resize:vertical;min-height:64px}
-input[type=range]{width:100%;accent-color:var(--acc)}
-.row{display:flex;gap:8px;align-items:center}
-.row>*{flex:1}
-.row>.fix{flex:none}
-.sw{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
-.sw button{width:24px;height:24px;border-radius:50%;border:2px solid var(--panel);outline:1px solid var(--line);cursor:pointer;flex:none;padding:0}
-input[type=color]{width:44px;height:34px;border:1px solid var(--line);border-radius:7px;padding:2px;background:var(--chip);flex:none}
-.biz{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.biz button{display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:7px;padding:5px 7px;cursor:pointer;font:inherit;font-size:12px}
-.biz i{width:14px;height:14px;border-radius:3px;flex:none}
-.btn{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:7px;padding:7px 12px;cursor:pointer;font:inherit;white-space:nowrap}
-.btn:hover{border-color:var(--acc)}
-.btn:disabled{opacity:.55;cursor:progress}
-.btn.pri{background:var(--acc);color:var(--panel);border-color:var(--acc);font-weight:700}
-.mini{font-size:12px;padding:3px 8px}
-.chk{display:flex;gap:6px;align-items:flex-start;font-size:12px;color:var(--ink);margin-top:10px;line-height:1.45}
-.chk input{margin:2px 0 0;flex:none;accent-color:var(--acc)}
-.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
-.bar .tt{font-size:17px;font-weight:700;margin-right:auto}
-.bar .tt small{font-weight:400;color:var(--muted);font-size:12px;margin-left:8px}
-.bar select{width:auto;padding:6px 8px}
-.btn.ico{display:inline-flex;align-items:center;gap:4px}
-.btn.ico span{font-size:16px;line-height:1}
-.stage{background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 6px 30px var(--shadow);max-width:1200px}
-.stage svg,.card svg{display:block;width:100%;height:auto}
-.note{font-size:12px;color:var(--muted);margin:8px 0 0;min-height:18px}
-.note.warn{color:var(--warn)}
-.filters{display:flex;gap:6px;flex-wrap:wrap;margin-top:20px}
-.filters button{border:1px solid var(--line);background:var(--chip);color:var(--muted);border-radius:999px;padding:4px 12px;font:inherit;font-size:12px;cursor:pointer}
-.filters button.on{background:var(--acc);border-color:var(--acc);color:var(--panel);font-weight:700}
-.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin-top:16px}
-.card{background:var(--panel);border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:transform .15s,border-color .15s}
-.card:hover{transform:translateY(-2px)}
-.card.on{border-color:var(--acc)}
-.card .meta{padding:6px 10px 8px}
-.card .nm{font-weight:700;font-size:13px}
-.card .hint{font-size:11px;color:var(--muted)}
-.focal{display:grid;grid-template-columns:repeat(3,26px);gap:4px;margin-top:6px}
-.focal button{border:1px solid var(--line);background:var(--chip);border-radius:5px;height:26px;cursor:pointer;padding:0;display:grid;place-items:center}
+.focal{display:grid;grid-template-columns:repeat(3,30px);gap:4px}
+.focal button{border:1px solid var(--line);background:var(--panel);border-radius:6px;height:30px;cursor:pointer;padding:0;display:grid;place-items:center}
 .focal button::after{content:'';width:7px;height:7px;border-radius:50%;background:var(--line)}
 .focal button.on{outline:2px solid var(--acc);outline-offset:-2px}
 .focal button.on::after{background:var(--acc);width:11px;height:11px}
-.hintline{font-size:11px;color:var(--muted);margin:6px 0 0}
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9;max-width:80vw;text-align:center}
+
+/* 樣式 */
+.sw{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.sw button{width:26px;height:26px;border-radius:50%;border:2px solid var(--panel);outline:1px solid var(--line);cursor:pointer;flex:none;padding:0}
+.biz{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.biz button{display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;min-height:34px;padding:0 8px;cursor:pointer;font:inherit;font-size:12px}
+.biz i{width:14px;height:14px;border-radius:3px;flex:none}
+.scope{display:inline-block;font-size:11px;font-weight:400;background:var(--soft);color:var(--acc);border-radius:5px;padding:0 6px;margin-left:6px}
+
+dialog.dlg{border:1px solid var(--line);border-radius:14px;padding:0;width:min(640px,94vw);background:var(--panel);color:var(--ink);box-shadow:0 20px 50px var(--shadow)}
+dialog.dlg::backdrop{background:rgba(0,0,0,.35)}
+.dlg .dh{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)}
+.dlg .db{padding:14px 16px 16px}
+.dlg textarea{min-height:220px;font-family:Consolas,'Microsoft JhengHei',monospace;font-size:13px}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:40;max-width:80vw;text-align:center}
 .toast.show{opacity:1}
-:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-.pghd{display:flex;align-items:center;gap:8px;margin-top:14px;max-width:1200px;flex-wrap:wrap}
-.pghd b{font-size:14px}
-.pghd .empty{margin-right:auto}
-.pages{display:flex;gap:10px;overflow-x:auto;padding:8px 2px 8px;max-width:1200px;align-items:flex-start}
-.pg{flex:0 0 156px;position:relative;cursor:pointer;border-radius:7px;border:2px solid transparent;background:var(--panel);overflow:hidden}
-.pg.on{border-color:var(--acc)}
-.pg.drag{opacity:.4}
-.pg svg{display:block;width:100%;height:auto;pointer-events:none}
-.pg .b{position:absolute;top:4px;left:4px;background:rgba(0,0,0,.65);color:#fff;font-size:11px;border-radius:8px;padding:0 6px}
-.pg.on .b{background:var(--acc);color:var(--panel)}
-.pg .nt{position:absolute;top:4px;right:4px;background:#fff;color:#444;font-size:10px;border-radius:6px;padding:0 5px;box-shadow:0 1px 3px rgba(0,0,0,.3)}
-.pg .ctl{display:flex;gap:2px;padding:3px}
-.pg .ctl button{border:0;background:var(--chip);color:var(--ink);border-radius:4px;font-size:11px;padding:2px 0;cursor:pointer;flex:1}
-.pgadd{flex:0 0 90px;align-self:stretch;min-height:110px;border:2px dashed var(--line);border-radius:7px;background:none;color:var(--muted);font:inherit;font-size:13px;cursor:pointer}
-.pgadd:hover{border-color:var(--acc);color:var(--acc)}
-.mob,.tabs{display:none}
-.outtools:empty{display:none}
-.outtools{flex-wrap:wrap}
-.outtools>*{flex:1 1 auto}
-/* ---------- 手機／平板：預覽固定在上方，設定改成底部分頁 ---------- */
+.tabs{display:none}
+.lbl-m{display:none}
+
+/* ---------- 手機／平板：畫布在上，下方依底部分頁切換 ---------- */
 @media (max-width:900px){
-  .app{display:flex;flex-direction:column;height:auto;min-height:100vh;min-height:100dvh}
-  main{order:-1;padding:0;overflow:visible}
-  aside{border:0;overflow:visible;overscroll-behavior:auto;padding:12px 14px calc(84px + env(safe-area-inset-bottom))}
-  .mtop{position:sticky;top:0;z-index:6;background:var(--bg);padding:calc(8px + env(safe-area-inset-top)) 12px 6px;border-bottom:1px solid var(--line)}
-  .bar{margin-bottom:8px;gap:6px;flex-wrap:wrap}
-  /* 範本名稱獨佔一行，按鈕排在下一行，不再互相擋住 */
-  .bar .tt{flex:0 0 100%;font-size:14px;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .bar .tt small{font-size:11px;margin-left:6px}
-  .bar .btn,.bar select{min-height:38px;padding:6px 10px}
-  .bar select{flex:1 1 0;min-width:0;max-width:none}
-  .btn.ico{padding:6px 9px}
-  .stage{border-radius:6px;box-shadow:0 2px 12px var(--shadow)}
-  .note{margin:4px 0 0;min-height:0;font-size:11px}
+  .top{position:sticky;top:0;padding:calc(6px + env(safe-area-inset-top)) 10px 6px}
+  .brand svg,.doc span,.lbl-d{display:none}
+  .lbl-m{display:inline}
+  .doc b{max-width:42vw;font-size:14px}
+  .top .btn{min-height:44px}
+  .top .btn.ico,.top .btn.sq{width:44px;min-width:44px;padding:0}
+  .menu{position:fixed;left:8px!important;right:8px!important;top:auto;bottom:8px;max-width:none;min-width:0;max-height:75vh;border-radius:16px;box-shadow:0 0 0 100vmax rgba(0,0,0,.35)}
+  .work{display:flex;flex-direction:column;height:auto}
+  .center{order:-1;position:sticky;top:57px;z-index:10;background:var(--bg);padding:8px 10px;gap:6px;overflow:visible;border-bottom:1px solid var(--line)}
+  .cbar .mob{display:inline-flex;width:44px;min-height:44px}
+  .cbar .tt{font-size:13px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cbar .tt small{display:none}
+  .note{flex:0 0 100%;margin:0;font-size:12px}
   .note:empty{display:none}
-  .desk{display:none}.mob{display:inline}
-  .drop{padding:20px 12px;font-size:16px}
-  aside .sub{display:none}
-  body:not([data-tab="out"]) aside .hd{display:none}
-  aside .pn{display:none}
-  body[data-tab="img"] .pn[data-pn="img"],body[data-tab="txt"] .pn[data-pn="txt"],body[data-tab="sty"] .pn[data-pn="sty"],body[data-tab="out"] .pn[data-pn="out"]{display:block}
-  body[data-tab="tpl"] aside{display:none}
-  body:not([data-tab="tpl"]) .filters,body:not([data-tab="tpl"]) .gal{display:none}
-  body[data-tab="tpl"] main{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
-  .filters{margin:12px 12px 0;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
-  .filters button{flex:none;padding:6px 12px}
-  .gal{grid-template-columns:repeat(2,1fr);gap:10px;margin:12px}
-  .card:hover{transform:none}
-  .pghd{margin:10px 12px 0}.pghd .empty{display:none}.pghd b{margin-right:auto}
-  .pages{margin:0 12px;padding-top:6px}
-  .pg{flex-basis:124px}.pg .ctl button{padding:6px 0;font-size:13px}
-  .pgadd{flex-basis:72px;min-height:96px}
-  .card .meta{padding:5px 8px 6px}
-  h2:first-child{margin-top:4px}
+  .stage{border-radius:6px}
+  .side,.insp{border:0;overflow:visible;padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+  .side{display:none;padding:12px}
+  body[data-tab="pages"] .side{display:block}
+  body[data-tab="pages"] .insp{display:none}
+  .itabs{display:none}
+  .pages{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .pgadd{grid-column:1/-1}
+  .pg .ctl button{min-height:36px;font-size:14px}
   input[type=text],textarea,select{font-size:16px}
-  .btn{min-height:40px}
-  .btn.mini{min-height:32px}
-  .lib{grid-template-columns:repeat(4,1fr)}
+  .btn{min-height:44px}.mini{min-height:36px}
+  .drop{padding:20px 12px;font-size:16px}.drop .desk{display:none}.drop .mob{display:inline}
   .order .o{flex-basis:84px}.order .o img{width:84px;height:62px}
-  .order .o button{padding:5px 0;font-size:13px}
-  .focal{grid-template-columns:repeat(3,40px)}.focal button{height:40px}
-  .sw button{width:32px;height:32px}
-  .tabs{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--panel);border-top:1px solid var(--line);padding:4px 4px calc(4px + env(safe-area-inset-bottom))}
-  .tabs button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:none;color:var(--muted);font:inherit;font-size:11px;padding:6px 0;border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent}
-  .tabs svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-  .tabs button.on{color:var(--acc);background:var(--chip);font-weight:700}
-  .toast{bottom:calc(80px + env(safe-area-inset-bottom))}
+  .order .o button{padding:6px 0;font-size:13px}
+  .focal{grid-template-columns:repeat(3,44px)}.focal button{height:44px}
+  .sw button{width:34px;height:34px}
+  .ied .r button{width:36px;min-height:40px}
+  .filters{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+  .filters button{flex:none;min-height:36px}
+  .tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:15;background:var(--panel);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+  .tabs button{min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:0;background:none;color:var(--muted);font:inherit;font-size:11px;border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .tabs svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .tabs button.on{color:var(--acc);background:var(--soft);font-weight:700}
+  .toast{bottom:calc(84px + env(safe-area-inset-bottom))}
 }
 @media (max-width:900px) and (orientation:landscape) and (max-height:500px){
-  .mtop{position:static}
+  .center,.top{position:static}
 }
 </style>
 </head>
 <body>
-<div class="app">
-<aside>
-  <div class="hd">
-    <h1>圖片排版產生器</h1>
-    <div class="seg" id="theme" role="group" aria-label="外觀"></div>
+<header class="top">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#2f5d8a"/><rect x="6" y="9" width="20" height="12" rx="2" fill="#fff"/><rect x="6" y="23" width="12" height="2.5" rx="1.2" fill="#fff"/></svg>
+    <div class="doc"><b id="docTitle">排版產生器</b><span id="docStat"></span></div>
   </div>
-  <p class="sub">上傳圖片 → 點選並排列順序 → 輸入文字 → 選範本 → 下載 16:9 圖片（可直接貼進 PPT）；下方「頁面」可新增多頁，整份輸出成含逐字稿的 PPTX</p>
-
-  <section class="pn" data-pn="img">
-  <h2><span><span class="n">1</span>上傳圖片</span><span><button class="btn mini" id="selAll">全選</button> <button class="btn mini" id="selNone">清除選擇</button></span></h2>
-  <div class="drop" id="drop" role="button" tabindex="0"><span class="desk">點此選擇或拖曳圖片到這裡（可多張，也可 Ctrl+V 貼上）</span><span class="mob">＋ 選擇照片（可多張）</span></div>
-  <input type="file" id="file" accept="image/*" multiple hidden>
-  <div class="lib" id="lib"></div>
-  <div class="row" style="margin-top:6px"><span class="empty" id="libInfo"></span><button class="btn mini fix" id="delUnsel">移除沒用到的圖</button></div>
-  <button class="btn mini" id="delAll" style="margin-top:6px">清空全部圖片</button>
-
-  <h2><span><span class="n">2</span>使用順序（可拖曳；✂ 裁切）</span></h2>
-  <div class="order" id="order"></div>
-  <div class="crop" id="cropEd" hidden>
-    <div class="row"><b id="cropName" class="cropname"></b><button class="btn mini fix" id="cropDone">完成</button></div>
-    <div class="cropwrap" id="cropWrap"><img id="cropImg" alt="" draggable="false"><i id="cropDot"></i></div>
-    <label for="cropZ">放大 — <b id="cropZv" style="font-weight:400;color:var(--ink)"></b></label><input type="range" id="cropZ" min="100" max="400" step="5">
-    <div class="row" style="margin-top:6px"><span class="hintline" style="margin:0">點或拖曳圖片，選要留在畫面中央的主體</span><button class="btn mini fix" id="cropReset">還原</button></div>
+  <div class="menuwrap">
+    <button class="btn sq" id="fileBtn" aria-haspopup="true" aria-expanded="false" aria-controls="fileMenu"><span class="lbl-d">檔案</span><svg class="lbl-m" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg><span class="lbl-m" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">檔案</span><svg class="lbl-d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="menu" id="fileMenu" hidden>
+      <span class="mh">開啟既有簡報（PPTX）</span>
+      <button class="mi" id="pptxReplace"><span class="tx">開啟 PPTX…<small>取代目前全部頁面</small></span></button>
+      <button class="mi" id="pptxAppend"><span class="tx">開啟 PPTX，加在後面…</span></button>
+      <div class="pad"><label class="chk" style="margin:0"><input type="checkbox" id="pptxImg" checked> 一併匯入投影片上的照片（小圖示與 Logo 會略過）</label></div>
+      <input type="file" id="pptxFile" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" hidden>
+      <hr>
+      <button class="mi" id="mdDlgBtn"><span class="tx">大綱（Markdown）…<small>貼上或開啟 .md，AI 寫的大綱直接變簡報</small></span></button>
+      <hr>
+      <span class="mh">專案</span>
+      <button class="mi" id="projLoad"><span class="tx">開啟專案 .pptgen.json…</span></button>
+      <button class="mi" id="projSave"><span class="tx">另存專案<small>所有頁面、逐字稿與照片存成一個檔，換電腦也能接續</small></span></button>
+      <input type="file" id="projFile" accept=".json,application/json" hidden>
+      <hr>
+      <button class="mi" id="reset"><span class="tx">新簡報（重設）</span></button>
+      <button class="mi" id="install" hidden><span class="tx">安裝成 App</span></button>
+      <p class="hintline pad" id="iosHint" hidden>iPhone／iPad：在 Safari 按「分享」→「加入主畫面」，就能像 App 一樣從桌面開啟、離線使用。</p>
+      <hr>
+      <div class="pad"><span class="lab" style="margin-top:4px">介面外觀</span><div class="seg" id="theme" role="group" aria-label="介面外觀"></div></div>
+    </div>
   </div>
-  </section>
-
-  <section class="pn" data-pn="txt">
-  <h2><span><span class="n">3</span>文字</span></h2>
-  <label for="title">標題</label><input type="text" id="title">
-  <label for="subtitle">副標題 / 英文</label><input type="text" id="subtitle">
-  <label for="body">內文</label><textarea id="body"></textarea>
-  <label for="items">項目清單（目錄／商務範本用；每行一項，用「|」分隔，例如「85%|客戶滿意度|說明」）</label><textarea id="items"></textarea>
-  <label for="number">大數字（大數字範本用）</label><input type="text" id="number">
-  <label for="notes">逐字稿（不會出現在畫面上，輸出 PPTX 時寫進這一頁的備忘稿）</label><textarea id="notes" style="min-height:110px"></textarea>
-  </section>
-
-  <section class="pn" data-pn="sty">
-  <h2><span><span class="n">4</span>風格</span></h2>
-  <div class="row"><input type="color" id="color" aria-label="主色"><button class="btn" id="pick">從第 1 張圖取色</button></div>
-  <div class="sw" id="sw"></div>
-  <label for="accent">輔色（商務範本的強調色）</label>
-  <div class="row"><input type="color" id="accent" aria-label="輔色"><span class="empty">數字、線條、色塊點綴</span></div>
-  <label class="chk"><input type="checkbox" id="bgOn"> 自訂底色（不勾選＝各範本預設的淡色底）</label>
-  <div class="row" style="margin-top:6px"><input type="color" id="bg" aria-label="底色"><div class="sw" id="bgSw" style="margin:0"></div></div>
-  <p class="hintline">照片滿版的範本（例如數據亮點、層疊色帶、直排）以照片為底，不受影響；選深色底時文字會自動變淺色。</p>
-  <label for="biz">商務配色組（一鍵套用主色＋輔色）</label>
-  <div class="biz" id="biz"></div>
-  <label id="focalLabel">所有圖片的預設焦點（個別圖片可在「使用順序」按 ✂ 放大與裁切）</label>
-  <div class="focal" id="focal" role="group" aria-labelledby="focalLabel"></div>
-  <label for="fs">全域字級 — <b id="fsVal" style="font-weight:400;color:var(--ink)"></b></label><input type="range" id="fs" min="70" max="140" step="5">
-  <p class="hintline">所有範本的文字一起放大或縮小；放太大時若有字放不下，下方會出現提醒。</p>
-  <label for="tf">標題字體</label><select id="tf"></select>
-  <label for="bf">內文字體</label><select id="bf"></select>
-  <label class="chk"><input type="checkbox" id="single"> 多張時也只用第 1 張圖，讓所有形狀連成一張完整畫面（只選 1 張時自動如此）</label>
-
-  <h2><span><span class="n">5</span>Logo 與頁尾</span></h2>
-  <div class="row"><button class="btn" id="logoBtn">上傳 Logo</button><button class="btn fix" id="logoDel">移除</button></div>
-  <input type="file" id="logoFile" accept="image/*" hidden>
-  <div class="row" style="margin-top:6px"><img id="logoPrev" alt="Logo 預覽" style="max-height:40px;max-width:140px;flex:none;display:none"><select id="logoPos" aria-label="Logo 位置"><option value="tr">右上角</option><option value="tl">左上角</option><option value="br">右下角</option><option value="bl">左下角</option></select></div>
-  <label for="logoSize">Logo 大小 — <b id="logoSizeVal" style="font-weight:400;color:var(--ink)"></b></label><input type="range" id="logoSize" min="30" max="160" step="5">
-  <label class="chk"><input type="checkbox" id="logoBg"> Logo 加白色底框（放在照片上比較清楚）</label>
-  <label for="company">公司／單位名稱</label><input type="text" id="company" placeholder="例如：ABC 股份有限公司">
-  <div class="row"><div><label for="date">日期</label><input type="text" id="date" placeholder="2026.10"></div><div><label for="page">第 1 頁頁碼（之後自動 +1）</label><input type="text" id="page" placeholder="P.01"></div></div>
-  <label class="chk"><input type="checkbox" id="footer"> 在右下角顯示頁尾（公司｜日期｜頁碼）</label>
-  </section>
-
-  <section class="pn" data-pn="out">
-  <h2><span><span class="n">6</span>輸出、專案與批次</span></h2>
-  <div class="row outtools" id="outTools"></div>
-  <div class="row" style="margin-top:8px"><button class="btn" id="install" hidden>安裝成 App</button></div>
-  <p class="hintline" id="iosHint" hidden>iPhone／iPad：在 Safari 按「分享」→「加入主畫面」，就能像 App 一樣從桌面開啟、離線使用。</p>
-  <div class="row"><div><label for="pptText">PPTX 文字</label><select id="pptText"><option value="edit">可修改・逐行（外觀最接近）</option><option value="flow">可修改・整段（改字會自動重排）</option><option value="image">轉成圖片（外觀完全一致）</option></select></div>
-  <div><label for="pptQ">PPTX 底圖品質</label><select id="pptQ"><option value="std">標準（2 倍，清晰）</option><option value="small">精簡（1 倍，檔案約小一半）</option></select></div></div>
-  <p class="hintline">「逐行」每一行是一段，外觀與預覽最接近；「整段」把同一段接回去，改字時 PowerPoint 會自動換行，但換行位置可能和預覽略有不同。文字框位置依字型估算，換到沒有相同字型的電腦（例如 Mac）若有偏移，可改選「轉成圖片」。逐字稿三種都會保留。</p>
-  <label for="fname">檔名（留空＝用標題）</label><input type="text" id="fname" placeholder="2026 提案">
-  <div class="row" style="margin-top:8px"><button class="btn" id="zipAll">打包目前分類（ZIP）</button></div>
-  <div class="row" style="margin-top:8px"><button class="btn" id="numBatch">章節頁連續編號輸出</button></div>
-  <p class="hintline">用章節頁範本，把「項目清單」每一行做成一章：數字從「大數字」欄開始自動遞增（01、02、03…），標題換成該行文字、「|」後面是副標，每頁依序換下一張已選圖片。格式選 PPTX 會輸出成一份多頁簡報，其他格式輸出 ZIP。</p>
-  <h2><span><span class="n">7</span>匯入既有簡報（PPTX）</span></h2>
-  <div class="row"><button class="btn" id="pptxAppend">加在後面</button><button class="btn pri" id="pptxReplace">開啟 PPTX 取代全部頁面</button></div>
-  <label class="chk"><input type="checkbox" id="pptxImg" checked> 一併匯入投影片上的照片（小圖示與 Logo 會略過）</label>
-  <input type="file" id="pptxFile" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" hidden>
-  <p class="hintline">讀取每張投影片的標題、文字、表格、照片與備忘稿（逐字稿），自動判讀成頁面並套用版型；同一欄上下相疊的小框會合成一個項目。圖表、SmartArt 與動畫不會轉換。檔案只在瀏覽器裡處理。</p>
-  <h2><span><span class="n">8</span>大綱匯入／匯出（Markdown）</span></h2>
-  <textarea id="mdIn" style="min-height:150px" placeholder="# 封面標題&#10;## 副標題&#10;&#10;---&#10;# 第二頁標題&#10;- 重點一|說明&#10;- 重點二|說明&#10;> 這一頁的逐字稿"></textarea>
-  <div class="row" style="margin-top:6px"><button class="btn fix" id="mdOpen">開啟 .md 檔</button><button class="btn" id="mdAppend">加在後面</button><button class="btn pri" id="mdReplace">取代全部頁面</button></div>
-  <div class="row" style="margin-top:6px"><button class="btn" id="mdExport">把目前的頁面匯出成大綱 .md</button></div>
-  <input type="file" id="mdFile" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden>
-  <p class="hintline">每頁用 <b>---</b> 分隔（或直接用下一個「# 標題」開新頁）：<b>#</b> 標題、<b>##</b> 副標題、<b>數字: 01</b> 大數字、<b>- 重點|說明</b> 或 <b>1.</b> 項目、<b>| 表格 |</b> 每列一行、<b>&gt;</b> 逐字稿、其他文字＝內文；<b>&lt;!-- 版型: tList --&gt;</b> 可指定範本（也可寫「條列、方格、表格、段落、引言、封面、章節」）。沒指定時依內容自動挑選。可以請 AI 照這個格式寫大綱，貼進來就成簡報。</p>
-  <div class="row" style="margin-top:8px"><button class="btn fix" id="projSave">專案存檔</button><button class="btn fix" id="projLoad">載入專案</button><button class="btn fix" id="reset">重設</button></div>
-  <input type="file" id="projFile" accept=".json,application/json" hidden>
-  <p class="hintline">專案存檔會把文字、配色與已選圖片一起存成 .json，換電腦或隔天再開都能接續。圖片全程只在你的瀏覽器處理。</p>
-  </section>
-</aside>
-<main>
-  <div class="mtop">
-  <div class="bar">
-    <div class="tt" id="curName"></div>
-    <button class="btn ico" id="undo" title="復原上一步（Ctrl+Z）"><span aria-hidden="true">↶</span>復原</button>
-    <button class="btn ico" id="redo" title="重做（Ctrl+Y）"><span aria-hidden="true">↷</span>重做</button>
-    <select id="fmt" aria-label="輸出格式"><option value="png">PNG</option><option value="jpeg">JPG</option><option value="svg">SVG</option><option value="pptx">PPTX（文字可編輯）</option></select>
-    <select id="scale" aria-label="輸出倍率"><option value="1">1× 1920×1080</option><option value="2">2× 3840×2160</option><option value="3">3× 5760×3240</option></select>
-    <button class="btn" id="copy">複製圖片</button>
-    <button class="btn" id="share" hidden>分享</button>
-    <button class="btn pri" id="dl">下載</button>
+  <button class="btn ico" id="undo" title="復原（Ctrl+Z）" aria-label="復原"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-3"/></svg></button>
+  <button class="btn ico lbl-d" id="redo" title="重做（Ctrl+Y）" aria-label="重做"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 000 10h3"/></svg></button>
+  <div class="grow"></div>
+  <div class="menuwrap">
+    <button class="btn sq" id="expBtn" aria-haspopup="true" aria-expanded="false" aria-controls="expMenu"><span class="lbl-d">匯出</span><svg class="lbl-d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg><svg class="lbl-m" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 9l5-5 5 5M5 20h14"/></svg><span class="lbl-m" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">匯出</span></button>
+    <div class="menu right" id="expMenu" hidden>
+      <span class="mh" id="expDeckHd">整份簡報</span>
+      <button class="mi" id="deckOut"><span class="tag" style="background:#c4572d">PPTX</span><span class="tx">PowerPoint 檔<small>文字可修改，逐字稿寫進備忘稿</small></span></button>
+      <button class="mi" id="htmlOut"><span class="tag" style="background:#2f5d8a">HTML</span><span class="tx">HTML 簡報<small>單一檔案，瀏覽器開啟即可播放</small></span></button>
+      <button class="mi" id="handout"><span class="tag" style="background:#3f6b3a">PDF</span><span class="tx">講義（列印／存成 PDF）<small>每頁投影片＋逐字稿</small></span></button>
+      <hr>
+      <span class="mh">目前這一頁</span>
+      <div class="pad row"><select id="fmt" aria-label="格式"><option value="png">PNG</option><option value="jpeg">JPG</option><option value="svg">SVG</option><option value="pptx">PPTX（單頁）</option></select><select id="scale" aria-label="倍率"><option value="1">1×</option><option value="2">2×</option><option value="3">3×</option></select><button class="btn pri fix" id="dl">下載</button></div>
+      <button class="mi" id="copy"><span class="tx">複製圖片（直接貼進 PPT）</span><span class="kbd">Ctrl+Shift+C</span></button>
+      <button class="mi" id="share" hidden><span class="tx">分享…</span></button>
+      <hr>
+      <span class="mh">其他</span>
+      <button class="mi" id="mdExport"><span class="tx">大綱 .md<small>交給 AI 改寫後再匯入</small></span></button>
+      <button class="mi" id="zipAll"><span class="tx">目前分類的所有版型（ZIP）</span></button>
+      <button class="mi" id="numBatch"><span class="tx">章節頁連續編號<small>用「項目」每一行做一章，數字自動遞增</small></span></button>
+      <details>
+        <summary>選項：PPTX 文字、底圖品質、檔名</summary>
+        <div class="pad">
+          <label for="pptText" style="margin-top:4px">PPTX 文字</label><select id="pptText"><option value="edit">可修改・逐行（外觀最接近）</option><option value="flow">可修改・整段（改字會自動重排）</option><option value="image">轉成圖片（外觀完全一致）</option></select>
+          <label for="pptQ">PPTX 底圖品質</label><select id="pptQ"><option value="std">標準（2 倍，清晰）</option><option value="small">精簡（1 倍，檔案約小一半）</option></select>
+          <label for="fname">檔名（留空＝用第一頁標題）</label><input type="text" id="fname" placeholder="2026 提案">
+          <p class="hintline">文字框位置依字型估算；換到沒有相同字型的電腦若有偏移，可選「轉成圖片」。逐字稿三種模式都會保留。</p>
+        </div>
+      </details>
+    </div>
   </div>
-  <div class="stage" id="stage"></div>
-  <p class="note" id="note" aria-live="polite"></p>
-  </div>
-  <div class="pghd"><b>頁面 <span id="pgCount"></span></b><span class="empty">每頁各自的範本、文字、照片與逐字稿；配色、字體、Logo、頁尾整份共用</span><button class="btn mini" id="playBtn" title="從目前這一頁開始播放（新分頁）">▶ 播放</button><button class="btn mini" id="htmlOut" title="匯出成單一 .html，用瀏覽器開啟即可播放">匯出 HTML</button><button class="btn pri mini" id="deckOut">輸出整份 PPTX</button></div>
-  <div class="pages" id="pages" aria-label="頁面清單"></div>
-  <div class="filters" id="filters" role="group" aria-label="範本分類"></div>
-  <div class="gal" id="gal"></div>
-</main>
+  <button class="btn pri sq" id="playBtn" title="從目前這一頁開始播放"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg><span class="lbl-d">播放</span><span class="lbl-m" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">播放</span></button>
+</header>
+
+<div class="work">
+  <nav class="side" aria-label="頁面清單">
+    <div class="sh"><b>頁面 <span id="pgCount"></span></b><span>拖曳排序</span></div>
+    <div class="pages" id="pages"></div>
+  </nav>
+
+  <main class="center">
+    <div class="cbar">
+      <button class="btn ico mob" id="prevPg" aria-label="上一頁"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="tt" id="curName"></div>
+      <button class="btn ico mob" id="nextPg" aria-label="下一頁"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+      <p class="note" id="note" aria-live="polite"></p>
+    </div>
+    <div class="stage" id="stage"></div>
+    <section class="notesbox" id="notesBox" aria-label="逐字稿">
+      <div class="nh"><label for="notes">逐字稿</label><span class="empty">寫進 PPTX 備忘稿，播放時顯示在簡報者檢視</span><span class="cnt" id="notesCount"></span></div>
+      <textarea id="notes" rows="4" placeholder="這一頁要講的內容…"></textarea>
+    </section>
+  </main>
+
+  <aside class="insp" aria-label="這一頁的設定">
+    <div class="itabs" id="itabs" role="tablist" aria-label="設定分類">
+      <button role="tab" data-tab="content">內容</button><button role="tab" data-tab="tpl">版型</button><button role="tab" data-tab="photo">照片</button><button role="tab" data-tab="style">樣式</button>
+    </div>
+
+    <section class="pn" data-pn="content" id="pnContent">
+      <div class="tplcard"><div class="tthumb" id="tplThumb"></div><div class="tx"><b id="tplName"></b><span id="tplHint"></span></div><button class="btn mini fix" id="tplChange">換版型</button></div>
+      <label for="title">標題</label><input type="text" id="title">
+      <label for="subtitle">副標題</label><input type="text" id="subtitle">
+      <div class="sec" style="margin-top:14px"><span>項目 <span id="itemsN"></span></span><button class="btn mini" id="itemsMode" aria-pressed="false">文字模式</button></div>
+      <div class="ied" id="itemsEd"></div>
+      <textarea id="items" hidden aria-label="項目（每行一項，用 | 分欄）" placeholder="每行一項，用「|」分欄：重點|說明"></textarea>
+      <button class="btn ghost" id="itemAdd" style="width:100%;margin-top:6px">＋ 新增項目</button>
+      <details class="more" id="moreFields">
+        <summary>更多欄位：內文、大數字</summary>
+        <label for="body">內文</label><textarea id="body"></textarea>
+        <label for="number">大數字（章節頁、大數字範本用）</label><input type="text" id="number">
+      </details>
+    </section>
+
+    <section class="pn" data-pn="tpl">
+      <div class="filters" id="filters" role="group" aria-label="版型分類"></div>
+      <div class="gal" id="gal"></div>
+    </section>
+
+    <section class="pn" data-pn="photo">
+      <div class="sec"><span>照片庫</span><span><button class="btn mini" id="selAll">全選</button> <button class="btn mini" id="selNone">清除選擇</button></span></div>
+      <div class="drop" id="drop" role="button" tabindex="0"><span class="desk">點此選擇或拖曳照片（可多張，也可 Ctrl+V 貼上）</span><span class="mob">＋ 選擇照片（可多張）</span></div>
+      <input type="file" id="file" accept="image/*" multiple hidden>
+      <div class="lib" id="lib"></div>
+      <div class="row" style="margin-top:6px"><span class="empty" id="libInfo"></span><button class="btn mini fix" id="delUnsel">移除沒用到的</button><button class="btn mini fix" id="delAll">清空</button></div>
+      <div class="sec"><span>這一頁的照片順序（可拖曳；✂ 裁切）</span></div>
+      <div class="order" id="order"></div>
+      <div class="crop" id="cropEd" hidden>
+        <div class="row"><b id="cropName" class="cropname"></b><button class="btn mini fix" id="cropDone">完成</button></div>
+        <div class="cropwrap" id="cropWrap"><img id="cropImg" alt="" draggable="false"><i id="cropDot"></i></div>
+        <label for="cropZ">放大 — <b id="cropZv" style="font-weight:400;color:var(--ink)"></b></label><input type="range" id="cropZ" min="100" max="400" step="5">
+        <div class="row" style="margin-top:6px"><span class="hintline" style="margin:0">點或拖曳圖片，選要留在畫面中央的主體</span><button class="btn mini fix" id="cropReset">還原</button></div>
+      </div>
+      <span class="lab" id="focalLabel">所有照片的預設焦點</span>
+      <div class="focal" id="focal" role="group" aria-labelledby="focalLabel"></div>
+      <label class="chk"><input type="checkbox" id="single"> 多張時也只用第 1 張，讓所有形狀連成一張完整畫面</label>
+    </section>
+
+    <section class="pn" data-pn="style">
+      <p class="hintline" style="margin:0 0 4px">這裡的設定<b>整份共用</b>，每一頁都會套用。</p>
+      <span class="lab">主色</span>
+      <div class="row"><input type="color" id="color" aria-label="主色"><button class="btn" id="pick">從第 1 張照片取色</button></div>
+      <div class="sw" id="sw"></div>
+      <label for="accent">輔色</label>
+      <div class="row"><input type="color" id="accent" aria-label="輔色"><span class="empty">數字、線條、色塊點綴</span></div>
+      <label for="biz">配色組（主色＋輔色）</label>
+      <div class="biz" id="biz"></div>
+      <label class="chk"><input type="checkbox" id="bgOn"> 自訂底色（不勾選＝各版型預設的淡色底）</label>
+      <div class="row" style="margin-top:6px"><input type="color" id="bg" aria-label="底色"><div class="sw" id="bgSw" style="margin:0"></div></div>
+      <label for="tf">標題字體</label><select id="tf"></select>
+      <label for="bf">內文字體</label><select id="bf"></select>
+      <label for="fs">全域字級 — <b id="fsVal" style="font-weight:400;color:var(--ink)"></b></label><input type="range" id="fs" min="70" max="140" step="5">
+      <div class="sec" style="margin-top:20px"><span>Logo 與頁尾</span></div>
+      <div class="row"><button class="btn" id="logoBtn">上傳 Logo</button><button class="btn fix" id="logoDel">移除</button></div>
+      <input type="file" id="logoFile" accept="image/*" hidden>
+      <div class="row" style="margin-top:6px"><img id="logoPrev" alt="Logo 預覽" style="max-height:40px;max-width:140px;flex:none;display:none"><select id="logoPos" aria-label="Logo 位置"><option value="tr">右上角</option><option value="tl">左上角</option><option value="br">右下角</option><option value="bl">左下角</option></select></div>
+      <label for="logoSize">Logo 大小 — <b id="logoSizeVal" style="font-weight:400;color:var(--ink)"></b></label><input type="range" id="logoSize" min="30" max="160" step="5">
+      <label class="chk"><input type="checkbox" id="logoBg"> Logo 加白色底框（放在照片上比較清楚）</label>
+      <label class="chk"><input type="checkbox" id="footer"> 顯示頁尾（單位｜日期｜頁碼）</label>
+      <label for="company">單位名稱</label><input type="text" id="company" placeholder="例如：○○處">
+      <div class="row"><div><label for="date">日期</label><input type="text" id="date" placeholder="2026.10"></div><div><label for="page">第 1 頁頁碼</label><input type="text" id="page" placeholder="P.01"></div></div>
+      <p class="hintline">頁碼之後每頁自動 +1（P.01、P.02…）。</p>
+    </section>
+  </aside>
 </div>
+
+<dialog class="dlg" id="mdDlg" aria-labelledby="mdDlgT">
+  <div class="dh"><b id="mdDlgT">大綱（Markdown）</b><button class="btn ico" id="mdClose" aria-label="關閉"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="db">
+    <textarea id="mdIn" aria-label="大綱內容" placeholder="# 封面標題&#10;## 副標題&#10;&#10;---&#10;# 第二頁標題&#10;- 重點一|說明&#10;- 重點二|說明&#10;> 這一頁的逐字稿"></textarea>
+    <div class="row" style="margin-top:10px"><button class="btn fix" id="mdOpen">開啟 .md 檔…</button><div></div><button class="btn fix" id="mdAppend">加在後面</button><button class="btn pri fix" id="mdReplace">取代全部頁面</button></div>
+    <input type="file" id="mdFile" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden>
+    <p class="hintline">每頁用 <b>---</b> 分隔（或直接用下一個「# 標題」開新頁）：<b>#</b> 標題、<b>##</b> 副標題、<b>數字: 01</b> 大數字、<b>- 重點|說明</b> 或 <b>1.</b> 項目、<b>| 表格 |</b> 每列一行、<b>&gt;</b> 逐字稿、其他文字＝內文；<b>&lt;!-- 版型: tList --&gt;</b> 可指定版型（也可寫「條列、方格、表格、段落、引言、封面、章節」）。沒指定時依內容自動挑選。</p>
+  </div>
+</dialog>
+
 <nav class="tabs" id="tabs" aria-label="功能分頁">
-  <button data-tab="img"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M4 18l5-5 4 4 3-3 4 4"/></svg>圖片</button>
-  <button data-tab="txt"><svg viewBox="0 0 24 24"><path d="M5 6h14M12 6v13M8 19h8"/></svg>文字</button>
-  <button data-tab="sty"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="9" cy="9.5" r="1.3"/><circle cx="14.5" cy="8.5" r="1.3"/><circle cx="16" cy="13" r="1.3"/><path d="M11 20c-2-1-2-4 0-5"/></svg>風格</button>
-  <button data-tab="tpl"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="7" rx="1.5"/><rect x="13" y="4" width="8" height="7" rx="1.5"/><rect x="3" y="13" width="8" height="7" rx="1.5"/><rect x="13" y="13" width="8" height="7" rx="1.5"/></svg>範本</button>
-  <button data-tab="out"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>輸出</button>
+  <button data-tab="pages"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="7" rx="1.5"/><rect x="4" y="13" width="16" height="7" rx="1.5"/></svg>頁面</button>
+  <button data-tab="content"><svg viewBox="0 0 24 24"><path d="M5 6h14M12 6v13M8 19h8"/></svg>內容</button>
+  <button data-tab="tpl"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="7" rx="1.5"/><rect x="13" y="4" width="8" height="7" rx="1.5"/><rect x="3" y="13" width="8" height="7" rx="1.5"/><rect x="13" y="13" width="8" height="7" rx="1.5"/></svg>版型</button>
+  <button data-tab="photo"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M4 18l5-5 4 4 3-3 4 4"/></svg>照片</button>
+  <button data-tab="style"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v16"/></svg>樣式</button>
 </nav>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
@@ -314,10 +437,10 @@ const SWATCH=['#2f5d8a','#3f6b3a','#7a8f4e','#c2456b','#d9822b','#8a5a2b','#5b4b
 const BGS=[['白','#ffffff'],['米白','#f7f3ea'],['淺灰','#f1f2f4'],['暖灰','#e9e4dc'],['淡藍','#eef3f9'],['深藍','#14233a'],['炭黑','#1e1f22']];
 const DEF={title:'敦煌鳴沙山月牙泉',subtitle:'Dunhuang · Crescent Lake',body:'沙漠中的一彎清泉，千百年來不曾乾涸。駝鈴聲聲、沙丘連綿，日落時分整座山脊被染成金色，是絲路上最溫柔的風景。',items:'工作概述|Job Overview\n靈感來源|Source of Inspiration\n成果展示|Achievement\n目標規劃|Goals and Ideas',number:'01',color:'#2f5d8a',accent:'#c9a24a',tf:0,bf:0,single:false,tpl:'diamond',
   bgOn:false,bg:'#f7f3ea',company:'',date:'',page:'',footer:false,logo:'',logoAR:1,logoPos:'tr',logoBg:true,logoSize:70,
-  focal:'xMidYMid',theme:'auto',cat:'all',fmt:'png',scale:2,fname:'',fs:100,notes:'',pages:[],cur:0,pptText:'edit',pptQ:'std'};
+  focal:'xMidYMid',theme:'auto',cat:'fit',fmt:'png',scale:2,fname:'',fs:100,notes:'',pages:[],cur:0,pptText:'edit',pptQ:'std'};
 const BIZ=[['藏青金','#1f3a5f','#c9a24a'],['商務藍','#1d5fa8','#38b2e8'],['深灰橘','#3b3f46','#f08a24'],['墨綠米','#2f5a46','#d8b98a'],['酒紅灰','#7a2635','#a8a8a8'],['科技紫','#3b2f8f','#22c3c3']];
 const FOCAL=['xMinYMin','xMidYMin','xMaxYMin','xMinYMid','xMidYMid','xMaxYMid','xMinYMax','xMidYMax','xMaxYMax'];
-const CATS=[['all','全部'],['text','文字頁'],['cover','封面／標題'],['shape','形狀拼貼'],['sec','章節頁'],['toc','目錄'],['grid','圖文分格'],['biz','商務'],['cn','中國風']];
+const CATS=[['fit','建議'],['all','全部'],['text','文字頁'],['cover','封面／標題'],['shape','形狀拼貼'],['sec','章節頁'],['toc','目錄'],['grid','圖文分格'],['biz','商務'],['cn','中國風']];
 
 /* ---------- helpers ---------- */
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -1168,9 +1291,19 @@ $('scale').onchange=()=>{S.scale=+$('scale').value;save()};
 for(const k of['pptText','pptQ']){$(k).value=S[k];$(k).onchange=()=>{S[k]=$(k).value;save()}}
 
 /* 範本分類 */
-function tplList(){return S.cat==='all'?TPL:TPL.filter(t=>t.cat===S.cat)}
+/* 「建議」：用這一頁的內容把每個版型試排一次，只列出放得下的；項目多、內文長或沒放照片時文字頁排前面 */
+let fitCache={sig:'',list:TPL};
+function fitList(){
+  const sig=galSignature();if(fitCache.sig===sig)return fitCache.list;
+  const th=chosen('thumb'),n=String(S.items||'').split('\n').filter(s=>s.trim()).length,wordy=n>=4||String(S.body||'').length>80||!sel.length;
+  const ok=TPL.filter(t=>!overflowNote(renderSVG(t,th,'f'+t.id+'_')));
+  const rank=t=>t.cat==='text'?(wordy?0:2):1;
+  fitCache={sig,list:(ok.length?ok:TPL).slice().sort((a,b)=>rank(a)-rank(b))};
+  return fitCache.list;
+}
+function tplList(){return S.cat==='fit'?fitList():S.cat==='all'?TPL:TPL.filter(t=>t.cat===S.cat)}
 function drawFilters(){
-  $('filters').innerHTML=CATS.map(([v,n])=>{const c=v==='all'?TPL.length:TPL.filter(t=>t.cat===v).length;
+  $('filters').innerHTML=CATS.map(([v,n])=>{const c=v==='fit'?fitList().length:v==='all'?TPL.length:TPL.filter(t=>t.cat===v).length;
     return`<button data-v="${v}" class="${S.cat===v?'on':''}" aria-pressed="${S.cat===v}">${n} ${c}</button>`}).join('');
 }
 $('filters').onclick=e=>{
@@ -1178,7 +1311,7 @@ $('filters').onclick=e=>{
   S.cat=b.dataset.v;save();drawFilters();
   /* 目前範本不在新分類裡就跳到該分類第一個，避免看不到自己正在用哪個 */
   const list=tplList();
-  if(list.length&&!list.some(t=>t.id===S.tpl)){S.tpl=list[0].id;drawStage()}
+  if(S.cat!=='fit'&&list.length&&!list.some(t=>t.id===S.tpl)){S.tpl=list[0].id;storePage();drawStage();drawPages()}
   drawGallery(true);
 };
 
@@ -1223,12 +1356,14 @@ function histGo(d){
 $('undo').onclick=()=>histGo(-1);$('redo').onclick=()=>histGo(1);
 function drawStage(){
   const tpl=TPLBY[S.tpl]||TPL[0];S.tpl=tpl.id;
-  $('curName').innerHTML=`${S.pages.length>1?`第 ${S.cur+1}/${S.pages.length} 頁・`:''}${esc(tpl.name)}<small>建議：${esc(tpl.hint)}</small>`;
+  $('curName').innerHTML=`第 ${S.cur+1} / ${S.pages.length} 頁<small>${esc(tpl.name)}</small>`;
   const svg=renderSVG(tpl,chosen('full'),'m_');
   $('stage').innerHTML=svg;
-  const n=overflowNote(svg);
-  $('note').textContent=(sel.length?'':'※ 目前用的是示意圖，上傳並點選圖片後就會換成你的圖片。 ')+(tpl.cat==='sec'?'這是章節頁：到「輸出」按「章節頁連續編號輸出」，可依項目清單一次做出每一章。 ':'')+(n||'');
-  $('note').classList.toggle('warn',!!n);
+  /* 屬性面板上方的「目前版型」卡片 */
+  $('tplName').textContent=tpl.name;$('tplHint').textContent=tpl.hint;$('tplThumb').innerHTML=renderSVG(tpl,chosen('thumb'),'tc_');
+  const n=overflowNote(svg),photo=tpl.cat!=='text'&&!sel.length;
+  $('note').textContent=n||(photo?'目前用示意圖：到「照片」上傳並點選照片就會換上。':'✓ 文字都放得下');
+  $('note').classList.toggle('warn',!!n);$('note').classList.toggle('ok',!n&&!photo);
 }
 let galSig='';
 function galSignature(){
@@ -1244,12 +1379,12 @@ function drawGallery(force){
   }
   galSig=sig;
   const th=chosen('thumb');
-  $('gal').innerHTML=tplList().map(t=>`<div class="card ${t.id===tpl.id?'on':''}" data-id="${t.id}" role="button" tabindex="0" aria-label="${esc(t.name)}">${renderSVG(t,th,'g'+t.id+'_')}<div class="meta"><div class="nm">${esc(t.name)}</div><div class="hint">${esc(t.hint)}</div></div></div>`).join('');
+  $('gal').innerHTML=tplList().map(t=>{const svg=renderSVG(t,th,'g'+t.id+'_'),ov=!!overflowNote(svg);
+    return`<div class="card ${t.id===tpl.id?'on':''}" data-id="${t.id}" role="button" tabindex="0" aria-label="${esc(t.name)}${ov?'（文字放不下）':''}">${svg}${ov?'<span class="ov">放不下</span>':''}<div class="meta"><div class="nm">${esc(t.name)}</div><div class="hint">${esc(t.hint)}</div></div></div>`}).join('');
 }
 function drawAll(){drawStage();drawGallery(true);drawPages()}
 function pickTpl(id){
   S.tpl=id;storePage();save();drawStage();drawGallery();drawPages();histLater();
-  document.querySelector('main').scrollTo({top:0,behavior:'smooth'});
   if(MQ.matches)toast('已套用：'+(TPLBY[id]?.name||''));
 }
 $('gal').onclick=e=>{const c=e.target.closest('.card');if(!c)return;pickTpl(c.dataset.id)};
@@ -1296,9 +1431,10 @@ function pageSVG(p,i){
 }
 function drawPages(){
   storePage();
-  $('pgCount').textContent=`（${S.pages.length}）`;
+  $('pgCount').textContent=S.pages.length;
+  $('docTitle').textContent=deckName();$('docStat').textContent=`${S.pages.length} 頁・自動存在這台電腦`;$('expDeckHd').textContent=`整份簡報（${S.pages.length} 頁）`;
   $('pages').innerHTML=S.pages.map((p,i)=>`<div class="pg${i===S.cur?' on':''}" data-i="${i}" draggable="${FINE.matches}" role="button" tabindex="0" aria-current="${i===S.cur}" aria-label="第 ${i+1} 頁：${esc(p.title||TPLBY[p.tpl]?.name)}">${pageSVG(p,i)}<span class="b">${i+1}</span>${p.notes.trim()?'<span class="nt" title="這一頁有逐字稿">稿</span>':''}`+
-    `<div class="ctl"><button data-a="l" aria-label="往前移">◀</button><button data-a="d" aria-label="複製這一頁" title="複製這一頁">⧉</button><button data-a="x" aria-label="刪除這一頁" title="刪除這一頁">✕</button><button data-a="r" aria-label="往後移">▶</button></div></div>`).join('')+
+    `<div class="ctl"><button data-a="l" aria-label="往前移" title="往前移">↑</button><button data-a="d" aria-label="複製這一頁" title="複製這一頁">⧉</button><button data-a="x" aria-label="刪除這一頁" title="刪除這一頁">✕</button><button data-a="r" aria-label="往後移" title="往後移">↓</button></div></div>`).join('')+
     '<button class="pgadd" id="pgAdd" title="在目前這一頁後面新增">＋<br>新增頁</button>';
   for(const k of[...pgCache.keys()])if(k>=S.pages.length)pgCache.delete(k);
 }
@@ -1548,9 +1684,10 @@ function importOutline(src,mode){
   }else{const at=S.pages.length;S.pages.push(...ps);usePage(at)}
   const nn=ps.filter(p=>p.notes.trim()).length;
   pageChanged(`已匯入 ${ps.length} 頁`+(nn?`（${nn} 頁有逐字稿）`:''));
+  return true;
 }
-$('mdReplace').onclick=()=>importOutline($('mdIn').value,'replace');
-$('mdAppend').onclick=()=>importOutline($('mdIn').value,'append');
+$('mdReplace').onclick=()=>{if(importOutline($('mdIn').value,'replace'))$('mdDlg').close()};
+$('mdAppend').onclick=()=>{if(importOutline($('mdIn').value,'append'))$('mdDlg').close()};
 $('mdOpen').onclick=()=>$('mdFile').click();
 $('mdFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
   try{$('mdIn').value=await f.text();toast(`已讀入 ${f.name}，按「取代全部頁面」或「加在後面」`)}catch(err){toast('讀取失敗：'+err.message)}};
@@ -1690,8 +1827,11 @@ function classifySlide(sl,i,W0,H0){
     /* 標題本身以引號開頭、內容不多的頁也當引言頁；「— 某某」是出處，放副標 */
     const qTitle=/^[「“"『]/.test(p.title)&&items.length<=3;
     if(qTitle||quote){const by=items.findIndex(o=>/^[—―－-]{1,2}\s*\S/.test(o.a));if(by>=0){p.subtitle=items[by].a.replace(/^[—―－-]+\s*/,'');items.splice(by,1)}}
-    if(i===0){p.body=items.map(o=>o.b?o.a+'：'+o.b:o.a).slice(0,4).join('\n');tpl='split'}
-    else if(quote||qTitle||(big&&items.length<=2)){p.body=items.map(o=>o.b?o.a+'：'+o.b:o.a).join('\n');if(qTitle)tpl='tQuote'}
+    /* 項目接成內文一行：大項本身已有「：」時改用全形空白，避免「A：B：C」 */
+    const line=o=>o.b?o.a+(o.a.includes('：')?'　':'：')+o.b:o.a;
+    /* 第一頁只有在內容少時才當封面；第一頁就是條列內容頁的簡報照一般規則 */
+    if(i===0&&items.length<=2){p.body=items.map(line).slice(0,4).join('\n');tpl='split'}
+    else if(quote||qTitle||(big&&items.length<=2)){p.body=items.map(line).join('\n');if(qTitle)tpl='tQuote'}
     else if(items.length<=2&&items.every(o=>o.one)&&items.reduce((s,o)=>s+o.a.length,0)>50)p.body=items.map(o=>o.a).join('\n');
     else{p.items=items.map(o=>(o.a+(o.b?'|'+o.b:'')).replace(/\n/g,' ')).join('\n');
       if(items.length>=2&&items.length<=8&&items.every(o=>o.b&&o.a.length<=16))tpl='tGrid'}
@@ -1854,7 +1994,7 @@ function numberedPages(imgs){
 }
 $('numBatch').onclick=async()=>{
   const btn=$('numBatch'),imgs=await currentImages(),pages=numberedPages(imgs);
-  if(!pages.length){toast('請先在「項目清單」每行輸入一個章節標題');setTab('txt');return}
+  if(!pages.length){toast('請先在「項目」每行輸入一個章節標題');setTab('content');return}
   btn.disabled=true;
   try{
     const tpl=pages[0].tpl,stem=`${baseName()}_${tpl.id}_編號${pages[0].num}-${pages[pages.length-1].num}`.replace(/[\\/:*?"<>|]/g,'');
@@ -2002,7 +2142,7 @@ async function buildPptx(tpls,imgs,onStep){
   return new Blob([z],{type:'application/vnd.openxmlformats-officedocument.presentationml.presentation'});
 }
 /* 選 PPTX 時倍率不適用、批次鈕改成輸出整份簡報 */
-function fmtUI(){$('scale').disabled=S.fmt==='pptx'||S.fmt==='svg';$('zipAll').textContent=S.fmt==='pptx'?'目前分類整份輸出（PPTX 多頁）':'打包目前分類（ZIP）'}
+function fmtUI(){$('scale').disabled=S.fmt==='pptx'||S.fmt==='svg';$('zipAll').querySelector('.tx').textContent=S.fmt==='pptx'?'目前分類的所有版型（PPTX 多頁）':'目前分類的所有版型（ZIP）'}
 $('fmt').addEventListener('change',fmtUI);
 
 /* ---------- 專案存檔 ---------- */
@@ -2054,7 +2194,69 @@ function syncUI(){
   $('logoPos').value=S.logoPos;$('logoSize').value=S.logoSize;$('fmt').value=S.fmt;$('pptText').value=S.pptText;$('pptQ').value=S.pptQ;$('scale').value=S.scale;$('fs').value=S.fs;showFs();fmtUI();
   for(const k of['footer','logoBg','bgOn','single'])$(k).checked=S[k];
   showLogo();showLogoSize();applyTheme();applyFocal();drawFilters();
+  renderItemsEd();notesCount();
+  if(S.body.trim()||S.number.trim())$('moreFields').open=true;
 }
+
+/* ---------- 項目編輯器：每行一列、「|」分欄；也可切回文字模式直接貼上 ---------- */
+let itemsRaw=false;
+const COLN=['重點','說明','補充','第 4 欄','第 5 欄'];
+const itemRows=()=>String(S.items||'').split('\n').map(l=>l.split(/[|｜]/));
+function itemsCount(){const n=String(S.items||'').split('\n').filter(s=>s.trim()).length;$('itemsN').textContent=n?String(n):''}
+function setItems(rows){
+  S.items=rows.map(r=>{const c=r.map(v=>String(v).replace(/[|｜\n]/g,' '));while(c.length>1&&!c[c.length-1].trim())c.pop();return c.join('|')}).join('\n');
+  $('items').value=S.items;itemsCount();save();refresh();
+}
+function renderItemsEd(){
+  $('itemsEd').hidden=itemsRaw;$('items').hidden=!itemsRaw;$('itemAdd').hidden=itemsRaw;
+  $('itemsMode').textContent=itemsRaw?'清單模式':'文字模式';$('itemsMode').setAttribute('aria-pressed',String(itemsRaw));
+  itemsCount();if(itemsRaw)return;
+  const rows=itemRows(),nc=Math.min(5,Math.max(2,...rows.map(r=>r.length)));
+  $('itemsEd').innerHTML=rows.map((r,i)=>`<div class="r" data-i="${i}"><span class="no">${i+1}</span>`+
+    '<div class="fs">'+[...Array(nc)].map((_,j)=>`<input type="text" class="${j?'cn':'c0'}" data-j="${j}" value="${esc(r[j]||'')}" placeholder="${COLN[j]}" aria-label="第 ${i+1} 項・${COLN[j]}">`).join('')+'</div>'+
+    `<div class="bt"><button type="button" data-a="u" aria-label="第 ${i+1} 項上移">↑</button><button type="button" data-a="d" aria-label="第 ${i+1} 項下移">↓</button><button type="button" data-a="x" aria-label="刪除第 ${i+1} 項">✕</button></div></div>`).join('');
+}
+$('itemsEd').addEventListener('input',e=>{const inp=e.target.closest('input');if(!inp)return;
+  const rows=itemRows(),i=+inp.closest('.r').dataset.i,j=+inp.dataset.j;while(rows[i].length<=j)rows[i].push('');rows[i][j]=inp.value;setItems(rows)});
+$('itemsEd').onclick=e=>{const b=e.target.closest('button');if(!b)return;const rows=itemRows(),i=+b.closest('.r').dataset.i;
+  if(b.dataset.a==='x'){rows.splice(i,1);if(!rows.length)rows.push([''])}else{const j=b.dataset.a==='u'?i-1:i+1;if(j<0||j>=rows.length)return;[rows[i],rows[j]]=[rows[j],rows[i]]}
+  setItems(rows);renderItemsEd()};
+$('itemAdd').onclick=()=>{const rows=itemRows();rows.push(['']);setItems(rows);renderItemsEd();const ins=$('itemsEd').querySelectorAll('.r:last-child input');if(ins[0])ins[0].focus()};
+$('itemsMode').onclick=()=>{itemsRaw=!itemsRaw;renderItemsEd()};
+$('items').addEventListener('input',itemsCount);
+/* 逐字稿字數與唸稿時間（約每分鐘 250 字） */
+function notesCount(){const n=String(S.notes||'').replace(/\s/g,'').length,sec=Math.max(1,Math.round(n/250*60));$('notesCount').textContent=n?`${n} 字・約 ${sec>=60?Math.floor(sec/60)+' 分 ':''}${sec%60} 秒`:''}
+$('notes').addEventListener('input',notesCount);
+$('tplChange').onclick=()=>setTab('tpl');
+$('prevPg').onclick=()=>goPage(S.cur-1);$('nextPg').onclick=()=>goPage(S.cur+1);
+
+/* ---------- 上方選單：檔案、匯出 ---------- */
+const MENUS=[];
+function menu(btn,box){
+  const close=()=>{box.hidden=true;btn.setAttribute('aria-expanded','false')};
+  btn.onclick=e=>{e.stopPropagation();const open=box.hidden;closeMenus();if(open){box.hidden=false;btn.setAttribute('aria-expanded','true');const f=box.querySelector('button:not([hidden]),select,input');if(f)f.focus()}};
+  box.addEventListener('click',e=>{if(e.target.closest('.mi,#dl'))close()});
+  MENUS.push(close);
+}
+function closeMenus(){MENUS.forEach(f=>f())}
+menu($('fileBtn'),$('fileMenu'));menu($('expBtn'),$('expMenu'));
+document.addEventListener('click',e=>{if(!e.target.closest('.menuwrap'))closeMenus()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenus()});
+$('mdDlgBtn').onclick=()=>$('mdDlg').showModal();
+$('mdClose').onclick=()=>$('mdDlg').close();
+
+/* 講義：每頁投影片＋逐字稿，開新視窗後直接叫出列印（可存成 PDF） */
+$('handout').onclick=async()=>{
+  const w=window.open('','_blank');if(!w){toast('瀏覽器擋住了新視窗，請允許本頁開彈出視窗');return}
+  w.document.write('<p style="font:16px sans-serif;padding:24px">準備講義中…</p>');
+  try{
+    storePage();const d=await deckSlides(),svgOf=s=>s.svg.replace(/@@IMG(\d+)@@/g,(m,k)=>d.imgs[+k]);
+    const html=`<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><title>${esc(deckName())}・講義</title><style>@page{size:A4;margin:14mm}body{margin:0;font:12pt/1.7 ${PLAYER_FONT};color:#222}.pg{break-inside:avoid;page-break-inside:avoid;margin:0 0 10mm}.pg svg{width:100%;height:auto;border:1px solid #ccc;display:block}.no{font-size:10pt;color:#666;margin:2mm 0}.nt{white-space:pre-wrap}@media screen{body{max-width:820px;margin:20px auto;padding:0 16px}}</style></head><body>`+
+      d.slides.map((s,i)=>`<div class="pg">${svgOf(s)}<div class="no">${i+1} / ${d.slides.length}</div>${s.notes?`<div class="nt">${esc(s.notes)}</div>`:''}</div>`).join('')+
+      `<script>addEventListener('load',()=>setTimeout(()=>print(),400))<\/script></body></html>`;
+    w.document.open();w.document.write(html);w.document.close();
+  }catch(e){console.error(e);w.close();toast('講義產生失敗：'+e.message)}
+};
 
 /* ---------- 快捷鍵 ---------- */
 document.addEventListener('keydown',e=>{
@@ -2074,26 +2276,27 @@ document.addEventListener('keydown',e=>{
   }
 });
 
-/* ---------- 手機版：底部分頁、工具列重排 ---------- */
+/* ---------- 分頁：桌面是右側屬性面板的四個分頁；手機多一個「頁面」，放在底部 ---------- */
 const MQ=matchMedia('(max-width:900px)');
-let tab='img';try{tab=sessionStorage.getItem('lgTab')||'img'}catch(e){}
+const TABS=['pages','content','tpl','photo','style'],OLDTAB={img:'photo',txt:'content',sty:'style',out:'content'};
+let tab='content';try{const v=sessionStorage.getItem('lgTab');tab=OLDTAB[v]||v||'content'}catch(e){}
 function setTab(t){
-  tab=t;document.body.dataset.tab=t;
-  [...$('tabs').children].forEach(b=>{b.classList.toggle('on',b.dataset.tab===t);b.setAttribute('aria-pressed',String(b.dataset.tab===t))});
+  if(!TABS.includes(t))t='content';
+  const pane=t==='pages'?'content':t;tab=t;document.body.dataset.tab=t;
+  [...$('tabs').children].forEach(b=>{const on=b.dataset.tab===t;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on))});
+  [...$('itabs').children].forEach(b=>{const on=b.dataset.tab===pane;b.classList.toggle('on',on);b.setAttribute('aria-selected',String(on))});
+  document.querySelectorAll('.insp .pn').forEach(p=>p.classList.toggle('on',p.dataset.pn===pane));
   try{sessionStorage.setItem('lgTab',t)}catch(e){}
   if(MQ.matches)window.scrollTo({top:0});
 }
 $('tabs').onclick=e=>{const b=e.target.closest('button');if(b)setTab(b.dataset.tab)};
-/* 窄螢幕時把倍率、複製移到「輸出」分頁，工具列只留最常用的 */
-function placeTools(){
-  const box=MQ.matches?$('outTools'):document.querySelector('.bar'),dl=$('dl');
-  const share=$('share');if(!box||!dl||!share)return;
-  for(const id of['scale','copy']){const el=$(id);if(!el)continue;if(MQ.matches)box.appendChild(el);else if(share.parentNode===box)box.insertBefore(el,share)}
-  if(!MQ.matches)box.appendChild(dl);
+$('itabs').onclick=e=>{const b=e.target.closest('button');if(b)setTab(b.dataset.tab)};
+/* 逐字稿：桌面放在畫布正下方（像 PowerPoint 的備忘稿），手機放進「內容」分頁 */
+function placeNotes(){
+  const nb=$('notesBox'),home=MQ.matches?$('pnContent'):document.querySelector('.center');
+  if(nb.parentNode!==home)home.appendChild(nb);
 }
-MQ.addEventListener('change',placeTools);
-/* 部分瀏覽器旋轉／縮放視窗時不一定觸發 change，用 resize 再保險一次 */
-let rzT=0;addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(placeTools,150)});
+MQ.addEventListener('change',()=>{placeNotes();setTab(tab)});
 
 /* 分享（手機上可直接傳到相簿、LINE 等） */
 const shareFile=(b,name)=>new File([b],name,{type:b.type});
@@ -2127,7 +2330,7 @@ if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){
     try{const c=await caches.open('lg-share'),keys=await c.keys(),files=[];
       for(const k of keys){const r=await c.match(k);const b=await r.blob();files.push(new File([b],decodeURIComponent(k.url.split('/').pop())||'shared',{type:b.type}));await c.delete(k)}
       history.replaceState(null,'',location.pathname);
-      await READY;if(files.length){setTab('img');await addFiles(files)}
+      await READY;if(files.length){setTab('photo');await addFiles(files)}
     }catch(e){console.warn(e)}})();
 }
 
@@ -2135,7 +2338,7 @@ samples=makeSamples();
 /* 先用示意圖畫出畫面，圖庫從 IndexedDB 還原後再把各頁的照片接回去 */
 const keepSel=S.pages.map(p=>[...p.sel]);
 if(S.pages.length)usePage(S.cur);else storePage();
-placeTools();setTab(['img','txt','sty','tpl','out'].includes(tab)?tab:'img');
+placeNotes();setTab(tab);
 syncUI();
 drawLib();
 drawAll();
