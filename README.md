@@ -23,6 +23,9 @@
 - 每頁各自有範本、文字、照片（含順序）與**逐字稿**；配色、字體、字級、Logo、頁尾整份共用
 - 「輸出整份 PPTX」把所有頁面輸出成一份簡報，逐字稿寫進每頁的**備忘稿**（單頁下載 PPTX 也會帶逐字稿）
 - 專案存檔會存下所有頁面與各頁用到的圖片（舊版專案檔載入後成為單頁）
+- 圖庫（原圖、縮圖、裁切）自動存在瀏覽器的 IndexedDB，重新整理後各頁的照片仍在；移除的圖片可以按復原救回
+- 頁尾「第 1 頁頁碼」填 `P.01`，之後每頁自動遞增（P.02、P.03…）
+- PPTX 文字可選「可直接修改」或「轉成圖片（外觀完全一致）」；底圖可選標準 2 倍或精簡 1 倍
 
 ## Markdown 大綱匯入／匯出
 
@@ -49,6 +52,22 @@
 - 每頁用 `---` 分隔，或直接用下一個 `# 標題` 開新頁
 - `#` 標題、`##` 副標題、`數字: 01` 大數字、`-`／`1.` 項目（`|` 後為說明）、`| 表格 |` 每列一行、`>` 逐字稿、其他文字為內文
 - `<!-- 版型: … -->` 可寫範本 id、名稱或「條列、方格、表格、段落、引言、封面、章節、大標題」；沒寫時依內容自動挑選
+
+## 命令列（CLI）與 Claude Skill
+
+讓 AI 只寫大綱、排版交給工具：`cli/pptgen.mjs` 在背景（headless）Chrome／Edge 執行同一份 `index.html`，結果與網頁版完全相同。需要 Node 22 以上。
+
+```bash
+node cli/pptgen.mjs check 大綱.md                      # 只檢查：版型分配、哪幾頁文字放不下
+node cli/pptgen.mjs build 大綱.md -o 簡報.pptx --palette 商務藍
+node cli/pptgen.mjs preview 大綱.md --pages 1,3-5      # 指定頁輸出 PNG
+node cli/pptgen.mjs templates                         # 版型清單
+node cli/pptgen.mjs install-skill                     # 安裝 Claude Skill 到 ~/.claude/skills
+```
+
+其他選項：`--color/--accent/--bg`、`--font/--body-font`、`--scale`、`--text image`（文字轉圖）、`--quality small`（小檔）、`--project 檔.pptgen.json`（另存網頁版專案檔，可載入後換照片微調）、`--json`。用 `--help` 看完整說明。
+
+`skill/SKILL.md` 教 AI 大綱格式、各版型容量與「檢查 → 只修被點名的頁 → 產生」流程；安裝後在 Claude Code 說「把這份講稿做成簡報」即可。
 
 ## 輸出
 

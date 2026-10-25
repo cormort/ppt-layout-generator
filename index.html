@@ -51,7 +51,8 @@ h2 .n{display:inline-grid;place-items:center;width:20px;height:20px;border-radiu
 .cropname{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cropwrap{position:relative;margin-top:8px;cursor:crosshair;touch-action:none;user-select:none;line-height:0}
 .cropwrap img{width:100%;max-height:260px;object-fit:contain;display:block;border-radius:6px;pointer-events:none}
-.cropwrap i{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px var(--acc),0 2px 6px rgba(0,0,0,.5);pointer-events:none}.empty{color:var(--muted);font-size:12px}
+.cropwrap i{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px var(--acc),0 2px 6px rgba(0,0,0,.5);pointer-events:none}
+.empty{color:var(--muted);font-size:12px}
 label{display:block;font-size:12px;color:var(--muted);margin:8px 0 3px}
 input[type=text],textarea,select{width:100%;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:7px;padding:7px 9px;font:inherit}
 textarea{resize:vertical;min-height:64px}
@@ -238,7 +239,7 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line);border-rad
   <label for="logoSize">Logo 大小 — <b id="logoSizeVal" style="font-weight:400;color:var(--ink)"></b></label><input type="range" id="logoSize" min="30" max="160" step="5">
   <label class="chk"><input type="checkbox" id="logoBg"> Logo 加白色底框（放在照片上比較清楚）</label>
   <label for="company">公司／單位名稱</label><input type="text" id="company" placeholder="例如：ABC 股份有限公司">
-  <div class="row"><div><label for="date">日期</label><input type="text" id="date" placeholder="2026.10"></div><div><label for="page">頁碼</label><input type="text" id="page" placeholder="P.01"></div></div>
+  <div class="row"><div><label for="date">日期</label><input type="text" id="date" placeholder="2026.10"></div><div><label for="page">第 1 頁頁碼（之後自動 +1）</label><input type="text" id="page" placeholder="P.01"></div></div>
   <label class="chk"><input type="checkbox" id="footer"> 在右下角顯示頁尾（公司｜日期｜頁碼）</label>
   </section>
 
@@ -247,6 +248,9 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line);border-rad
   <div class="row outtools" id="outTools"></div>
   <div class="row" style="margin-top:8px"><button class="btn" id="install" hidden>安裝成 App</button></div>
   <p class="hintline" id="iosHint" hidden>iPhone／iPad：在 Safari 按「分享」→「加入主畫面」，就能像 App 一樣從桌面開啟、離線使用。</p>
+  <div class="row"><div><label for="pptText">PPTX 文字</label><select id="pptText"><option value="edit">可直接修改（文字框）</option><option value="image">轉成圖片（外觀完全一致）</option></select></div>
+  <div><label for="pptQ">PPTX 底圖品質</label><select id="pptQ"><option value="std">標準（2 倍，清晰）</option><option value="small">精簡（1 倍，檔案約小一半）</option></select></div></div>
+  <p class="hintline">文字框的位置是依字型估算的；換到沒有相同字型的電腦（例如 Mac）若有偏移，可改選「轉成圖片」，但文字就不能再修改。逐字稿兩種都會保留。</p>
   <label for="fname">檔名（留空＝用標題）</label><input type="text" id="fname" placeholder="2026 提案">
   <div class="row" style="margin-top:8px"><button class="btn" id="zipAll">打包目前分類（ZIP）</button></div>
   <div class="row" style="margin-top:8px"><button class="btn" id="numBatch">章節頁連續編號輸出</button></div>
@@ -305,7 +309,7 @@ const SWATCH=['#2f5d8a','#3f6b3a','#7a8f4e','#c2456b','#d9822b','#8a5a2b','#5b4b
 const BGS=[['白','#ffffff'],['米白','#f7f3ea'],['淺灰','#f1f2f4'],['暖灰','#e9e4dc'],['淡藍','#eef3f9'],['深藍','#14233a'],['炭黑','#1e1f22']];
 const DEF={title:'敦煌鳴沙山月牙泉',subtitle:'Dunhuang · Crescent Lake',body:'沙漠中的一彎清泉，千百年來不曾乾涸。駝鈴聲聲、沙丘連綿，日落時分整座山脊被染成金色，是絲路上最溫柔的風景。',items:'工作概述|Job Overview\n靈感來源|Source of Inspiration\n成果展示|Achievement\n目標規劃|Goals and Ideas',number:'01',color:'#2f5d8a',accent:'#c9a24a',tf:0,bf:0,single:false,tpl:'diamond',
   bgOn:false,bg:'#f7f3ea',company:'',date:'',page:'',footer:false,logo:'',logoAR:1,logoPos:'tr',logoBg:true,logoSize:70,
-  focal:'xMidYMid',theme:'auto',cat:'all',fmt:'png',scale:2,fname:'',fs:100,notes:'',pages:[],cur:0};
+  focal:'xMidYMid',theme:'auto',cat:'all',fmt:'png',scale:2,fname:'',fs:100,notes:'',pages:[],cur:0,pptText:'edit',pptQ:'std'};
 const BIZ=[['藏青金','#1f3a5f','#c9a24a'],['商務藍','#1d5fa8','#38b2e8'],['深灰橘','#3b3f46','#f08a24'],['墨綠米','#2f5a46','#d8b98a'],['酒紅灰','#7a2635','#a8a8a8'],['科技紫','#3b2f8f','#22c3c3']];
 const FOCAL=['xMinYMin','xMidYMin','xMaxYMin','xMinYMid','xMidYMid','xMaxYMid','xMinYMax','xMidYMax','xMaxYMax'];
 const CATS=[['all','全部'],['text','文字頁'],['cover','封面／標題'],['shape','形狀拼貼'],['sec','章節頁'],['toc','目錄'],['grid','圖文分格'],['biz','商務'],['cn','中國風']];
@@ -730,10 +734,12 @@ const tSoft=c=>c.col.dk?'rgba(255,255,255,.07)':c.col.light;
 const TBOT=1000;
 
 def({id:'tList',cat:'text',name:'文字・條列重點',hint:'不用圖片；項目填「重點|說明」，多項自動分兩欄並縮字',render(c){
-  const h=head(c),it=items(c).slice(0,24),k=FS,top=h.y,nc=it.length>6?2:1,cols=strip(120,1800,nc,90),per=Math.ceil(it.length/nc);
+  const h=head(c),it=items(c).slice(0,24),k=FS,nc=it.length>6?2:1;let top=h.y;const cols=strip(120,1800,nc,90),per=Math.ceil(it.length/nc);
   const lay=sz=>cols.map(([a,b],ci)=>{let y=0;const rows=it.slice(ci*per,ci*per+per).map((o,j)=>{const w=b-a-76,al=wrap(o.a,w,sz,c.tf,700),bl=wrap([o.b,o.c].filter(Boolean).join('　'),w,sz*.72,c.bf),r={n:ci*per+j,al,bl,y};
     y+=al.length*sz*k*1.32+(bl.length?bl.length*sz*.72*k*1.5+6:0)+sz*k*.75;return r});return{a,rows,h:y}});
   let sz=36,L=lay(sz);while(sz>18&&Math.max(...L.map(l=>l.h))>TBOT-top){sz-=2;L=lay(sz)}
+  /* 項目少時整組往中間移（略偏上，視覺比正中央穩），放滿時從頂端排 */
+  top+=Math.max(0,(TBOT-top-Math.max(...L.map(l=>l.h)))*.4);
   const bs=Math.max(30,sz*1.05)*k;let s='';
   for(const col of L)for(const r of col.rows){const y0=top+r.y;if(y0+sz*k>TBOT)break;
     const by=y0+sz*k*.95-bs*.72;
@@ -798,7 +804,10 @@ def({id:'tQuote',cat:'text',name:'文字・引言金句',hint:'不用圖片；�
   const k=FS,w=1460;let sz=72;while(sz>40&&wrap(c.t.title,w,sz,c.tf,700).length>4)sz-=4;
   const tl=wrap(c.t.title,w,sz,c.tf,700).slice(0,4),sl=wrap(c.t.subtitle,w,30,c.bf,600).slice(0,2),bl=wrap(c.t.body,w,24,c.bf).slice(0,3);
   const th=(tl.length-1)*sz*k*1.35,tot=th+(sl.length?90+sl.length*42:0)+(bl.length?60+bl.length*38:0),y0=560-tot/2;
-  return bg(c.col.paper||c.col.light)+`<text x="170" y="${f1(y0+90)}" font-size="300" font-family="Georgia,serif" fill="${c.col.acc}" opacity=".45">“</text>`
+  /* 裝飾引號用路徑畫（不靠字型，沒有 Georgia 時也一樣大） */
+  const qm=x=>`<circle cx="${x}" cy="${f1(y0-46)}" r="34"/><path d="M${x+34},${f1(y0-46)}C${x+34},${f1(y0+10)} ${x+6},${f1(y0+42)} ${x-30},${f1(y0+52)}L${x-34},${f1(y0+38)}C${x-8},${f1(y0+26)} ${x+6},${f1(y0+6)} ${x+4},${f1(y0-14)}Z"/>`;
+  /* 路徑畫的是「”」形，轉 180° 成開引號「“」 */
+  return bg(c.col.paper||c.col.light)+`<g fill="${c.col.acc}" opacity=".5">${[140,226].map(x=>`<g transform="rotate(180 ${x} ${f1(y0-46)})">${qm(x)}</g>`).join('')}</g>`
    +T(tl,{x:300,y:y0,size:sz,lh:1.35,fill:c.col.ink,font:c.tf,weight:700})
    +(sl.length?`<rect x="302" y="${f1(y0+th+48)}" width="90" height="6" rx="3" fill="${c.col.acc}"/>`+T(sl,{x:302,y:y0+th+112,size:30,lh:1.4,fill:c.col.mt,font:c.bf,weight:600}):'')
    +T(bl,{x:302,y:y0+th+(sl.length?112+sl.length*42+30:80),size:24,lh:1.6,fill:c.col.mute,font:c.bf});
@@ -823,6 +832,8 @@ function sanitise(raw){
   if(!FOCAL.includes(s.focal))s.focal='xMidYMid';
   if(!['auto','light','dark'].includes(s.theme))s.theme='auto';
   if(!['png','jpeg','svg','pptx'].includes(s.fmt))s.fmt='png';
+  if(!['edit','image'].includes(s.pptText))s.pptText='edit';
+  if(!['std','small'].includes(s.pptQ))s.pptQ='std';
   s.fs=clampNum(s.fs,70,140,100);
   s.scale=clampNum(s.scale,1,3,2);
   s.logoSize=clampNum(s.logoSize,30,160,70);
@@ -831,12 +842,12 @@ function sanitise(raw){
   if(!CATS.some(c=>c[0]===s.cat))s.cat='all';
   for(const k of ['title','subtitle','body','items','number','company','date','page','fname','notes'])s[k]=String(s[k]??'');
   for(const k of ['single','bgOn','footer','logoBg'])s[k]=!!s[k];
-  s.pages=Array.isArray(s.pages)?s.pages.slice(0,300).map(cleanPage):[];
+  s.pages=Array.isArray(s.pages)?s.pages.slice(0,MAXPAGES).map(cleanPage):[];
   s.cur=clampNum(Math.round(s.cur),0,Math.max(0,s.pages.length-1),0);
   return s;
 }
 /* 每頁各自的欄位；其餘（配色、字體、Logo、頁尾…）整份共用 */
-const PAGE_KEYS=['tpl','title','subtitle','body','items','number','notes'];
+const PAGE_KEYS=['tpl','title','subtitle','body','items','number','notes'],MAXPAGES=500;
 function cleanPage(p){
   p=p&&typeof p==='object'?p:{};const o={};
   for(const k of PAGE_KEYS)o[k]=String(p[k]??'');
@@ -847,13 +858,41 @@ function cleanPage(p){
 function loadState(){
   let raw={};
   try{raw=JSON.parse(localStorage.getItem(LSKEY)||localStorage.getItem(OLDLKEY)||'{}')||{}}catch(e){}
-  const s=sanitise(raw);
-  /* 圖片不存在 localStorage，舊的圖片編號重開後已失效，清掉以免對到新上傳的圖 */
-  for(const p of s.pages)p.sel=[];
-  return s;
+  /* 各頁的圖片編號先保留，等 IndexedDB 的圖庫還原後再核對（見最下方啟動流程） */
+  return sanitise(raw);
 }
 const S=loadState();
 const lib=[];let sel=[];let samples=[];let nid=0;
+
+/* ---------- 圖庫持久化：原圖、縮圖、裁切存在 IndexedDB，重新整理後各頁的照片仍在 ---------- */
+const IDB={db:null,t:0,warned:false};
+const idbReq=r=>new Promise((res,rej)=>{r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+function idbOpen(){
+  if(!('indexedDB' in window))return Promise.reject(new Error('no indexedDB'));
+  const r=indexedDB.open('layoutGen',1);r.onupgradeneeded=()=>r.result.createObjectStore('imgs',{keyPath:'id'});return idbReq(r);
+}
+function libSave(it){if(it)it.dirty=true;clearTimeout(IDB.t);IDB.t=setTimeout(libFlush,500)}
+async function libFlush(){
+  clearTimeout(IDB.t);if(!IDB.db)return;
+  try{
+    const tx=IDB.db.transaction('imgs','readwrite'),st=tx.objectStore('imgs'),have=new Set(lib.map(x=>x.id));
+    for(const k of await idbReq(st.getAllKeys()))if(!have.has(k))st.delete(k);
+    for(const it of lib)if(it.dirty){st.put({id:it.id,name:it.name,blob:it.blob,tblob:it.tblob,w:it.w,h:it.h,crop:it.crop||null});it.dirty=false}
+    await new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=tx.onabort=()=>rej(tx.error)});
+  }catch(e){console.warn('idb',e);if(!IDB.warned){IDB.warned=true;toast('瀏覽器空間不足，照片無法自動保留；請用「專案存檔」保存')}}
+}
+async function libRestore(){
+  try{IDB.db=await idbOpen()}catch(e){console.warn('idb',e);return}
+  try{
+    const rows=await idbReq(IDB.db.transaction('imgs').objectStore('imgs').getAll());
+    for(const r of rows.sort((a,b)=>a.id-b.id)){
+      if(!(r.blob instanceof Blob)||lib.some(x=>x.id===r.id))continue;const tb=r.tblob instanceof Blob?r.tblob:r.blob;
+      lib.push({id:r.id,name:String(r.name||'image'),blob:r.blob,tblob:tb,full:URL.createObjectURL(r.blob),thumb:URL.createObjectURL(tb),w:r.w,h:r.h,crop:cleanCrop(r.crop)});
+      nid=Math.max(nid,r.id);
+    }
+  }catch(e){console.warn('idb',e)}
+}
+addEventListener('pagehide',()=>{libFlush()});
 
 let saveT=0,savePrev='',dirty=false;
 function flushSave(){
@@ -894,8 +933,8 @@ async function makeItem(name,bmp,crop=null){
   const f=Math.min(1,2400/Math.max(bmp.width,bmp.height)),t=Math.min(1,520/Math.max(bmp.width,bmp.height));
   const thumb=await encode(bmp,Math.max(1,Math.round(bmp.width*t)),Math.max(1,Math.round(bmp.height*t)),.85);
   const full=await encode(bmp,Math.max(1,Math.round(bmp.width*f)),Math.max(1,Math.round(bmp.height*f)),.92,thumb.alpha);
-  const it={id:++nid,name,full:URL.createObjectURL(full.blob),thumb:URL.createObjectURL(thumb.blob),blob:full.blob,w:bmp.width,h:bmp.height,crop:cleanCrop(crop)};
-  lib.push(it);return it;
+  const it={id:++nid,name,full:URL.createObjectURL(full.blob),thumb:URL.createObjectURL(thumb.blob),blob:full.blob,tblob:thumb.blob,w:bmp.width,h:bmp.height,crop:cleanCrop(crop)};
+  lib.push(it);libSave(it);return it;
 }
 async function addFiles(files){
   const fs=[...files].filter(f=>f&&f.type&&f.type.startsWith('image/'));
@@ -908,7 +947,9 @@ async function addFiles(files){
   drawLib();refresh();toast(ok?`已加入 ${ok} 張`:'這些檔案讀不進來，換成 JPG／PNG 試試');
 }
 const blobToData=b=>new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(b)});
-function dropItem(it){URL.revokeObjectURL(it.full);URL.revokeObjectURL(it.thumb)}
+/* 移除的圖先放回收區（不釋放網址），按復原時才救得回來 */
+const TRASH=new Map();
+function dropItem(it){TRASH.set(it.id,it);libSave()}
 
 function cleanCrop(c){if(!c||typeof c!=='object')return null;return{z:clampNum(c.z,1,4,1),fx:clampNum(c.fx,0,1,.5),fy:clampNum(c.fy,0,1,.5)}}
 const imgOf=(it,src)=>({src,w:it.w,h:it.h,crop:it.crop||null});
@@ -925,13 +966,19 @@ function colors(){const m=S.color,dark=mix(m,'#000000',.45),paper=S.bgOn&&HEXRE.
   const[r,g,b]=paper?hex2rgb(paper):[255,255,255],dk=(.299*r+.587*g+.114*b)/255<.5;
   return{main:m,acc:S.accent||m,dark,soft:mix(m,'#ffffff',.55),light:mix(m,'#ffffff',.9),paper,dk,mt:dk&&(.299*hex2rgb(m)[0]+.587*hex2rgb(m)[1]+.114*hex2rgb(m)[2])/255<.55?mix(m,'#ffffff',.5):m,
     ink:dk?mix(m,'#ffffff',.88):dark,mute:dk?'rgba(255,255,255,.72)':'#555'}}
+/* 頁碼：「頁碼」欄是第 1 頁的寫法，之後每頁自動遞增（P.01 → P.02…）；
+   S.pageNo 由縮圖／整份輸出暫時指定，平常用目前這一頁 */
+function pageLabel(){
+  const seed=String(S.page||'').trim();if(!seed)return '';
+  const i=Number.isInteger(S.pageNo)?S.pageNo:S.cur;return numberSeq(seed,i+1)[i];
+}
 /* logo + footer drawn on top of every template */
 function chrome(c){
   let s='';const pos=S.logoPos||'tr';
   if(S.logo){const h=S.logoSize,w=Math.min(560,h*S.logoAR),p=14,x=pos[1]==='r'?W-40-w-p*2:40,y=pos[0]==='t'?36:H-36-h-p*2;
     if(S.logoBg)s+=`<rect x="${f1(x)}" y="${y}" width="${f1(w+p*2)}" height="${h+p*2}" rx="14" fill="#fff" opacity=".92"/>`;
     s+=`<image href="${S.logo}" x="${f1(x+p)}" y="${y+p}" width="${f1(w)}" height="${h}" preserveAspectRatio="xMidYMid meet"/>`}
-  const t=S.footer?[S.company,S.date,S.page].map(v=>String(v||'').trim()).filter(Boolean).join('   |   '):'';
+  const t=S.footer?[S.company,S.date,pageLabel()].map(v=>String(v||'').trim()).filter(Boolean).join('   |   '):'';
   if(t){const w=tw(t,20,c.bf,600)+40,left=S.logo&&pos==='br',x=left?40:W-40-w;
     s+=`<rect x="${f1(x)}" y="${H-72}" width="${f1(w)}" height="40" rx="20" fill="#fff" opacity=".88"/>`+T([t],{x:x+w/2,y:H-45,size:20,fill:'#444',font:c.bf,weight:600,anchor:'middle',fixed:true})}
   return s;
@@ -1002,9 +1049,11 @@ function showCrop(){
 }
 function openCrop(id){cropId=id;const it=cropItem();if(!it)return;$('cropEd').hidden=false;const img=$('cropImg');img.onload=showCrop;img.src=it.thumb;showCrop();drawLib()}
 function closeCrop(){cropId=0;$('cropEd').hidden=true}
-function setCrop(p){const it=cropItem();if(!it)return;it.crop=cleanCrop({...(it.crop||focalCrop()),...p});showCrop();drawLib();refresh()}
+/* 拖曳時只更新「已裁切」外框，不重建整個圖庫與順序列 */
+function markCut(){$('order').querySelectorAll('.o').forEach(o=>o.classList.toggle('cut',!!lib.find(x=>x.id===sel[+o.dataset.i])?.crop))}
+function setCrop(p){const it=cropItem();if(!it)return;it.crop=cleanCrop({...(it.crop||focalCrop()),...p});libSave(it);showCrop();markCut();refresh()}
 $('cropDone').onclick=()=>{closeCrop();drawLib()};
-$('cropReset').onclick=()=>{const it=cropItem();if(!it)return;it.crop=null;showCrop();drawLib();refresh()};
+$('cropReset').onclick=()=>{const it=cropItem();if(!it)return;it.crop=null;libSave(it);showCrop();markCut();refresh()};
 $('cropZ').oninput=()=>setCrop({z:+$('cropZ').value/100});
 {const wr=$('cropWrap');let down=false;
   const at=e=>{const g=showCrop();if(!g||!g.dw)return;setCrop({fx:(e.clientX-g.o.left-g.ox)/g.dw,fy:(e.clientY-g.o.top-g.oy)/g.dh})};
@@ -1098,6 +1147,7 @@ $('focal').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.focal=b
 $('fmt').value=S.fmt;$('scale').value=S.scale;
 $('fmt').onchange=()=>{S.fmt=$('fmt').value;save()};
 $('scale').onchange=()=>{S.scale=+$('scale').value;save()};
+for(const k of['pptText','pptQ']){$(k).value=S[k];$(k).onchange=()=>{S[k]=$(k).value;save()}}
 
 /* 範本分類 */
 function tplList(){return S.cat==='all'?TPL:TPL.filter(t=>t.cat===S.cat)}
@@ -1118,9 +1168,10 @@ $('filters').onclick=e=>{
 let tA=0,tB=0;
 function refresh(){storePage();clearTimeout(tA);clearTimeout(tB);tA=setTimeout(drawStage,40);tB=setTimeout(()=>{drawGallery();drawPages()},240);histLater()}
 
-/* ---------- 復原／重做：記錄文字、樣式、選圖順序與裁切（介面偏好與圖庫本身不記） ---------- */
+/* ---------- 復原／重做：記錄文字、樣式、頁面、選圖順序、圖庫成員與裁切（介面偏好不記）；
+   crop 欄位同時是「當時圖庫有哪些圖」的清單，移除的圖從回收區撈回來 ---------- */
 const HIST={list:[],i:-1,t:0,lock:false},LOGOS=[''];
-const NOHIST=['theme','cat','fmt','scale','fname'];
+const NOHIST=['theme','cat','fmt','scale','fname','pptText','pptQ'];
 function snapState(){
   const s={...S};for(const k of NOHIST)delete s[k];
   let li=LOGOS.indexOf(S.logo);if(li<0)li=LOGOS.push(S.logo)-1;s.logo=li;
@@ -1140,8 +1191,13 @@ function histGo(d){
   try{
     const keep={};for(const k of NOHIST)keep[k]=S[k];
     Object.assign(S,sanitise({...st.s,logo:LOGOS[st.s.logo]||'',...keep}));
+    const pool=new Map([...TRASH,...lib.map(it=>[it.id,it])]),want=st.crop.map(([id])=>pool.get(id)).filter(Boolean);
+    for(const it of lib)if(!want.includes(it))TRASH.set(it.id,it);
+    for(const it of want)if(!lib.includes(it))it.dirty=true;
+    lib.length=0;lib.push(...want);
+    const cm=new Map(st.crop);for(const it of lib)if(JSON.stringify(it.crop||null)!==JSON.stringify(cm.get(it.id)||null)){it.crop=cm.get(it.id)||null;it.dirty=true}
+    libSave();
     sel=st.sel.filter(id=>lib.some(x=>x.id===id));
-    const cm=new Map(st.crop);for(const it of lib)if(cm.has(it.id))it.crop=cm.get(it.id);
     syncUI();drawLib();drawAll();if(cropId)showCrop();save();
   }finally{HIST.lock=false}
   histUI();toast(d<0?'已復原':'已重做');
@@ -1217,7 +1273,7 @@ function pageSVG(p,i){
   const sig=[JSON.stringify(ovOf(p)),ids.join(),ids.map(id=>JSON.stringify(lib.find(x=>x.id===id).crop||0)).join(),
     S.color,S.accent,S.bgOn,S.bg,S.single,S.focal,S.tf,S.bf,S.logo,S.logoSize,S.logoPos,S.logoBg,S.footer,S.company,S.date,S.page,S.fs].join('\u0001');
   const c=pgCache.get(i);if(c&&c.sig===sig)return c.svg;
-  const svg=withState(ovOf(p),()=>renderSVG(TPLBY[p.tpl]||TPL[0],imgsOf(ids,'thumb'),'pg'+i+'_'));
+  const svg=withState({...ovOf(p),pageNo:i},()=>renderSVG(TPLBY[p.tpl]||TPL[0],imgsOf(ids,'thumb'),'pg'+i+'_'));
   pgCache.set(i,{sig,svg});return svg;
 }
 function drawPages(){
@@ -1244,7 +1300,7 @@ $('pages').onkeydown=e=>{if(e.key!=='Enter'&&e.key!==' ')return;const d=e.target
   P.addEventListener('dragend',()=>{if(dragP!=null){dragP=null;drawPages()}});}
 async function deckPages(){
   storePage();
-  return Promise.all(S.pages.map(async p=>({tpl:TPLBY[p.tpl]||TPL[0],imgs:await pageImages(p.sel),ov:ovOf(p),notes:p.notes})));
+  return Promise.all(S.pages.map(async(p,i)=>({tpl:TPLBY[p.tpl]||TPL[0],imgs:await pageImages(p.sel),ov:{...ovOf(p),pageNo:i},notes:p.notes})));
 }
 const deckName=()=>safeName(S.fname||S.pages[0]?.title||'簡報');
 $('deckOut').onclick=async()=>{
@@ -1315,9 +1371,12 @@ function outlineOf(pages){
   }).join('\n\n---\n\n')+'\n';
 }
 function importOutline(src,mode){
-  const ps=parseOutline(src);
+  let ps=parseOutline(src);
   if(!ps.length){toast('沒有讀到任何頁面：每頁用「# 標題」開頭，或用 --- 分頁');return}
   storePage();
+  const room=MAXPAGES-(mode==='replace'?0:S.pages.length);
+  if(ps.length>room){if(!confirm(`整份最多 ${MAXPAGES} 頁，大綱只會匯入前 ${Math.max(0,room)} 頁，要繼續嗎？`))return;ps=ps.slice(0,Math.max(0,room))}
+  if(!ps.length){toast(`已達 ${MAXPAGES} 頁上限`);return}
   if(mode==='replace'){
     if(S.pages.length>1&&!confirm(`用大綱的 ${ps.length} 頁取代目前的 ${S.pages.length} 頁？（可按復原）`))return;
     S.pages=ps;usePage(0);
@@ -1446,7 +1505,7 @@ function numberedPages(imgs){
   const cur=TPLBY[S.tpl],nums=numberSeq(S.number,rows.length),tpl=cur&&cur.cat==='sec'?cur:TPL.find(t=>t.cat==='sec');
   return rows.map((r,i)=>({tpl,num:nums[i],
     imgs:imgs.length>1?imgs.map((_,k)=>imgs[(i+k)%imgs.length]):imgs,
-    ov:{number:nums[i],title:r.a,subtitle:r.b||S.subtitle}}));
+    ov:{number:nums[i],title:r.a,subtitle:r.b||S.subtitle,pageNo:i}}));
 }
 $('numBatch').onclick=async()=>{
   const btn=$('numBatch'),imgs=await currentImages(),pages=numberedPages(imgs);
@@ -1542,9 +1601,10 @@ async function buildPptx(tpls,imgs,onStep){
     /* 每頁可以是範本本身，或 {tpl,imgs,ov,notes}（整份簡報／連續編號用：換文字、圖片與逐字稿） */
     const pg=tpls[i].tpl?tpls[i]:{tpl:tpls[i],imgs,ov:null};
     onStep&&onStep(i,pg.tpl);
-    COLLECT=[];let svg,texts;
-    try{svg=withState(pg.ov,()=>renderSVG(pg.tpl,pg.imgs||imgs,'p'+i+'_'))}finally{texts=COLLECT;COLLECT=null}
-    const jpg=await rasterizeSVG(svg,2,'image/jpeg');
+    /* 「轉成圖片」時不收集文字，文字直接畫進底圖 */
+    const editable=S.pptText!=='image';COLLECT=editable?[]:null;let svg,texts;
+    try{svg=withState(pg.ov,()=>renderSVG(pg.tpl,pg.imgs||imgs,'p'+i+'_'))}finally{texts=COLLECT||[];COLLECT=null}
+    const jpg=await rasterizeSVG(svg,S.pptQ==='small'?1:2,'image/jpeg');
     slides.push({xml:slideXml(texts),img:new Uint8Array(await jpg.arrayBuffer()),notes:String(pg.notes||'').trim()?String(pg.notes).replace(/\s+$/,''):''});
     await new Promise(r=>setTimeout(r,0));
   }
@@ -1631,13 +1691,13 @@ $('projFile').onchange=async e=>{
 };
 $('reset').onclick=()=>{
   if(!confirm('重設所有頁面、文字與樣式？只會留下目前這一頁的圖片（可按復原）'))return;
-  Object.assign(S,{...DEF,pages:[],cur:0,logo:S.logo,logoAR:S.logoAR,theme:S.theme,cat:S.cat,fmt:S.fmt,scale:S.scale});
+  Object.assign(S,{...DEF,pages:[],cur:0,logo:S.logo,logoAR:S.logoAR,theme:S.theme,cat:S.cat,fmt:S.fmt,scale:S.scale,pptText:S.pptText,pptQ:S.pptQ});
   storePage();save();syncUI();drawAll();histLater();toast('已重設');
 };
 function syncUI(){
   for(const k of['title','subtitle','body','items','number','notes','company','date','page','fname'])$(k).value=S[k];
   $('tf').value=S.tf;$('bf').value=S.bf;$('color').value=S.color;$('accent').value=S.accent;$('bg').value=S.bg;
-  $('logoPos').value=S.logoPos;$('logoSize').value=S.logoSize;$('fmt').value=S.fmt;$('scale').value=S.scale;$('fs').value=S.fs;showFs();fmtUI();
+  $('logoPos').value=S.logoPos;$('logoSize').value=S.logoSize;$('fmt').value=S.fmt;$('pptText').value=S.pptText;$('pptQ').value=S.pptQ;$('scale').value=S.scale;$('fs').value=S.fs;showFs();fmtUI();
   for(const k of['footer','logoBg','bgOn','single'])$(k).checked=S[k];
   showLogo();showLogoSize();applyTheme();applyFocal();drawFilters();
 }
@@ -1673,8 +1733,9 @@ $('tabs').onclick=e=>{const b=e.target.closest('button');if(b)setTab(b.dataset.t
 /* 窄螢幕時把倍率、複製移到「輸出」分頁，工具列只留最常用的 */
 function placeTools(){
   const box=MQ.matches?$('outTools'):document.querySelector('.bar'),dl=$('dl');
-  for(const id of['scale','copy']){const el=$(id);if(MQ.matches)box.appendChild(el);else box.insertBefore(el,$('share'))}
-  if(!MQ.matches)document.querySelector('.bar').appendChild(dl);
+  const share=$('share');if(!box||!dl||!share)return;
+  for(const id of['scale','copy']){const el=$(id);if(!el)continue;if(MQ.matches)box.appendChild(el);else if(share.parentNode===box)box.insertBefore(el,share)}
+  if(!MQ.matches)box.appendChild(dl);
 }
 MQ.addEventListener('change',placeTools);
 /* 部分瀏覽器旋轉／縮放視窗時不一定觸發 change，用 resize 再保險一次 */
@@ -1712,17 +1773,26 @@ if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){
     try{const c=await caches.open('lg-share'),keys=await c.keys(),files=[];
       for(const k of keys){const r=await c.match(k);const b=await r.blob();files.push(new File([b],decodeURIComponent(k.url.split('/').pop())||'shared',{type:b.type}));await c.delete(k)}
       history.replaceState(null,'',location.pathname);
-      if(files.length){setTab('img');await addFiles(files)}
+      await READY;if(files.length){setTab('img');await addFiles(files)}
     }catch(e){console.warn(e)}})();
 }
 
 samples=makeSamples();
+/* 先用示意圖畫出畫面，圖庫從 IndexedDB 還原後再把各頁的照片接回去 */
+const keepSel=S.pages.map(p=>[...p.sel]);
 if(S.pages.length)usePage(S.cur);else storePage();
 placeTools();setTab(['img','txt','sty','tpl','out'].includes(tab)?tab:'img');
 syncUI();
 drawLib();
 drawAll();
 histCommit();
+const READY=libRestore().then(()=>{
+  const ids=new Set(lib.map(x=>x.id));let lost=0;
+  S.pages.forEach((p,i)=>{const want=keepSel[i]||[];p.sel=want.filter(id=>ids.has(id));lost+=want.length-p.sel.length});
+  usePage(S.cur);drawLib();drawAll();save();
+  HIST.list=[];HIST.i=-1;histCommit();
+  if(lost)toast(lib.length?`有 ${lost} 張照片找不到，那幾頁暫用示意圖`:'上次的照片沒有保留下來（瀏覽器資料可能被清除）；可用「載入專案」開啟 .pptgen.json');
+});
 </script>
 </body>
 </html>
