@@ -102,6 +102,21 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line);border-rad
 .toast.show{opacity:1}
 :focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.pghd{display:flex;align-items:center;gap:10px;margin-top:14px;max-width:1200px}
+.pghd b{font-size:14px}
+.pghd .empty{margin-right:auto}
+.pages{display:flex;gap:10px;overflow-x:auto;padding:8px 2px 8px;max-width:1200px;align-items:flex-start}
+.pg{flex:0 0 156px;position:relative;cursor:pointer;border-radius:7px;border:2px solid transparent;background:var(--panel);overflow:hidden}
+.pg.on{border-color:var(--acc)}
+.pg.drag{opacity:.4}
+.pg svg{display:block;width:100%;height:auto;pointer-events:none}
+.pg .b{position:absolute;top:4px;left:4px;background:rgba(0,0,0,.65);color:#fff;font-size:11px;border-radius:8px;padding:0 6px}
+.pg.on .b{background:var(--acc);color:var(--panel)}
+.pg .nt{position:absolute;top:4px;right:4px;background:#fff;color:#444;font-size:10px;border-radius:6px;padding:0 5px;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.pg .ctl{display:flex;gap:2px;padding:3px}
+.pg .ctl button{border:0;background:var(--chip);color:var(--ink);border-radius:4px;font-size:11px;padding:2px 0;cursor:pointer;flex:1}
+.pgadd{flex:0 0 90px;align-self:stretch;min-height:110px;border:2px dashed var(--line);border-radius:7px;background:none;color:var(--muted);font:inherit;font-size:13px;cursor:pointer}
+.pgadd:hover{border-color:var(--acc);color:var(--acc)}
 .mob,.tabs{display:none}
 .outtools:empty{display:none}
 .outtools{flex-wrap:wrap}
@@ -135,6 +150,10 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line);border-rad
   .filters button{flex:none;padding:6px 12px}
   .gal{grid-template-columns:repeat(2,1fr);gap:10px;margin:12px}
   .card:hover{transform:none}
+  .pghd{margin:10px 12px 0}.pghd .empty{display:none}.pghd b{margin-right:auto}
+  .pages{margin:0 12px;padding-top:6px}
+  .pg{flex-basis:124px}.pg .ctl button{padding:6px 0;font-size:13px}
+  .pgadd{flex-basis:72px;min-height:96px}
   .card .meta{padding:5px 8px 6px}
   h2:first-child{margin-top:4px}
   input[type=text],textarea,select{font-size:16px}
@@ -163,14 +182,14 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line);border-rad
     <h1>圖片排版產生器</h1>
     <div class="seg" id="theme" role="group" aria-label="外觀"></div>
   </div>
-  <p class="sub">上傳圖片 → 點選並排列順序 → 輸入文字 → 選範本 → 下載 16:9 圖片（可直接貼進 PPT）</p>
+  <p class="sub">上傳圖片 → 點選並排列順序 → 輸入文字 → 選範本 → 下載 16:9 圖片（可直接貼進 PPT）；下方「頁面」可新增多頁，整份輸出成含逐字稿的 PPTX</p>
 
   <section class="pn" data-pn="img">
   <h2><span><span class="n">1</span>上傳圖片</span><span><button class="btn mini" id="selAll">全選</button> <button class="btn mini" id="selNone">清除選擇</button></span></h2>
   <div class="drop" id="drop" role="button" tabindex="0"><span class="desk">點此選擇或拖曳圖片到這裡（可多張，也可 Ctrl+V 貼上）</span><span class="mob">＋ 選擇照片（可多張）</span></div>
   <input type="file" id="file" accept="image/*" multiple hidden>
   <div class="lib" id="lib"></div>
-  <div class="row" style="margin-top:6px"><span class="empty" id="libInfo"></span><button class="btn mini fix" id="delUnsel">移除未選的圖</button></div>
+  <div class="row" style="margin-top:6px"><span class="empty" id="libInfo"></span><button class="btn mini fix" id="delUnsel">移除沒用到的圖</button></div>
   <button class="btn mini" id="delAll" style="margin-top:6px">清空全部圖片</button>
 
   <h2><span><span class="n">2</span>使用順序（可拖曳；✂ 裁切）</span></h2>
@@ -190,6 +209,7 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line);border-rad
   <label for="body">內文</label><textarea id="body"></textarea>
   <label for="items">項目清單（目錄／商務範本用；每行一項，用「|」分隔，例如「85%|客戶滿意度|說明」）</label><textarea id="items"></textarea>
   <label for="number">大數字（大數字範本用）</label><input type="text" id="number">
+  <label for="notes">逐字稿（不會出現在畫面上，輸出 PPTX 時寫進這一頁的備忘稿）</label><textarea id="notes" style="min-height:110px"></textarea>
   </section>
 
   <section class="pn" data-pn="sty">
@@ -251,6 +271,8 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line);border-rad
   <div class="stage" id="stage"></div>
   <p class="note" id="note" aria-live="polite"></p>
   </div>
+  <div class="pghd"><b>頁面 <span id="pgCount"></span></b><span class="empty">每頁各自的範本、文字、照片與逐字稿；配色、字體、Logo、頁尾整份共用</span><button class="btn pri mini" id="deckOut">輸出整份 PPTX</button></div>
+  <div class="pages" id="pages" aria-label="頁面清單"></div>
   <div class="filters" id="filters" role="group" aria-label="範本分類"></div>
   <div class="gal" id="gal"></div>
 </main>
@@ -277,7 +299,7 @@ const SWATCH=['#2f5d8a','#3f6b3a','#7a8f4e','#c2456b','#d9822b','#8a5a2b','#5b4b
 const BGS=[['白','#ffffff'],['米白','#f7f3ea'],['淺灰','#f1f2f4'],['暖灰','#e9e4dc'],['淡藍','#eef3f9'],['深藍','#14233a'],['炭黑','#1e1f22']];
 const DEF={title:'敦煌鳴沙山月牙泉',subtitle:'Dunhuang · Crescent Lake',body:'沙漠中的一彎清泉，千百年來不曾乾涸。駝鈴聲聲、沙丘連綿，日落時分整座山脊被染成金色，是絲路上最溫柔的風景。',items:'工作概述|Job Overview\n靈感來源|Source of Inspiration\n成果展示|Achievement\n目標規劃|Goals and Ideas',number:'01',color:'#2f5d8a',accent:'#c9a24a',tf:0,bf:0,single:false,tpl:'diamond',
   bgOn:false,bg:'#f7f3ea',company:'',date:'',page:'',footer:false,logo:'',logoAR:1,logoPos:'tr',logoBg:true,logoSize:70,
-  focal:'xMidYMid',theme:'auto',cat:'all',fmt:'png',scale:2,fname:'',fs:100};
+  focal:'xMidYMid',theme:'auto',cat:'all',fmt:'png',scale:2,fname:'',fs:100,notes:'',pages:[],cur:0};
 const BIZ=[['藏青金','#1f3a5f','#c9a24a'],['商務藍','#1d5fa8','#38b2e8'],['深灰橘','#3b3f46','#f08a24'],['墨綠米','#2f5a46','#d8b98a'],['酒紅灰','#7a2635','#a8a8a8'],['科技紫','#3b2f8f','#22c3c3']];
 const FOCAL=['xMinYMin','xMidYMin','xMaxYMin','xMinYMid','xMidYMid','xMaxYMid','xMinYMax','xMidYMax','xMaxYMax'];
 const CATS=[['all','全部'],['cover','封面／標題'],['shape','形狀拼貼'],['sec','章節頁'],['toc','目錄'],['grid','圖文分格'],['biz','商務'],['cn','中國風']];
@@ -710,14 +732,28 @@ function sanitise(raw){
   s.logoAR=clampNum(s.logoAR,.15,8,1);
   if(typeof s.logo!=='string'||!/^data:image\//.test(s.logo))s.logo='';
   if(!CATS.some(c=>c[0]===s.cat))s.cat='all';
-  for(const k of ['title','subtitle','body','items','number','company','date','page','fname'])s[k]=String(s[k]??'');
+  for(const k of ['title','subtitle','body','items','number','company','date','page','fname','notes'])s[k]=String(s[k]??'');
   for(const k of ['single','bgOn','footer','logoBg'])s[k]=!!s[k];
+  s.pages=Array.isArray(s.pages)?s.pages.slice(0,300).map(cleanPage):[];
+  s.cur=clampNum(Math.round(s.cur),0,Math.max(0,s.pages.length-1),0);
   return s;
+}
+/* 每頁各自的欄位；其餘（配色、字體、Logo、頁尾…）整份共用 */
+const PAGE_KEYS=['tpl','title','subtitle','body','items','number','notes'];
+function cleanPage(p){
+  p=p&&typeof p==='object'?p:{};const o={};
+  for(const k of PAGE_KEYS)o[k]=String(p[k]??'');
+  if(!TPLBY[o.tpl])o.tpl=TPL[0].id;
+  o.sel=Array.isArray(p.sel)?p.sel.filter(Number.isInteger):[];
+  return o;
 }
 function loadState(){
   let raw={};
   try{raw=JSON.parse(localStorage.getItem(LSKEY)||localStorage.getItem(OLDLKEY)||'{}')||{}}catch(e){}
-  return sanitise(raw);
+  const s=sanitise(raw);
+  /* 圖片不存在 localStorage，舊的圖片編號重開後已失效，清掉以免對到新上傳的圖 */
+  for(const p of s.pages)p.sel=[];
+  return s;
 }
 const S=loadState();
 const lib=[];let sel=[];let samples=[];let nid=0;
@@ -779,13 +815,15 @@ function dropItem(it){URL.revokeObjectURL(it.full);URL.revokeObjectURL(it.thumb)
 
 function cleanCrop(c){if(!c||typeof c!=='object')return null;return{z:clampNum(c.z,1,4,1),fx:clampNum(c.fx,0,1,.5),fy:clampNum(c.fy,0,1,.5)}}
 const imgOf=(it,src)=>({src,w:it.w,h:it.h,crop:it.crop||null});
-function chosen(kind){const L=sel.map(id=>lib.find(x=>x.id===id)).filter(Boolean);
+function imgsOf(ids,kind){const L=ids.map(id=>lib.find(x=>x.id===id)).filter(Boolean);
   if(!L.length)return samples.map(s=>imgOf(s,s.src));return L.map(x=>imgOf(x,x[kind]))}
-async function currentImages(){
-  const L=sel.map(id=>lib.find(x=>x.id===id)).filter(Boolean);
+const chosen=kind=>imgsOf(sel,kind);
+async function pageImages(ids){
+  const L=ids.map(id=>lib.find(x=>x.id===id)).filter(Boolean);
   if(!L.length)return samples.map(s=>imgOf(s,s.data));
   return Promise.all(L.map(async it=>imgOf(it,it.data||(it.data=await blobToData(it.blob)))));
 }
+const currentImages=()=>pageImages(sel);
 function colors(){const m=S.color,dark=mix(m,'#000000',.45),paper=S.bgOn&&HEXRE.test(S.bg)?S.bg:null;
   const[r,g,b]=paper?hex2rgb(paper):[255,255,255],dk=(.299*r+.587*g+.114*b)/255<.5;
   return{main:m,acc:S.accent||m,dark,soft:mix(m,'#ffffff',.55),light:mix(m,'#ffffff',.9),paper,dk,mt:dk&&(.299*hex2rgb(m)[0]+.587*hex2rgb(m)[1]+.114*hex2rgb(m)[2])/255<.55?mix(m,'#ffffff',.5):m,
@@ -840,7 +878,7 @@ function overflowNote(svg){
 const FINE=matchMedia('(pointer:fine)');
 function drawLib(){
   $('lib').innerHTML=lib.map(it=>{const n=sel.indexOf(it.id);return`<div class="it ${n>=0?'on':''}" data-id="${it.id}" data-n="${n+1}" title="${esc(it.name)}" role="button" tabindex="0" aria-pressed="${n>=0}" aria-label="${esc(it.name)}"><img src="${it.thumb}" alt="" draggable="false"></div>`}).join('');
-  $('libInfo').textContent=lib.length?`共 ${lib.length} 張，已選 ${sel.length} 張`:'';
+  $('libInfo').textContent=lib.length?`共 ${lib.length} 張，這一頁用了 ${sel.length} 張`:'';
   $('order').innerHTML=sel.length?sel.map((id,i)=>{const it=lib.find(x=>x.id===id);return`<div class="o${it.crop?' cut':''}${id===cropId?' edit':''}" draggable="${FINE.matches}" data-i="${i}"><img src="${it.thumb}" alt="" draggable="false"><span class="b">${i+1}</span><div class="ctl"><button data-a="l" aria-label="往前移">◀</button><button data-a="c" aria-label="裁切" title="放大／裁切">✂</button><button data-a="x" aria-label="移除">✕</button><button data-a="r" aria-label="往後移">▶</button></div></div>`}).join(''):'<span class="empty">尚未選擇（預覽暫用示意圖）</span>';
   if(cropId&&!sel.includes(cropId))closeCrop();
   $('delUnsel').disabled=!lib.length;$('delAll').disabled=!lib.length;
@@ -887,10 +925,12 @@ $('order').addEventListener('drop',e=>{e.preventDefault();if(dragI==null)return;
 $('order').addEventListener('dragend',()=>{dragI=null;drawLib()});
 $('selAll').onclick=()=>{for(const it of lib)if(!sel.includes(it.id))sel.push(it.id);drawLib();refresh()};
 $('selNone').onclick=()=>{sel=[];drawLib();refresh()};
-$('delUnsel').onclick=()=>{let n=0;for(let i=lib.length-1;i>=0;i--)if(!sel.includes(lib[i].id)){dropItem(lib[i]);lib.splice(i,1);n++}drawLib();refresh();toast(n?`已移除 ${n} 張`:'沒有未選取的圖片')};
+/* 其他頁面用到的圖也算「有用到」，不能只看目前這一頁 */
+$('delUnsel').onclick=()=>{storePage();const used=new Set(S.pages.flatMap(p=>p.sel));let n=0;
+  for(let i=lib.length-1;i>=0;i--)if(!used.has(lib[i].id)){dropItem(lib[i]);lib.splice(i,1);n++}drawLib();refresh();toast(n?`已移除 ${n} 張`:'每張圖都有頁面在用')};
 $('delAll').onclick=()=>{if(!lib.length){toast('目前沒有圖片');return}
-  if(!confirm(`確定清空全部 ${lib.length} 張圖片？（文字與設定會保留）`))return;
-  for(const it of lib)dropItem(it);lib.length=0;sel=[];drawLib();refresh();toast('已清空')};
+  if(!confirm(`確定清空全部 ${lib.length} 張圖片？（所有頁面的文字與設定會保留）`))return;
+  for(const it of lib)dropItem(it);lib.length=0;sel=[];for(const p of S.pages)p.sel=[];drawLib();refresh();toast('已清空')};
 function pickFiles(){$('file').click()}
 const drop=$('drop');drop.onclick=pickFiles;
 drop.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pickFiles()}};
@@ -900,7 +940,7 @@ $('file').onchange=e=>{addFiles(e.target.files);e.target.value=''};
 drop.addEventListener('drop',e=>addFiles(e.dataTransfer.files));
 document.addEventListener('paste',e=>{const fs=[...(e.clipboardData?.files||[])];if(fs.length)addFiles(fs)});
 
-for(const k of['title','subtitle','body','items','number','company','date','page','fname']){$(k).value=S[k];$(k).oninput=()=>{S[k]=$(k).value;save();refresh()}}
+for(const k of['title','subtitle','body','items','number','notes','company','date','page','fname']){$(k).value=S[k];$(k).oninput=()=>{S[k]=$(k).value;save();refresh()}}
 const fo=FONTS.map((f,i)=>`<option value="${i}">${f[0]}</option>`).join('');
 $('tf').innerHTML=fo;$('bf').innerHTML=fo;$('tf').value=S.tf;$('bf').value=S.bf;
 $('tf').onchange=()=>{S.tf=+$('tf').value;save();refresh()};$('bf').onchange=()=>{S.bf=+$('bf').value;save();refresh()};
@@ -979,7 +1019,7 @@ $('filters').onclick=e=>{
 
 /* 繪製 */
 let tA=0,tB=0;
-function refresh(){clearTimeout(tA);clearTimeout(tB);tA=setTimeout(drawStage,40);tB=setTimeout(()=>drawGallery(),240);histLater()}
+function refresh(){storePage();clearTimeout(tA);clearTimeout(tB);tA=setTimeout(drawStage,40);tB=setTimeout(()=>{drawGallery();drawPages()},240);histLater()}
 
 /* ---------- 復原／重做：記錄文字、樣式、選圖順序與裁切（介面偏好與圖庫本身不記） ---------- */
 const HIST={list:[],i:-1,t:0,lock:false},LOGOS=[''];
@@ -1012,7 +1052,7 @@ function histGo(d){
 $('undo').onclick=()=>histGo(-1);$('redo').onclick=()=>histGo(1);
 function drawStage(){
   const tpl=TPLBY[S.tpl]||TPL[0];S.tpl=tpl.id;
-  $('curName').innerHTML=`${esc(tpl.name)}<small>建議：${esc(tpl.hint)}</small>`;
+  $('curName').innerHTML=`${S.pages.length>1?`第 ${S.cur+1}/${S.pages.length} 頁・`:''}${esc(tpl.name)}<small>建議：${esc(tpl.hint)}</small>`;
   const svg=renderSVG(tpl,chosen('full'),'m_');
   $('stage').innerHTML=svg;
   const n=overflowNote(svg);
@@ -1035,14 +1075,90 @@ function drawGallery(force){
   const th=chosen('thumb');
   $('gal').innerHTML=tplList().map(t=>`<div class="card ${t.id===tpl.id?'on':''}" data-id="${t.id}" role="button" tabindex="0" aria-label="${esc(t.name)}">${renderSVG(t,th,'g'+t.id+'_')}<div class="meta"><div class="nm">${esc(t.name)}</div><div class="hint">${esc(t.hint)}</div></div></div>`).join('');
 }
-function drawAll(){drawStage();drawGallery(true)}
+function drawAll(){drawStage();drawGallery(true);drawPages()}
 function pickTpl(id){
-  S.tpl=id;save();drawStage();drawGallery();histLater();
+  S.tpl=id;storePage();save();drawStage();drawGallery();drawPages();histLater();
   document.querySelector('main').scrollTo({top:0,behavior:'smooth'});
   if(MQ.matches)toast('已套用：'+(TPLBY[id]?.name||''));
 }
 $('gal').onclick=e=>{const c=e.target.closest('.card');if(!c)return;pickTpl(c.dataset.id)};
 $('gal').onkeydown=e=>{if(e.key!=='Enter'&&e.key!==' ')return;const c=e.target.closest('.card');if(!c)return;e.preventDefault();pickTpl(c.dataset.id)};
+
+/* ---------- 頁面清單：S 的單頁欄位與 sel 永遠是「目前這一頁」，切頁時才跟 S.pages 互換 ---------- */
+const ovOf=p=>Object.fromEntries(PAGE_KEYS.map(k=>[k,p[k]]));
+const pageOf=()=>({...ovOf(S),sel:[...sel]});
+function storePage(){
+  if(!S.pages.length)S.pages=[pageOf()];
+  S.cur=clampNum(S.cur,0,S.pages.length-1,0);S.pages[S.cur]=pageOf();
+}
+function usePage(i){
+  const p=S.pages[i];if(!p)return;S.cur=i;
+  for(const k of PAGE_KEYS)S[k]=p[k];
+  sel=p.sel.filter(id=>lib.some(x=>x.id===id));
+}
+function pageChanged(msg){closeCrop();syncUI();drawLib();drawAll();save();histLater();if(msg)toast(msg)}
+function goPage(i){if(i===S.cur||!S.pages[i])return;storePage();usePage(i);pageChanged()}
+function addPage(dup){
+  storePage();const cur=S.pages[S.cur];
+  const p=dup?{...cur,sel:[...cur.sel]}:{...cleanPage({tpl:cur.tpl,title:'新頁面'}),sel:[]};
+  S.pages.splice(S.cur+1,0,p);usePage(S.cur+1);pageChanged(dup?'已複製這一頁':'已新增一頁');
+}
+function delPage(i){
+  storePage();if(S.pages.length<2){toast('至少要保留一頁');return}
+  const n=i<S.cur?S.cur-1:i===S.cur?Math.min(i,S.pages.length-2):S.cur;
+  S.pages.splice(i,1);usePage(n);pageChanged(`已刪除第 ${i+1} 頁（可按復原）`);
+}
+function movePage(i,j){
+  storePage();if(j<0||j>=S.pages.length||i===j)return;
+  const cur=S.pages[S.cur],[m]=S.pages.splice(i,1);S.pages.splice(j,0,m);S.cur=S.pages.indexOf(cur);
+  save();drawStage();drawPages();histLater();
+}
+/* 縮圖快取：頁面內容與共用樣式都沒變就不重畫 */
+const pgCache=new Map();
+function pageSVG(p,i){
+  const ids=p.sel.filter(id=>lib.some(x=>x.id===id));
+  const sig=[JSON.stringify(ovOf(p)),ids.join(),ids.map(id=>JSON.stringify(lib.find(x=>x.id===id).crop||0)).join(),
+    S.color,S.accent,S.bgOn,S.bg,S.single,S.focal,S.tf,S.bf,S.logo,S.logoSize,S.logoPos,S.logoBg,S.footer,S.company,S.date,S.page,S.fs].join('\u0001');
+  const c=pgCache.get(i);if(c&&c.sig===sig)return c.svg;
+  const svg=withState(ovOf(p),()=>renderSVG(TPLBY[p.tpl]||TPL[0],imgsOf(ids,'thumb'),'pg'+i+'_'));
+  pgCache.set(i,{sig,svg});return svg;
+}
+function drawPages(){
+  storePage();
+  $('pgCount').textContent=`（${S.pages.length}）`;
+  $('pages').innerHTML=S.pages.map((p,i)=>`<div class="pg${i===S.cur?' on':''}" data-i="${i}" draggable="${FINE.matches}" role="button" tabindex="0" aria-current="${i===S.cur}" aria-label="第 ${i+1} 頁：${esc(p.title||TPLBY[p.tpl]?.name)}">${pageSVG(p,i)}<span class="b">${i+1}</span>${p.notes.trim()?'<span class="nt" title="這一頁有逐字稿">稿</span>':''}`+
+    `<div class="ctl"><button data-a="l" aria-label="往前移">◀</button><button data-a="d" aria-label="複製這一頁" title="複製這一頁">⧉</button><button data-a="x" aria-label="刪除這一頁" title="刪除這一頁">✕</button><button data-a="r" aria-label="往後移">▶</button></div></div>`).join('')+
+    '<button class="pgadd" id="pgAdd" title="在目前這一頁後面新增">＋<br>新增頁</button>';
+  for(const k of[...pgCache.keys()])if(k>=S.pages.length)pgCache.delete(k);
+}
+$('pages').onclick=e=>{
+  if(e.target.closest('#pgAdd')){addPage(false);return}
+  const d=e.target.closest('.pg');if(!d)return;const i=+d.dataset.i,b=e.target.closest('button');
+  if(!b){goPage(i);return}
+  const a=b.dataset.a;
+  if(a==='d'){goPage(i);addPage(true)}else if(a==='x')delPage(i);else movePage(i,a==='l'?i-1:i+1);
+};
+$('pages').onkeydown=e=>{if(e.key!=='Enter'&&e.key!==' ')return;const d=e.target.closest('.pg');if(!d||e.target.closest('button'))return;e.preventDefault();goPage(+d.dataset.i)};
+{let dragP=null;const P=$('pages');
+  P.addEventListener('dragstart',e=>{const d=e.target.closest('.pg');if(!d)return;dragP=+d.dataset.i;d.classList.add('drag');e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',String(dragP))}catch(_){}});
+  P.addEventListener('dragover',e=>{if(dragP!=null)e.preventDefault()});
+  P.addEventListener('drop',e=>{e.preventDefault();if(dragP==null)return;const d=e.target.closest('.pg'),j=d?+d.dataset.i:S.pages.length-1,i=dragP;dragP=null;
+    if(i===j)drawPages();else movePage(i,j)});
+  P.addEventListener('dragend',()=>{if(dragP!=null){dragP=null;drawPages()}});}
+async function deckPages(){
+  storePage();
+  return Promise.all(S.pages.map(async p=>({tpl:TPLBY[p.tpl]||TPL[0],imgs:await pageImages(p.sel),ov:ovOf(p),notes:p.notes})));
+}
+const deckName=()=>safeName(S.fname||S.pages[0]?.title||'簡報');
+$('deckOut').onclick=async()=>{
+  const btn=$('deckOut');btn.disabled=true;
+  try{
+    const pages=await deckPages(),n=pages.length,withNotes=pages.filter(p=>p.notes.trim()).length;
+    saveBlob(await buildPptx(pages,null,i=>toast(`製作投影片… ${i+1}/${n}`)),`${deckName()}_${n}頁.pptx`);
+    toast(`已輸出 ${n} 頁 PPTX`+(withNotes?`，其中 ${withNotes} 頁有逐字稿`:''));
+  }catch(e){console.error(e);toast('輸出失敗：'+e.message)}
+  finally{btn.disabled=false}
+};
 
 /* ---------- 輸出 ---------- */
 const safeName=s=>String(s||'').replace(/[\\/:*?"<>|\r\n\t]/g,'').trim().slice(0,60)||'排版';
@@ -1084,7 +1200,7 @@ async function download(){
     const tpl=TPLBY[S.tpl]||TPL[0];
     if(S.fmt==='pptx'){
       toast('產生 PPTX 中…');
-      saveBlob(await buildPptx([tpl],await currentImages()),`${baseName()}_${tpl.id}.pptx`);
+      saveBlob(await buildPptx([{tpl,imgs:await currentImages(),ov:null,notes:S.notes}]),`${baseName()}_${tpl.id}.pptx`);
       toast('已下載 PPTX（文字可在 PowerPoint 直接修改）');return;
     }
     toast('產生圖片中…');
@@ -1226,7 +1342,22 @@ function slideXml(texts){
   const pic=`<p:pic><p:nvPicPr><p:cNvPr id="2" name="版面底圖"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="rId2"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${W*EMU}" cy="${H*EMU}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
   return XH+`<p:sld ${NS}><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>${pic}${texts.map((t,i)=>textSp(t,i+3)).join('')}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`;
 }
-const SPTREE0='<p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/></p:spTree>';
+const GRP0='<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/>';
+const SPTREE0=`<p:spTree>${GRP0}</p:spTree>`;
+const CLRMAP='<p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>';
+/* 備忘稿：一份備忘稿母片（上半投影片縮圖、下半逐字稿），每頁有逐字稿才產生該頁的備忘稿 */
+const notesPh=(id,name,ph,xfrm,extra='')=>`<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${name}"/><p:cNvSpPr><a:spLocks noGrp="1"${ph.includes('sldImg')?' noRot="1" noChangeAspect="1"':''}/></p:cNvSpPr><p:nvPr>${ph}</p:nvPr></p:nvSpPr><p:spPr>${xfrm}</p:spPr>${extra}</p:sp>`;
+const NOTES_MASTER=XH+`<p:notesMaster ${NS}><p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg><p:spTree>${GRP0}`+
+  notesPh(2,'投影片圖片版面配置區 1','<p:ph type="sldImg" idx="2"/>','<a:xfrm><a:off x="685800" y="1143000"/><a:ext cx="5486400" cy="3086100"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln w="12700"><a:solidFill><a:prstClr val="black"/></a:solidFill></a:ln>')+
+  notesPh(3,'備忘稿版面配置區 2','<p:ph type="body" sz="quarter" idx="3"/>','<a:xfrm><a:off x="685800" y="4400550"/><a:ext cx="5486400" cy="3600450"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom>',
+    '<p:txBody><a:bodyPr vert="horz" lIns="91440" tIns="45720" rIns="91440" bIns="45720" rtlCol="0"/><a:lstStyle/><a:p><a:pPr lvl="0"/><a:r><a:rPr lang="zh-TW" altLang="en-US"/><a:t>按一下以編輯母片文字樣式</a:t></a:r></a:p></p:txBody>')+
+  `</p:spTree></p:cSld>${CLRMAP}<p:notesStyle><a:lvl1pPr marL="0" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1"><a:defRPr sz="1200" kern="1200"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mn-lt"/><a:ea typeface="+mn-ea"/><a:cs typeface="+mn-cs"/></a:defRPr></a:lvl1pPr></p:notesStyle></p:notesMaster>`;
+function notesXml(text){
+  const paras=String(text).replace(/\r\n?/g,'\n').split('\n').map(l=>l?`<a:p><a:r><a:rPr lang="zh-TW" altLang="en-US" dirty="0"/><a:t>${xesc(l)}</a:t></a:r></a:p>`:'<a:p><a:endParaRPr lang="zh-TW" altLang="en-US" dirty="0"/></a:p>').join('');
+  return XH+`<p:notes ${NS}><p:cSld><p:spTree>${GRP0}`+notesPh(2,'投影片圖片版面配置區 1','<p:ph type="sldImg"/>','')+
+    notesPh(3,'備忘稿版面配置區 2','<p:ph type="body" idx="1"/>','',`<p:txBody><a:bodyPr/><a:lstStyle/>${paras}</p:txBody>`)+
+    '</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:notes>';
+}
 const THEME_XML=XH+'<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Office"><a:themeElements><a:clrScheme name="Office"><a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1><a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="44546A"/></a:dk2><a:lt2><a:srgbClr val="E7E6E6"/></a:lt2>'+
   ['4472C4','ED7D31','A5A5A5','FFC000','5B9BD5','70AD47'].map((c,i)=>`<a:accent${i+1}><a:srgbClr val="${c}"/></a:accent${i+1}>`).join('')+'<a:hlink><a:srgbClr val="0563C1"/></a:hlink><a:folHlink><a:srgbClr val="954F72"/></a:folHlink></a:clrScheme>'+
   '<a:fontScheme name="Office"><a:majorFont><a:latin typeface="Calibri Light"/><a:ea typeface="Microsoft JhengHei"/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="Calibri"/><a:ea typeface="Microsoft JhengHei"/><a:cs typeface=""/></a:minorFont></a:fontScheme>'+
@@ -1236,19 +1367,21 @@ async function buildPptx(tpls,imgs,onStep){
   const enc=new TextEncoder(),files=[],add=(name,str)=>files.push({name,data:typeof str==='string'?enc.encode(str):str});
   const slides=[];
   for(let i=0;i<tpls.length;i++){
-    /* 每頁可以是範本本身，或 {tpl,imgs,ov}（連續編號用：換數字、標題、圖片） */
+    /* 每頁可以是範本本身，或 {tpl,imgs,ov,notes}（整份簡報／連續編號用：換文字、圖片與逐字稿） */
     const pg=tpls[i].tpl?tpls[i]:{tpl:tpls[i],imgs,ov:null};
     onStep&&onStep(i,pg.tpl);
     COLLECT=[];let svg,texts;
     try{svg=withState(pg.ov,()=>renderSVG(pg.tpl,pg.imgs||imgs,'p'+i+'_'))}finally{texts=COLLECT;COLLECT=null}
     const jpg=await rasterizeSVG(svg,2,'image/jpeg');
-    slides.push({xml:slideXml(texts),img:new Uint8Array(await jpg.arrayBuffer())});
+    slides.push({xml:slideXml(texts),img:new Uint8Array(await jpg.arrayBuffer()),notes:String(pg.notes||'').trim()?String(pg.notes).replace(/\s+$/,''):''});
     await new Promise(r=>setTimeout(r,0));
   }
-  const n=slides.length;
+  const n=slides.length,hasNotes=slides.some(s=>s.notes);
   add('[Content_Types].xml',XH+'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpeg" ContentType="image/jpeg"/>'+
     '<Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>'+
     slides.map((_,i)=>`<Override PartName="/ppt/slides/slide${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join('')+
+    (hasNotes?'<Override PartName="/ppt/notesMasters/notesMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.notesMaster+xml"/><Override PartName="/ppt/theme/theme2.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>'+
+      slides.map((s,i)=>s.notes?`<Override PartName="/ppt/notesSlides/notesSlide${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml"/>`:'').join(''):'')+
     '<Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>'+
     '<Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/><Override PartName="/ppt/presProps.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presProps+xml"/>'+
     '<Override PartName="/ppt/tableStyles.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.tableStyles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>');
@@ -1256,19 +1389,28 @@ async function buildPptx(tpls,imgs,onStep){
   const now=new Date().toISOString().replace(/\.\d+Z$/,'Z');
   add('docProps/core.xml',XH+`<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xesc(S.title||'排版')}</dc:title><dc:creator>圖片排版產生器</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified></cp:coreProperties>`);
   add('docProps/app.xml',XH+`<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>圖片排版產生器</Application><Slides>${n}</Slides></Properties>`);
-  add('ppt/presentation.xml',XH+`<p:presentation ${NS} saveSubsetFonts="1"><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst><p:sldIdLst>${slides.map((_,i)=>`<p:sldId id="${256+i}" r:id="rId${i+10}"/>`).join('')}</p:sldIdLst><p:sldSz cx="${W*EMU}" cy="${H*EMU}"/><p:notesSz cx="6858000" cy="9144000"/></p:presentation>`);
-  add('ppt/_rels/presentation.xml.rels',rels([['rId1','slideMaster','slideMasters/slideMaster1.xml'],['rId2','theme','theme/theme1.xml'],['rId3','presProps','presProps.xml'],['rId4','tableStyles','tableStyles.xml'],...slides.map((_,i)=>[`rId${i+10}`,'slide',`slides/slide${i+1}.xml`])]));
+  add('ppt/presentation.xml',XH+`<p:presentation ${NS} saveSubsetFonts="1"><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>${hasNotes?'<p:notesMasterIdLst><p:notesMasterId r:id="rId5"/></p:notesMasterIdLst>':''}<p:sldIdLst>${slides.map((_,i)=>`<p:sldId id="${256+i}" r:id="rId${i+10}"/>`).join('')}</p:sldIdLst><p:sldSz cx="${W*EMU}" cy="${H*EMU}"/><p:notesSz cx="6858000" cy="9144000"/></p:presentation>`);
+  add('ppt/_rels/presentation.xml.rels',rels([['rId1','slideMaster','slideMasters/slideMaster1.xml'],['rId2','theme','theme/theme1.xml'],['rId3','presProps','presProps.xml'],['rId4','tableStyles','tableStyles.xml'],...(hasNotes?[['rId5','notesMaster','notesMasters/notesMaster1.xml']]:[]),...slides.map((_,i)=>[`rId${i+10}`,'slide',`slides/slide${i+1}.xml`])]));
   add('ppt/presProps.xml',XH+`<p:presentationPr ${NS}/>`);
   add('ppt/tableStyles.xml',XH+'<a:tblStyleLst xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" def="{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"/>');
   add('ppt/theme/theme1.xml',THEME_XML);
-  add('ppt/slideMasters/slideMaster1.xml',XH+`<p:sldMaster ${NS}><p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg>${SPTREE0}</p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/><p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst></p:sldMaster>`);
+  add('ppt/slideMasters/slideMaster1.xml',XH+`<p:sldMaster ${NS}><p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg>${SPTREE0}</p:cSld>${CLRMAP}<p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst></p:sldMaster>`);
   add('ppt/slideMasters/_rels/slideMaster1.xml.rels',rels([['rId1','slideLayout','../slideLayouts/slideLayout1.xml'],['rId2','theme','../theme/theme1.xml']]));
   add('ppt/slideLayouts/slideLayout1.xml',XH+`<p:sldLayout ${NS} type="blank" preserve="1"><p:cSld name="空白">${SPTREE0}</p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`);
   add('ppt/slideLayouts/_rels/slideLayout1.xml.rels',rels([['rId1','slideMaster','../slideMasters/slideMaster1.xml']]));
+  if(hasNotes){
+    add('ppt/theme/theme2.xml',THEME_XML);
+    add('ppt/notesMasters/notesMaster1.xml',NOTES_MASTER);
+    add('ppt/notesMasters/_rels/notesMaster1.xml.rels',rels([['rId1','theme','../theme/theme2.xml']]));
+  }
   slides.forEach((s,i)=>{
     add(`ppt/slides/slide${i+1}.xml`,s.xml);
-    add(`ppt/slides/_rels/slide${i+1}.xml.rels`,rels([['rId1','slideLayout','../slideLayouts/slideLayout1.xml'],['rId2','image',`../media/image${i+1}.jpeg`]]));
+    add(`ppt/slides/_rels/slide${i+1}.xml.rels`,rels([['rId1','slideLayout','../slideLayouts/slideLayout1.xml'],['rId2','image',`../media/image${i+1}.jpeg`],...(s.notes?[['rId3','notesSlide',`../notesSlides/notesSlide${i+1}.xml`]]:[])]));
     add(`ppt/media/image${i+1}.jpeg`,s.img);
+    if(s.notes){
+      add(`ppt/notesSlides/notesSlide${i+1}.xml`,notesXml(s.notes));
+      add(`ppt/notesSlides/_rels/notesSlide${i+1}.xml.rels`,rels([['rId1','notesMaster','../notesMasters/notesMaster1.xml'],['rId2','slide',`../slides/slide${i+1}.xml`]]));
+    }
   });
   const z=makeZip(files);
   return new Blob([z],{type:'application/vnd.openxmlformats-officedocument.presentationml.presentation'});
@@ -1280,12 +1422,14 @@ $('fmt').addEventListener('change',fmtUI);
 /* ---------- 專案存檔 ---------- */
 $('projSave').onclick=async()=>{
   try{
-    toast('整理專案中…');
-    const L=sel.map(id=>lib.find(x=>x.id===id)).filter(Boolean);
+    toast('整理專案中…');storePage();
+    /* v2：存所有頁面用到的圖，每頁的 sel 改存成 images 陣列的索引 */
+    const L=[...new Set(S.pages.flatMap(p=>p.sel))].map(id=>lib.find(x=>x.id===id)).filter(Boolean),at=new Map(L.map((it,i)=>[it.id,i]));
     const imgs=await Promise.all(L.map(async it=>({name:it.name,crop:it.crop,data:it.data||(it.data=await blobToData(it.blob))})));
-    const pkg={app:'ppt-layout-generator',v:1,state:S,images:imgs};
-    saveBlob(new Blob([JSON.stringify(pkg)],{type:'application/json'}),`${baseName()}.pptgen.json`);
-    toast(`已存檔（${imgs.length} 張圖片）`);
+    const state={...S,pages:S.pages.map(p=>({...p,sel:p.sel.filter(id=>at.has(id)).map(id=>at.get(id))}))};
+    const pkg={app:'ppt-layout-generator',v:2,state,images:imgs};
+    saveBlob(new Blob([JSON.stringify(pkg)],{type:'application/json'}),`${deckName()}.pptgen.json`);
+    toast(`已存檔（${S.pages.length} 頁、${imgs.length} 張圖片）`);
   }catch(e){toast('存檔失敗：'+e.message)}
 };
 $('projLoad').onclick=()=>$('projFile').click();
@@ -1296,24 +1440,30 @@ $('projFile').onchange=async e=>{
     if(!pkg||pkg.app!=='ppt-layout-generator'||!pkg.state)throw new Error('不是這個工具的專案檔');
     for(const it of lib)dropItem(it);
     lib.length=0;sel=[];closeCrop();
-    Object.assign(S,sanitise(pkg.state));
-    syncUI();
+    const st=sanitise(pkg.state),ids=[];
     if(Array.isArray(pkg.images)){
       toast(`載入 ${pkg.images.length} 張圖片…`);
       for(const im of pkg.images){
-        try{const blob=await(await fetch(im.data)).blob();const bmp=await createImageBitmap(blob);const it=await makeItem(im.name||'image',bmp,im.crop);if(bmp.close)bmp.close();sel.push(it.id)}catch(err){console.warn(err)}
+        let id=0;
+        try{const blob=await(await fetch(im.data)).blob();const bmp=await createImageBitmap(blob);const it=await makeItem(im.name||'image',bmp,im.crop);if(bmp.close)bmp.close();id=it.id}catch(err){console.warn(err)}
+        ids.push(id);
       }
     }
-    drawLib();drawAll();save();toast('專案已載入');
+    /* v1 只有單頁：全部圖片都給它；v2 把每頁的索引換回新的圖片編號 */
+    if(st.pages.length&&pkg.v>=2)for(const p of st.pages)p.sel=p.sel.map(k=>ids[k]).filter(Boolean);
+    else st.pages=[];
+    Object.assign(S,st);
+    if(S.pages.length)usePage(S.cur);else{sel=ids.filter(Boolean);storePage()}
+    syncUI();drawLib();drawAll();save();histLater();toast(`專案已載入（${S.pages.length} 頁）`);
   }catch(err){console.warn(err);toast('載入失敗：'+err.message)}
 };
 $('reset').onclick=()=>{
-  if(!confirm('重設所有文字與樣式？（已選的圖片會保留）'))return;
-  Object.assign(S,{...DEF,logo:S.logo,logoAR:S.logoAR,theme:S.theme,cat:S.cat,fmt:S.fmt,scale:S.scale});
-  save();syncUI();drawAll();toast('已重設');
+  if(!confirm('重設所有頁面、文字與樣式？只會留下目前這一頁的圖片（可按復原）'))return;
+  Object.assign(S,{...DEF,pages:[],cur:0,logo:S.logo,logoAR:S.logoAR,theme:S.theme,cat:S.cat,fmt:S.fmt,scale:S.scale});
+  storePage();save();syncUI();drawAll();histLater();toast('已重設');
 };
 function syncUI(){
-  for(const k of['title','subtitle','body','items','number','company','date','page','fname'])$(k).value=S[k];
+  for(const k of['title','subtitle','body','items','number','notes','company','date','page','fname'])$(k).value=S[k];
   $('tf').value=S.tf;$('bf').value=S.bf;$('color').value=S.color;$('accent').value=S.accent;$('bg').value=S.bg;
   $('logoPos').value=S.logoPos;$('logoSize').value=S.logoSize;$('fmt').value=S.fmt;$('scale').value=S.scale;$('fs').value=S.fs;showFs();fmtUI();
   for(const k of['footer','logoBg','bgOn','single'])$(k).checked=S[k];
@@ -1329,6 +1479,7 @@ document.addEventListener('keydown',e=>{
   else if(mod&&(key==='y'||(key==='z'&&e.shiftKey))){e.preventDefault();histGo(1)}
   else if(mod&&key==='s'){e.preventDefault();download()}
   else if(mod&&e.shiftKey&&e.key.toLowerCase()==='c'){e.preventDefault();$('copy').click()}
+  else if(!mod&&(e.key==='PageDown'||e.key==='PageUp')){e.preventDefault();goPage(S.cur+(e.key==='PageDown'?1:-1))}
   else if(e.altKey&&(e.key==='ArrowRight'||e.key==='ArrowLeft')){
     e.preventDefault();const list=tplList();if(!list.length)return;
     const i=list.findIndex(x=>x.id===S.tpl);
@@ -1364,7 +1515,7 @@ if(navigator.canShare&&navigator.canShare({files:[new File([''],'a.png',{type:'i
   $('share').onclick=async()=>{
     try{
       const tpl=TPLBY[S.tpl]||TPL[0],imgs=await currentImages();toast('準備分享…');
-      const b=S.fmt==='pptx'?await buildPptx([tpl],imgs):await exportBlob(tpl,S.fmt==='svg'?'png':S.fmt,Math.min(S.scale,2),imgs);
+      const b=S.fmt==='pptx'?await buildPptx([{tpl,imgs,ov:null,notes:S.notes}]):await exportBlob(tpl,S.fmt==='svg'?'png':S.fmt,Math.min(S.scale,2),imgs);
       const ext=S.fmt==='pptx'?'pptx':S.fmt==='jpeg'?'jpg':'png';
       await navigator.share({files:[shareFile(b,`${baseName()}_${tpl.id}.${ext}`)],title:S.title||'排版'});
     }catch(e){if(e&&e.name!=='AbortError')toast('分享失敗：'+e.message)}
@@ -1394,6 +1545,7 @@ if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){
 }
 
 samples=makeSamples();
+if(S.pages.length)usePage(S.cur);else storePage();
 placeTools();setTab(['img','txt','sty','tpl','out'].includes(tab)?tab:'img');
 syncUI();
 drawLib();
