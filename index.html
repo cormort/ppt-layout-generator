@@ -40,6 +40,9 @@ textarea{resize:vertical;min-height:64px}
 .sw{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .sw button{width:24px;height:24px;border-radius:50%;border:2px solid var(--panel);outline:1px solid var(--line);cursor:pointer;flex:none}
 input[type=color]{width:44px;height:34px;border:1px solid var(--line);border-radius:7px;padding:2px;background:var(--chip);flex:none}
+.biz{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.biz button{display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:7px;padding:5px 7px;cursor:pointer;font:inherit;font-size:12px}
+.biz i{width:14px;height:14px;border-radius:3px;flex:none}
 .btn{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:7px;padding:7px 12px;cursor:pointer;font:inherit;white-space:nowrap}
 .btn:hover{border-color:var(--acc)}
 .btn.pri{background:var(--acc);color:var(--panel);border-color:var(--acc);font-weight:700}
@@ -82,15 +85,28 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line);border-rad
   <label>標題</label><input type="text" id="title">
   <label>副標題 / 英文</label><input type="text" id="subtitle">
   <label>內文</label><textarea id="body"></textarea>
-  <label>項目清單（目錄類範本用；每行一項，可用「|」接說明）</label><textarea id="items"></textarea>
+  <label>項目清單（目錄／商務範本用；每行一項，用「|」分隔，例如「85%|客戶滿意度|說明」）</label><textarea id="items"></textarea>
   <label>大數字（大數字範本用）</label><input type="text" id="number">
 
   <h2><span><span class="n">4</span>風格</span></h2>
   <div class="row"><input type="color" id="color"><button class="btn" id="pick">從第 1 張圖取色</button></div>
   <div class="sw" id="sw"></div>
+  <label>輔色（商務範本的強調色）</label>
+  <div class="row"><input type="color" id="accent"><span class="empty">數字、線條、色塊點綴</span></div>
+  <label>商務配色組（一鍵套用主色＋輔色）</label>
+  <div class="biz" id="biz"></div>
   <label>標題字體</label><select id="tf"></select>
   <label>內文字體</label><select id="bf"></select>
   <label class="chk"><input type="checkbox" id="single"> 多張時也只用第 1 張圖，讓所有形狀連成一張完整畫面（只選 1 張時自動如此）</label>
+
+  <h2><span><span class="n">5</span>Logo 與頁尾</span></h2>
+  <div class="row"><button class="btn" id="logoBtn">上傳 Logo</button><button class="btn" id="logoDel" style="flex:none">移除</button></div>
+  <input type="file" id="logoFile" accept="image/*" hidden>
+  <div class="row" style="margin-top:6px"><img id="logoPrev" alt="" style="max-height:40px;max-width:140px;flex:none;display:none"><select id="logoPos"><option value="tr">右上角</option><option value="tl">左上角</option><option value="br">右下角</option><option value="bl">左下角</option></select></div>
+  <label class="chk"><input type="checkbox" id="logoBg"> Logo 加白色底框（放在照片上比較清楚）</label>
+  <label>公司／單位名稱</label><input type="text" id="company" placeholder="例如：ABC 股份有限公司">
+  <div class="row"><div><label>日期</label><input type="text" id="date" placeholder="2026.10"></div><div><label>頁碼</label><input type="text" id="page" placeholder="P.01"></div></div>
+  <label class="chk"><input type="checkbox" id="footer"> 在右下角顯示頁尾（公司｜日期｜頁碼）</label>
 </aside>
 <main>
   <div class="bar">
@@ -116,7 +132,9 @@ const FONTS=[
  ["Georgia（英文襯線）","Georgia,'Times New Roman','PMingLiU',serif"],
  ["Arial Black（英文粗體）","'Arial Black','Arial','Microsoft JhengHei',sans-serif"]];
 const SWATCH=['#2f5d8a','#3f6b3a','#7a8f4e','#c2456b','#d9822b','#8a5a2b','#5b4b8a','#1f7a7a','#b03a2e','#3a3a3a'];
-const DEF={title:'敦煌鳴沙山月牙泉',subtitle:'Dunhuang · Crescent Lake',body:'沙漠中的一彎清泉，千百年來不曾乾涸。駝鈴聲聲、沙丘連綿，日落時分整座山脊被染成金色，是絲路上最溫柔的風景。',items:'工作概述|Job Overview\n靈感來源|Source of Inspiration\n成果展示|Achievement\n目標規劃|Goals and Ideas',number:'01',color:'#2f5d8a',tf:0,bf:0,single:false,tpl:'diamond'};
+const DEF={title:'敦煌鳴沙山月牙泉',subtitle:'Dunhuang · Crescent Lake',body:'沙漠中的一彎清泉，千百年來不曾乾涸。駝鈴聲聲、沙丘連綿，日落時分整座山脊被染成金色，是絲路上最溫柔的風景。',items:'工作概述|Job Overview\n靈感來源|Source of Inspiration\n成果展示|Achievement\n目標規劃|Goals and Ideas',number:'01',color:'#2f5d8a',accent:'#c9a24a',tf:0,bf:0,single:false,tpl:'diamond',
+  company:'',date:'',page:'',footer:false,logo:'',logoAR:1,logoPos:'tr',logoBg:true};
+const BIZ=[['藏青金','#1f3a5f','#c9a24a'],['商務藍','#1d5fa8','#38b2e8'],['深灰橘','#3b3f46','#f08a24'],['墨綠米','#2f5a46','#d8b98a'],['酒紅灰','#7a2635','#a8a8a8'],['科技紫','#3b2f8f','#22c3c3']];
 
 /* ---------- helpers ---------- */
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -177,7 +195,7 @@ function stack(c,{x,cy,w,anchor='start',tSize=84,tColor,sColor,bColor='#4a4a4a',
   const top=-tSize*.85,bot=y+10;
   return `<g transform="translate(0 ${f1(cy-(top+bot)/2)})">${s}</g>`;
 }
-function items(c){const it=String(c.t.items||'').split('\n').map(s=>s.trim()).filter(Boolean).map(s=>{const[a,...b]=s.split(/[|｜]/);return{a:a.trim(),b:b.join(' ').trim()}});return it.length?it:[{a:'項目一',b:''},{a:'項目二',b:''},{a:'項目三',b:''}]}
+function items(c){const it=String(c.t.items||'').split('\n').map(s=>s.trim()).filter(Boolean).map(s=>{const[a,b='',...r]=s.split(/[|｜]/);return{a:a.trim(),b:b.trim(),c:r.join(' ').trim()}});return it.length?it:[{a:'項目一',b:''},{a:'項目二',b:''},{a:'項目三',b:''}]}
 const nOf=(c,min=2,max=6,def=4)=>c.imgs.length>1&&!c.single?Math.max(min,Math.min(max,c.imgs.length)):def;
 const pad2=i=>String(i+1).padStart(2,'0');
 function strip(x0,x1,n,gap){const w=(x1-x0-(n-1)*gap)/n;return[...Array(n)].map((_,i)=>[x0+i*(w+gap),x0+i*(w+gap)+w])}
@@ -383,6 +401,77 @@ def({id:'pixel',name:'方塊溶解',hint:'1 張（人像很適合）',render(c){
    +stack(c,{x:130,cy:500,w:420,tSize:110,tColor:c.col.main,sColor:c.col.dark,bSize:24});
 }});
 
+/* ---------- business templates ---------- */
+def({id:'split',name:'商務・封面左右分割',hint:'1 張；可填公司名、日期',render(c){
+  const L=960;
+  return bg(c.col.dark)+IMG(c.imgs[0],L,0,W-L,H)+`<rect x="${L-7}" width="14" height="${H}" fill="${c.col.acc}"/>`
+   +T([c.t.company],{x:140,y:150,size:24,fill:c.col.acc,font:c.bf,weight:700,ls:6})
+   +stack(c,{x:140,cy:520,w:700,tSize:92,tColor:'#fff',sColor:c.col.acc,bColor:'rgba(255,255,255,.82)',bSize:26,maxBody:5})
+   +T([c.t.date],{x:140,y:980,size:24,fill:'#fff',op:.7,font:c.bf,ls:2});
+}});
+
+def({id:'bullets',name:'商務・左圖右文條列',hint:'1 張；項目填「重點|說明」',render(c){
+  const it=items(c).slice(0,6),n=it.length,cl=c.id(),x0=980,st=Math.min(150,620/n),y0=380+(620-st*n)/2;let rows='';
+  it.forEach((o,i)=>{const y=y0+i*st;rows+=`<rect x="${x0}" y="${f1(y-40)}" width="56" height="56" rx="12" fill="${c.col.main}"/>`
+    +T([pad2(i)],{x:x0+28,y:y-2,size:26,fill:'#fff',font:c.bf,weight:700,anchor:'middle'})
+    +T([o.a],{x:x0+84,y,size:36,fill:c.col.dark,font:c.tf,weight:700})
+    +T(wrap(o.b,780,22,c.bf).slice(0,st>=130?2:1),{x:x0+86,y:y+38,size:22,lh:1.5,fill:'#666',font:c.bf})});
+  const img=[[0,0],[860,0],[760,1080],[0,1080]];
+  return bg('#fff')+`<defs><clipPath id="${cl}"><path d="${P(img)}"/></clipPath></defs>`+IMG(c.imgs[0],0,0,900,H,`clip-path="url(#${cl})"`)
+   +`<path d="${P([[860,0],[892,0],[792,1080],[760,1080]])}" fill="${c.col.acc}"/>`
+   +T([c.t.subtitle],{x:x0,y:150,size:24,fill:c.col.acc,font:c.bf,weight:700,ls:4})
+   +T(wrap(c.t.title,820,62,c.tf,700).slice(0,1),{x:x0,y:228,size:62,fill:c.col.dark,font:c.tf,weight:700})
+   +`<rect x="${x0}" y="262" width="820" height="2" fill="${c.col.light}"/><rect x="${x0}" y="261" width="90" height="4" fill="${c.col.main}"/>`+rows;
+}});
+
+def({id:'kpi',name:'商務・數據亮點',hint:'1 張背景；項目填「數字|標籤|說明」',render(c){
+  const it=items(c).slice(0,4),n=it.length,cols=strip(140,1780,n,60),g=c.id();let s='';
+  cols.forEach(([a,b],i)=>{const o=it[i],w=b-a,sz=Math.min(140,100*(w-20)/Math.max(1,tw(o.a,100,c.tf,800)));
+    if(i)s+=`<line x1="${f1(a-30)}" y1="560" x2="${f1(a-30)}" y2="930" stroke="#fff" stroke-opacity=".25"/>`;
+    s+=T([o.a],{x:a,y:700,size:f1(sz),fill:c.col.acc,font:c.tf,weight:800})+`<rect x="${f1(a)}" y="735" width="60" height="4" fill="#fff" opacity=".7"/>`
+     +T([o.b],{x:a,y:800,size:32,fill:'#fff',font:c.tf,weight:700})+T(wrap(o.c,w-20,21,c.bf).slice(0,3),{x:a,y:848,size:21,lh:1.55,fill:'#fff',op:.72,font:c.bf})});
+  return IMG(c.imgs[0],0,0,W,H)+`<defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.col.dark}" stop-opacity=".62"/><stop offset="1" stop-color="${c.col.dark}" stop-opacity=".93"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#${g})"/>`
+   +T([c.t.title],{x:140,y:200,size:66,fill:'#fff',font:c.tf,weight:700})+T([c.t.subtitle],{x:142,y:262,size:26,fill:c.col.acc,font:c.bf,weight:700,ls:4})
+   +T(wrap(c.t.body,1100,24,c.bf).slice(0,2),{x:142,y:330,size:24,lh:1.7,fill:'#fff',op:.8,font:c.bf})+s;
+}});
+
+def({id:'timeline',name:'商務・時間軸',hint:'每節點 1 張；項目填「年份|事件|說明」',render(c){
+  const it=items(c).slice(0,6),n=it.length,x0=240,x1=1680,ly=480,r=86,w=Math.min(300,(x1-x0)/Math.max(1,n-1)-24);let s='',defs='';
+  s+=`<line x1="120" y1="${ly}" x2="1790" y2="${ly}" stroke="${c.col.soft}" stroke-width="6"/><path d="M1790,${ly-18}L1825,${ly}L1790,${ly+18}Z" fill="${c.col.soft}"/>`;
+  it.forEach((o,i)=>{const x=n===1?960:x0+(x1-x0)*i/(n-1),id=c.id(),bl=wrap(o.b,w,28,c.tf,700).slice(0,2);
+    defs+=`<clipPath id="${id}"><circle cx="${f1(x)}" cy="${ly}" r="${r}"/></clipPath>`;
+    s+=`<circle cx="${f1(x)}" cy="${ly}" r="${r+12}" fill="#fff" stroke="${c.col.main}" stroke-width="4"/>`+IMG(c.imgs[i%c.imgs.length],x-r,ly-r,2*r,2*r,`clip-path="url(#${id})"`)
+      +T([o.a],{x,y:ly+175,size:44,fill:c.col.main,font:c.tf,weight:800,anchor:'middle'})
+      +T(bl,{x,y:ly+228,size:28,lh:1.3,fill:c.col.dark,font:c.tf,weight:700,anchor:'middle'})
+      +T(wrap(o.c,w,20,c.bf).slice(0,4),{x,y:ly+228+bl.length*36+20,size:20,lh:1.5,fill:'#777',font:c.bf,anchor:'middle'})});
+  return bg('#fff')+`<rect y="${ly}" width="${W}" height="${H-ly}" fill="${c.col.light}" opacity=".6"/><defs>${defs}</defs>`
+   +T([c.t.title],{x:960,y:160,size:64,fill:c.col.dark,font:c.tf,weight:700,anchor:'middle'})
+   +T([c.t.subtitle],{x:960,y:215,size:24,fill:c.col.main,font:c.bf,weight:600,anchor:'middle',ls:5})+`<g filter="url(#${c.sh})">${s}</g>`;
+}});
+
+def({id:'steps',name:'商務・流程步驟',hint:'每步 1 張（或 1 張連續）；項目填「步驟|說明」',render(c){
+  const it=items(c).slice(0,6),n=it.length,y=320,h=290,d=60,gap=14,w=(1680-(n-1)*gap-d)/n,sh=[];let ov='',lab='';
+  it.forEach((o,i)=>{const x=120+i*(w+gap),pts=[[x,y],[x+w,y],[x+w+d,y+h/2],[x+w,y+h],[x,y+h]];if(i)pts.push([x+d,y+h/2]);
+    sh.push(polyShape(pts));const xc=x+w/2+d/2;
+    ov+=`<path d="${P(pts)}" fill="${i%2?c.col.dark:c.col.main}" opacity=".38"/>`+T([pad2(i)],{x:xc,y:y+h/2+30,size:86,fill:'#fff',font:c.tf,weight:800,anchor:'middle',extra:`filter="url(#${c.ts})"`});
+    lab+=T(wrap(o.a,w,34,c.tf,700).slice(0,1),{x:xc,y:710,size:34,fill:c.col.dark,font:c.tf,weight:700,anchor:'middle'})+`<rect x="${f1(xc-22)}" y="735" width="44" height="4" rx="2" fill="${c.col.acc}"/>`
+      +T(wrap(o.b,w-10,21,c.bf).slice(0,5),{x:xc,y:785,size:21,lh:1.55,fill:'#666',font:c.bf,anchor:'middle'})});
+  return bg('#fff')+mosaic(c,sh)+ov+lab+T([c.t.title],{x:960,y:170,size:64,fill:c.col.dark,font:c.tf,weight:700,anchor:'middle'})
+   +T([c.t.subtitle],{x:960,y:225,size:24,fill:c.col.main,font:c.bf,weight:600,anchor:'middle',ls:5});
+}});
+
+def({id:'cards',name:'商務・圖文卡片',hint:'每張卡片 1 張（2–4 欄）；項目填「標題|說明」',render(c){
+  const it=items(c).slice(0,4),n=Math.max(2,it.length),cols=strip(140,1780,n,40),top=290,bot=960,ih=310,rr=20;let s='',defs='';
+  cols.forEach(([a,b],i)=>{const o=it[i]||{a:'',b:''},w=b-a,id=c.id(),tl=wrap(o.a,w-72,36,c.tf,700).slice(0,2);
+    defs+=`<clipPath id="${id}"><path d="M${f1(a)},${top+ih}V${top+rr}Q${f1(a)},${top} ${f1(a+rr)},${top}H${f1(b-rr)}Q${f1(b)},${top} ${f1(b)},${top+rr}V${top+ih}Z"/></clipPath>`;
+    s+=`<rect x="${f1(a)}" y="${top}" width="${f1(w)}" height="${bot-top}" rx="${rr}" fill="#fff" filter="url(#${c.sh})"/>`+IMG(c.imgs[i%c.imgs.length],a,top,w,ih,`clip-path="url(#${id})"`)
+     +`<rect x="${f1(a+36)}" y="${top+ih+40}" width="50" height="5" rx="2.5" fill="${c.col.acc}"/>`
+     +T(tl,{x:a+36,y:top+ih+100,size:36,lh:1.25,fill:c.col.dark,font:c.tf,weight:700})
+     +T(wrap(o.b,w-72,22,c.bf).slice(0,6-tl.length),{x:a+36,y:top+ih+100+tl.length*45+18,size:22,lh:1.6,fill:'#666',font:c.bf})});
+  return bg(c.col.light)+`<defs>${defs}</defs>`+T([c.t.title],{x:960,y:170,size:64,fill:c.col.dark,font:c.tf,weight:700,anchor:'middle'})
+   +T([c.t.subtitle],{x:960,y:225,size:24,fill:c.col.main,font:c.bf,weight:600,anchor:'middle',ls:5})+s;
+}});
+
 /* ---------- state ---------- */
 let S;try{S={...DEF,...JSON.parse(localStorage.getItem('layoutGen')||'{}')}}catch(e){S={...DEF}}
 const lib=[];let sel=[];let samples=[];
@@ -412,13 +501,24 @@ const blobToData=b=>new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr
 
 function chosen(kind){const L=sel.map(id=>lib.find(x=>x.id===id)).filter(Boolean);
   if(!L.length)return samples.map(s=>({src:s.src}));return L.map(x=>({src:x[kind]}))}
-function colors(){const m=S.color;return{main:m,dark:mix(m,'#000000',.45),soft:mix(m,'#ffffff',.55),light:mix(m,'#ffffff',.9)}}
+function colors(){const m=S.color;return{main:m,acc:S.accent||m,dark:mix(m,'#000000',.45),soft:mix(m,'#ffffff',.55),light:mix(m,'#ffffff',.9)}}
+/* logo + footer drawn on top of every template */
+function chrome(c){
+  let s='';const pos=S.logoPos||'tr';
+  if(S.logo){const h=70,w=h*(S.logoAR||1),p=14,x=pos[1]==='r'?W-40-w-p*2:40,y=pos[0]==='t'?36:H-36-h-p*2;
+    if(S.logoBg)s+=`<rect x="${f1(x)}" y="${y}" width="${f1(w+p*2)}" height="${h+p*2}" rx="14" fill="#fff" opacity=".92"/>`;
+    s+=`<image href="${S.logo}" x="${f1(x+p)}" y="${y+p}" width="${f1(w)}" height="${h}" preserveAspectRatio="xMidYMid meet"/>`}
+  const t=S.footer?[S.company,S.date,S.page].map(v=>String(v||'').trim()).filter(Boolean).join('   |   '):'';
+  if(t){const w=tw(t,20,c.bf,600)+40,left=S.logo&&pos==='br',x=left?40:W-40-w;
+    s+=`<rect x="${f1(x)}" y="${H-72}" width="${f1(w)}" height="40" rx="20" fill="#fff" opacity=".88"/>`+T([t],{x:x+20,y:H-45,size:20,fill:'#444',font:c.bf,weight:600})}
+  return s;
+}
 function renderSVG(tpl,imgs,pre){
   let k=0;const c={imgs,t:S,col:colors(),tf:FONTS[S.tf][1],bf:FONTS[S.bf][1],single:S.single,id:()=>pre+'x'+(k++),sh:pre+'sh',ts:pre+'ts'};
   const inner=tpl.render(c);
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}"><defs><clipPath id="${pre}frame"><rect width="${W}" height="${H}"/></clipPath>`+
    `<filter id="${pre}sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000" flood-opacity=".22"/></filter>`+
-   `<filter id="${pre}ts" x="-20%" y="-40%" width="140%" height="180%"><feDropShadow dx="0" dy="2" stdDeviation="5" flood-color="#000" flood-opacity=".55"/></filter></defs><g clip-path="url(#${pre}frame)">${inner}</g></svg>`;
+   `<filter id="${pre}ts" x="-20%" y="-40%" width="140%" height="180%"><feDropShadow dx="0" dy="2" stdDeviation="5" flood-color="#000" flood-opacity=".55"/></filter></defs><g clip-path="url(#${pre}frame)">${inner}${chrome(c)}</g></svg>`;
 }
 
 /* ---------- UI ---------- */
@@ -444,13 +544,24 @@ const drop=$('drop');drop.onclick=()=>$('file').click();$('file').onchange=e=>{a
 drop.addEventListener('drop',e=>addFiles(e.dataTransfer.files));
 document.addEventListener('paste',e=>{const fs=[...(e.clipboardData?.files||[])];if(fs.length)addFiles(fs)});
 
-for(const k of['title','subtitle','body','items','number']){$(k).value=S[k]??'';$(k).oninput=()=>{S[k]=$(k).value;save();refresh()}}
+for(const k of['title','subtitle','body','items','number','company','date','page']){$(k).value=S[k]??'';$(k).oninput=()=>{S[k]=$(k).value;save();refresh()}}
 const fo=FONTS.map((f,i)=>`<option value="${i}">${f[0]}</option>`).join('');
 $('tf').innerHTML=fo;$('bf').innerHTML=fo;$('tf').value=S.tf;$('bf').value=S.bf;
 $('tf').onchange=()=>{S.tf=+$('tf').value;save();refresh()};$('bf').onchange=()=>{S.bf=+$('bf').value;save();refresh()};
 $('color').value=S.color;$('color').oninput=()=>{S.color=$('color').value;save();refresh()};
 $('sw').innerHTML=SWATCH.map(c=>`<button style="background:${c}" data-c="${c}" title="${c}"></button>`).join('');
 $('sw').onclick=e=>{const c=e.target.dataset.c;if(!c)return;S.color=c;$('color').value=c;save();refresh()};
+$('accent').value=S.accent;$('accent').oninput=()=>{S.accent=$('accent').value;save();refresh()};
+$('biz').innerHTML=BIZ.map(([n,m,a],i)=>`<button data-i="${i}"><i style="background:${m}"></i><i style="background:${a}"></i>${n}</button>`).join('');
+$('biz').onclick=e=>{const b=e.target.closest('button');if(!b)return;const[,m,a]=BIZ[+b.dataset.i];S.color=m;S.accent=a;$('color').value=m;$('accent').value=a;save();refresh()};
+for(const k of['footer','logoBg']){$(k).checked=!!S[k];$(k).onchange=()=>{S[k]=$(k).checked;save();refresh()}}
+$('logoPos').value=S.logoPos;$('logoPos').onchange=()=>{S.logoPos=$('logoPos').value;save();refresh()};
+const showLogo=()=>{$('logoPrev').src=S.logo||'';$('logoPrev').style.display=S.logo?'':'none'};showLogo();
+$('logoBtn').onclick=()=>$('logoFile').click();
+$('logoDel').onclick=()=>{S.logo='';save();showLogo();refresh()};
+$('logoFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{const bmp=await createImageBitmap(f),s=Math.min(1,480/Math.max(bmp.width,bmp.height)),cv=document.createElement('canvas');
+  cv.width=Math.round(bmp.width*s);cv.height=Math.round(bmp.height*s);cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);
+  S.logo=cv.toDataURL('image/png');S.logoAR=cv.width/cv.height;save();showLogo();refresh();toast('已加入 Logo')}catch(err){toast('Logo 讀取失敗')}};
 $('single').checked=!!S.single;$('single').onchange=()=>{S.single=$('single').checked;save();refresh()};
 $('pick').onclick=()=>{const src=chosen('thumb')[0].src,im=new Image();im.onload=()=>{const cv=document.createElement('canvas');cv.width=cv.height=40;const x=cv.getContext('2d');x.drawImage(im,0,0,40,40);
   const d=x.getImageData(0,0,40,40).data,bins=Array.from({length:12},()=>({w:0,r:0,g:0,b:0}));
