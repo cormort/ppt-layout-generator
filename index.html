@@ -229,17 +229,23 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.35)}
   .itabs{display:none}
   .pages{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
   .pgadd{grid-column:1/-1}
-  .pg .ctl button{min-height:36px;font-size:14px}
+  .pg .ctl button{font-size:14px}
   input[type=text],textarea,select{font-size:16px}
-  .btn{min-height:44px}.mini{min-height:36px}
+  .btn{min-height:44px}.mini{min-height:44px}
   .drop{padding:20px 12px;font-size:16px}.drop .desk{display:none}.drop .mob{display:inline}
   .order .o{flex-basis:84px}.order .o img{width:84px;height:62px}
   .order .o button{padding:6px 0;font-size:13px}
   .focal{grid-template-columns:repeat(3,44px)}.focal button{height:44px}
-  .sw button{width:34px;height:34px}
-  .ied .r button{width:36px;min-height:40px}
+  .ied .r button{width:44px;min-height:44px}
+  /* 手機上所有可點的控制都至少 44px（頁面操作、分類標籤、切換鈕、色票、勾選框） */
+  .pg .ctl button,.filters button,.seg button,.biz button,select{min-height:44px}
+  .pg .ctl{flex-wrap:wrap}.pg .ctl button{flex:1 1 45%}
+  .sw button{width:44px;height:44px}
+  input[type=color]{height:44px}
+  .chk{min-height:44px;align-items:center}
+  .chk input{width:22px;height:22px;margin:0}
   .filters{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
-  .filters button{flex:none;min-height:36px}
+  .filters button{flex:none}
   .tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:15;background:var(--panel);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
   .tabs button{min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:0;background:none;color:var(--muted);font:inherit;font-size:11px;border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent}
   .tabs svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -1431,7 +1437,9 @@ function plainOf(svg){return unesc(String(svg).replace(/<[^>]*>/g,' ')).replace(
 /* 只在「開頭有出現、結尾沒出現」時判定被截斷，
    所以範本根本沒用到某個欄位時不會誤報 */
 function overflowNote(svg){
-  const flat=plainOf(svg),miss=[];
+  /* 頁尾（單位｜日期｜頁碼）不算版面內容：先拿掉，免得「2026 年度計畫」的開頭剛好撞到日期 2026.10 而誤報 */
+  let flat=plainOf(svg);const miss=[];
+  if(S.footer)for(const f of[S.company,S.date,pageLabel()]){const v=String(f||'').replace(/\s+/g,'').toLowerCase();if(v)flat=flat.split(v).join(' ')}
   /* 完整字串有出現 → 沒被截斷；只有開頭出現 → 被截斷；完全沒出現 → 這個範本沒用到這欄，不提醒 */
   const check=(label,val)=>{
     const v=String(val||'').replace(/\s+/g,'').toLowerCase();
