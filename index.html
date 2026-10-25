@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>圖片排版產生器</title>
+<style>
+:root{--bg:#f3f1ed;--panel:#fff;--ink:#222;--muted:#7a756d;--line:#e3dfd8;--acc:#2f5d8a;--chip:#f6f4f0}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#1a1b1d;--panel:#24262a;--ink:#ececec;--muted:#9a9a9a;--line:#3a3d42;--acc:#86b4e4;--chip:#2c2f34}}
+:root[data-theme="dark"]{--bg:#1a1b1d;--panel:#24262a;--ink:#ececec;--muted:#9a9a9a;--line:#3a3d42;--acc:#86b4e4;--chip:#2c2f34}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 'Microsoft JhengHei','PingFang TC',system-ui,sans-serif}
+.app{display:grid;grid-template-columns:370px 1fr;height:100vh}
+aside{overflow:auto;background:var(--panel);border-right:1px solid var(--line);padding:16px 16px 40px}
+main{overflow:auto;padding:18px 22px 40px;min-width:0}
+h1{font-size:18px;margin:0 0 4px}
+.sub{color:var(--muted);font-size:12px;margin:0 0 8px}
+h2{font-size:13px;color:var(--muted);margin:20px 0 8px;letter-spacing:.04em;display:flex;justify-content:space-between;align-items:center}
+h2 .n{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--acc);color:var(--panel);font-size:12px;margin-right:6px}
+.drop{border:2px dashed var(--line);border-radius:10px;padding:16px;text-align:center;color:var(--muted);cursor:pointer;transition:.15s}
+.drop:hover,.drop.over{border-color:var(--acc);color:var(--acc)}
+.lib{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.lib .it{position:relative;aspect-ratio:3/4;border-radius:6px;overflow:hidden;cursor:pointer;outline:2px solid transparent;background:var(--chip)}
+.lib .it img{width:100%;height:100%;object-fit:cover;display:block}
+.lib .it.on{outline-color:var(--acc)}
+.lib .it.on::after{content:attr(data-n);position:absolute;top:4px;left:4px;background:var(--acc);color:var(--panel);font-weight:700;font-size:12px;min-width:20px;height:20px;border-radius:10px;display:grid;place-items:center;padding:0 5px}
+.order{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;min-height:20px}
+.order .o{flex:0 0 74px;position:relative;cursor:grab}
+.order .o img{width:74px;height:56px;object-fit:cover;border-radius:6px;display:block}
+.order .o .b{position:absolute;top:2px;left:2px;background:rgba(0,0,0,.65);color:#fff;font-size:11px;border-radius:8px;padding:0 6px}
+.order .o .ctl{display:flex;justify-content:space-between;margin-top:2px}
+.order .o button{border:0;background:var(--chip);color:var(--ink);border-radius:4px;font-size:11px;padding:1px 6px;cursor:pointer}
+.order .o.drag{opacity:.4}
+.empty{color:var(--muted);font-size:12px}
+label{display:block;font-size:12px;color:var(--muted);margin:8px 0 3px}
+input[type=text],textarea,select{width:100%;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:7px;padding:7px 9px;font:inherit}
+textarea{resize:vertical;min-height:64px}
+.row{display:flex;gap:8px;align-items:center}
+.row>*{flex:1}
+.sw{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.sw button{width:24px;height:24px;border-radius:50%;border:2px solid var(--panel);outline:1px solid var(--line);cursor:pointer;flex:none}
+input[type=color]{width:44px;height:34px;border:1px solid var(--line);border-radius:7px;padding:2px;background:var(--chip);flex:none}
+.btn{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:7px;padding:7px 12px;cursor:pointer;font:inherit;white-space:nowrap}
+.btn:hover{border-color:var(--acc)}
+.btn.pri{background:var(--acc);color:var(--panel);border-color:var(--acc);font-weight:700}
+.mini{font-size:12px;padding:3px 8px}
+.chk{display:flex;gap:6px;align-items:flex-start;font-size:12px;color:var(--ink);margin-top:10px}
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.bar .tt{font-size:17px;font-weight:700;margin-right:auto}
+.bar .tt small{font-weight:400;color:var(--muted);font-size:12px;margin-left:8px}
+.stage{background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 6px 30px rgba(0,0,0,.12);max-width:1200px}
+.stage svg,.card svg{display:block;width:100%;height:auto}
+.note{font-size:12px;color:#b06a00;margin:8px 0 0}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin-top:22px}
+.card{background:var(--panel);border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:.15s}
+.card:hover{transform:translateY(-2px)}
+.card.on{border-color:var(--acc)}
+.card .meta{padding:6px 10px 8px}
+.card .nm{font-weight:700;font-size:13px}
+.card .hint{font-size:11px;color:var(--muted)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;opacity:0;transition:.3s;pointer-events:none}
+.toast.show{opacity:1}
+@media (max-width:900px){.app{grid-template-columns:1fr;height:auto}aside{border-right:0;border-bottom:1px solid var(--line)}main{padding:16px}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside>
+  <h1>圖片排版產生器</h1>
+  <p class="sub">上傳圖片 → 點選並排列順序 → 輸入文字 → 選範本 → 下載 PNG（16:9，可直接貼進 PPT）</p>
+
+  <h2><span><span class="n">1</span>上傳圖片</span><span><button class="btn mini" id="selAll">全選</button> <button class="btn mini" id="selNone">清除選擇</button></span></h2>
+  <div class="drop" id="drop">點此選擇或拖曳圖片到這裡（可多張，也可 Ctrl+V 貼上）</div>
+  <input type="file" id="file" accept="image/*" multiple hidden>
+  <div class="lib" id="lib"></div>
+  <div class="row" style="margin-top:6px"><span class="empty" id="libInfo"></span><button class="btn mini" id="delUnsel" style="flex:none">移除未選的圖</button></div>
+
+  <h2><span><span class="n">2</span>使用順序（可拖曳）</span></h2>
+  <div class="order" id="order"></div>
+
+  <h2><span><span class="n">3</span>文字</span></h2>
+  <label>標題</label><input type="text" id="title">
+  <label>副標題 / 英文</label><input type="text" id="subtitle">
+  <label>內文</label><textarea id="body"></textarea>
+  <label>項目清單（目錄類範本用；每行一項，可用「|」接說明）</label><textarea id="items"></textarea>
+  <label>大數字（大數字範本用）</label><input type="text" id="number">
+
+  <h2><span><span class="n">4</span>風格</span></h2>
+  <div class="row"><input type="color" id="color"><button class="btn" id="pick">從第 1 張圖取色</button></div>
+  <div class="sw" id="sw"></div>
+  <label>標題字體</label><select id="tf"></select>
+  <label>內文字體</label><select id="bf"></select>
+  <label class="chk"><input type="checkbox" id="single"> 多張時也只用第 1 張圖，讓所有形狀連成一張完整畫面（只選 1 張時自動如此）</label>
+</aside>
+<main>
+  <div class="bar">
+    <div class="tt" id="curName"></div>
+    <button class="btn" id="copy">複製圖片</button>
+    <button class="btn" id="dl1">下載 PNG</button>
+    <button class="btn pri" id="dl2">下載高清 PNG (2×)</button>
+  </div>
+  <div class="stage" id="stage"></div>
+  <p class="note" id="note"></p>
+  <div class="gal" id="gal"></div>
+</main>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const W=1920,H=1080;
+const FONTS=[
+ ["微軟正黑體","'Microsoft JhengHei','PingFang TC','Noto Sans TC',sans-serif"],
+ ["標楷體","'DFKai-SB','BiauKai','KaiTi','STKaiti',serif"],
+ ["新細明體","'PMingLiU','MingLiU','Songti TC',serif"],
+ ["思源宋體 / Noto Serif","'Noto Serif TC','Source Han Serif TC','Noto Serif CJK TC','Songti TC',serif"],
+ ["微軟雅黑","'Microsoft YaHei','PingFang SC',sans-serif"],
+ ["Georgia（英文襯線）","Georgia,'Times New Roman','PMingLiU',serif"],
+ ["Arial Black（英文粗體）","'Arial Black','Arial','Microsoft JhengHei',sans-serif"]];
+const SWATCH=['#2f5d8a','#3f6b3a','#7a8f4e','#c2456b','#d9822b','#8a5a2b','#5b4b8a','#1f7a7a','#b03a2e','#3a3a3a'];
+const DEF={title:'敦煌鳴沙山月牙泉',subtitle:'Dunhuang · Crescent Lake',body:'沙漠中的一彎清泉，千百年來不曾乾涸。駝鈴聲聲、沙丘連綿，日落時分整座山脊被染成金色，是絲路上最溫柔的風景。',items:'工作概述|Job Overview\n靈感來源|Source of Inspiration\n成果展示|Achievement\n目標規劃|Goals and Ideas',number:'01',color:'#2f5d8a',tf:0,bf:0,single:false,tpl:'diamond'};
+
+/* ---------- helpers ---------- */
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const f1=n=>Math.round(n*10)/10;
+const mctx=document.createElement('canvas').getContext('2d');
+function tw(s,size,font,weight=400){mctx.font=`${weight} ${size}px ${font}`;return mctx.measureText(s).width}
+function wrap(str,maxW,size,font,weight=400){
+  const out=[];
+  for(const para of String(str||'').split('\n')){
+    if(!para.trim()){if(out.length)out.push('');continue}
+    const toks=para.match(/[A-Za-z0-9À-ɏ'’\-.,:;!?()"&]+\s*|\s+|./gu)||[];
+    let line='';
+    for(const t of toks){
+      if(line&&tw((line+t).trimEnd(),size,font,weight)>maxW){out.push(line.trimEnd());line=t.trimStart()}
+      else line+=t;
+    }
+    if(line.trim())out.push(line.trimEnd());
+  }
+  return out;
+}
+function T(lines,{x,y,size,lh=1.5,fill='#333',font,weight=400,anchor='start',ls=0,op=1,extra=''}){
+  if(!lines.length)return '';
+  return `<text x="${f1(x)}" y="${f1(y)}" font-size="${size}" font-family="${esc(font)}" font-weight="${weight}" fill="${fill}" text-anchor="${anchor}" letter-spacing="${ls}" opacity="${op}" ${extra}>`+
+    lines.map((l,i)=>`<tspan x="${f1(x)}" dy="${i?f1(size*lh):0}">${esc(l)||' '}</tspan>`).join('')+`</text>`;
+}
+function VT(str,{x,y,size,gap=1.12,fill='#333',font,weight=400,op=1,extra=''}){
+  const ch=[...String(str||'')];
+  return `<text font-size="${size}" font-family="${esc(font)}" font-weight="${weight}" fill="${fill}" text-anchor="middle" opacity="${op}" ${extra}>`+
+    ch.map((c,i)=>`<tspan x="${f1(x)}" y="${f1(y+i*size*gap)}">${esc(c)}</tspan>`).join('')+`</text>`;
+}
+const IMG=(im,x,y,w,h,a='')=>`<image href="${im.src}" x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" preserveAspectRatio="xMidYMid slice" ${a}/>`;
+const bg=col=>`<rect width="${W}" height="${H}" fill="${col}"/>`;
+const P=pts=>'M'+pts.map(p=>f1(p[0])+','+f1(p[1])).join('L')+'Z';
+function bbox(pts){let a=1e9,b=1e9,c=-1e9,d=-1e9;for(const[x,y]of pts){a=Math.min(a,x);b=Math.min(b,y);c=Math.max(c,x);d=Math.max(d,y)}return[a,b,c-a,d-b]}
+function unionB(sh){return bbox(sh.flatMap(s=>[[s.b[0],s.b[1]],[s.b[0]+s.b[2],s.b[1]+s.b[3]]]))}
+function rot(pts,ang,tx,ty){const r=ang*Math.PI/180,c=Math.cos(r),s=Math.sin(r);return pts.map(([x,y])=>[tx+x*c-y*s,ty+x*s+y*c])}
+function hex2rgb(h){h=h.replace('#','');if(h.length===3)h=[...h].map(c=>c+c).join('');const n=parseInt(h,16);return[n>>16&255,n>>8&255,n&255]}
+function mix(a,b,t){const A=hex2rgb(a),B=hex2rgb(b);return'#'+A.map((v,i)=>Math.round(v+(B[i]-v)*t).toString(16).padStart(2,'0')).join('')}
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const uniOf=c=>c.imgs.length===1||c.single;
+
+/* shapes → clipped images. Shape: {el:'<path …/>', b:[x,y,w,h]} */
+function mosaic(c,shapes,{shadow=true,box=null,attr=''}={}){
+  let defs='',body='';
+  if(uniOf(c)){
+    const id=c.id();defs=`<clipPath id="${id}">${shapes.map(s=>s.el).join('')}</clipPath>`;
+    const b=box||unionB(shapes);body=IMG(c.imgs[0],...b,`clip-path="url(#${id})"`);
+  }else shapes.forEach((s,i)=>{const id=c.id();defs+=`<clipPath id="${id}">${s.el}</clipPath>`;body+=IMG(c.imgs[i%c.imgs.length],...s.b,`clip-path="url(#${id})"`)});
+  return `<defs>${defs}</defs><g ${shadow?`filter="url(#${c.sh})"`:''} ${attr}>${body}</g>`;
+}
+/* left/centered text stack, vertically centred on cy */
+function stack(c,{x,cy,w,anchor='start',tSize=84,tColor,sColor,bColor='#4a4a4a',bSize=26,line=true,tWeight=700,sSize=30,maxBody=8}){
+  let s='',y=0;const tl=wrap(c.t.title,w,tSize,c.tf,tWeight);
+  s+=T(tl,{x,y,size:tSize,lh:1.18,fill:tColor,font:c.tf,weight:tWeight,anchor});y+=(tl.length-1)*tSize*1.18;
+  if(c.t.subtitle){y+=sSize+26;const sl=wrap(c.t.subtitle,w,sSize,c.bf,600);s+=T(sl,{x,y,size:sSize,lh:1.3,fill:sColor,font:c.bf,weight:600,ls:2,anchor});y+=(sl.length-1)*sSize*1.3}
+  if(line){y+=34;const lx=anchor==='middle'?x-40:anchor==='end'?x-80:x;s+=`<rect x="${lx}" y="${y}" width="80" height="5" rx="2.5" fill="${sColor}"/>`;y+=8}
+  if(c.t.body){y+=bSize*1.9;const bl=wrap(c.t.body,w,bSize,c.bf).slice(0,maxBody);s+=T(bl,{x,y,size:bSize,lh:1.75,fill:bColor,font:c.bf,anchor});y+=(bl.length-1)*bSize*1.75}
+  const top=-tSize*.85,bot=y+10;
+  return `<g transform="translate(0 ${f1(cy-(top+bot)/2)})">${s}</g>`;
+}
+function items(c){const it=String(c.t.items||'').split('\n').map(s=>s.trim()).filter(Boolean).map(s=>{const[a,...b]=s.split(/[|｜]/);return{a:a.trim(),b:b.join(' ').trim()}});return it.length?it:[{a:'項目一',b:''},{a:'項目二',b:''},{a:'項目三',b:''}]}
+const nOf=(c,min=2,max=6,def=4)=>c.imgs.length>1&&!c.single?Math.max(min,Math.min(max,c.imgs.length)):def;
+const pad2=i=>String(i+1).padStart(2,'0');
+function strip(x0,x1,n,gap){const w=(x1-x0-(n-1)*gap)/n;return[...Array(n)].map((_,i)=>[x0+i*(w+gap),x0+i*(w+gap)+w])}
+function band(xa,xb,top,bot,steps=18){const t=[],b=[];for(let k=0;k<=steps;k++){const x=xa+(xb-xa)*k/steps;t.push([x,top(x)]);b.unshift([x,bot(x)])}return t.concat(b)}
+const polyShape=pts=>({el:`<path d="${P(pts)}"/>`,b:bbox(pts)});
+function annular(cx,cy,R,r,a0,a1){const p=(rad,a)=>[cx+rad*Math.cos(a),cy+rad*Math.sin(a)],L=a1-a0>Math.PI?1:0;const[o0,o1,i1,i0]=[p(R,a0),p(R,a1),p(r,a1),p(r,a0)];
+  const d=`M${f1(o0[0])},${f1(o0[1])}A${R},${R} 0 ${L} 1 ${f1(o1[0])},${f1(o1[1])}L${f1(i1[0])},${f1(i1[1])}A${r},${r} 0 ${L} 0 ${f1(i0[0])},${f1(i0[1])}Z`;
+  const pts=[];for(let k=0;k<=8;k++){const a=a0+(a1-a0)*k/8;pts.push(p(R,a),p(r,a))}return{el:`<path d="${d}"/>`,b:bbox(pts)}}
+
+/* ---------- templates ---------- */
+const TPL=[];const def=o=>TPL.push(o);
+
+def({id:'diamond',name:'菱形拼貼',hint:'多張循環（共 21 格）',render(c){
+  const a=150,D=a*Math.SQRT2,st=(D+18)/2,cx=960,cy=548;
+  const cells=[[-4,-2],[2,-2],[-5,-1],[-3,-1],[1,-1],[3,-1],[-6,0],[-4,0],[-2,0],[0,0],[2,0],[4,0],[6,0],[-5,1],[-3,1],[-1,1],[1,1],[3,1],[5,1],[-2,2],[4,2]];
+  const sh=cells.map(([i,j])=>{const x=cx+i*st,y=cy+j*st;return{el:`<rect x="${-a/2}" y="${-a/2}" width="${a}" height="${a}" rx="22" transform="translate(${f1(x)} ${f1(y)}) rotate(45)"/>`,b:[x-D/2,y-D/2,D,D]}});
+  return bg(c.col.light)+T(wrap(c.t.title,1600,74,c.tf,700).slice(0,1),{x:960,y:138,size:74,fill:c.col.dark,font:c.tf,weight:700,anchor:'middle'})
+   +T([c.t.subtitle],{x:960,y:192,size:26,fill:c.col.main,font:c.bf,weight:600,ls:6,anchor:'middle'})
+   +mosaic(c,sh)+T(wrap(c.t.body,1400,25,c.bf).slice(0,2),{x:960,y:950,size:25,lh:1.7,fill:'#555',font:c.bf,anchor:'middle'});
+}});
+
+def({id:'heart',name:'心形拼貼',hint:'多張循環（約 45 格）',render(c){
+  const cx=1330,cy=540,k=26,s=58,st=68,sh=[];
+  const outline=[...Array(72)].map((_,i)=>{const t=i/72*Math.PI*2;return[cx+k*16*Math.sin(t)**3,cy-20-k*(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))]});
+  const inside=(x,y)=>{let o=false;for(let i=0,j=71;i<72;j=i++){const[a,b]=outline[i],[p,q]=outline[j];if((b>y)!==(q>y)&&x<(p-a)*(y-b)/(q-b)+a)o=!o}return o};
+  for(let gy=cy-476;gy<=cy+476;gy+=st)for(let gx=cx-476;gx<=cx+476;gx+=st)
+    if(inside(gx,gy))sh.push({el:`<rect x="${gx-s/2}" y="${gy-s/2}" width="${s}" height="${s}" rx="14"/>`,b:[gx-s/2,gy-s/2,s,s]});
+  return bg(mix(c.col.light,'#ffffff',.4))+`<circle cx="${cx}" cy="${cy}" r="430" fill="${c.col.light}"/>`+mosaic(c,sh)
+   +stack(c,{x:150,cy:540,w:640,tSize:80,tColor:c.col.dark,sColor:c.col.main});
+}});
+
+def({id:'hex',name:'六邊形蜂巢',hint:'多張循環（約 20 格）',render(c){
+  const r=100,dr=93,cx=1290,cy=540,sh=[];
+  for(let j=-2;j<=2;j++)for(let i=-4;i<=4;i++){
+    const x=cx+(i+(j&1)*.5)*Math.sqrt(3)*r,y=cy+j*1.5*r;
+    if(((x-cx)/520)**2+((y-cy)/390)**2>1)continue;
+    const pts=[...Array(6)].map((_,k)=>{const a=(60*k-90)*Math.PI/180;return[x+dr*Math.cos(a),y+dr*Math.sin(a)]});sh.push(polyShape(pts));
+  }
+  return bg(c.col.light)+mosaic(c,sh)+stack(c,{x:140,cy:540,w:560,tSize:82,tColor:c.col.dark,sColor:c.col.main});
+}});
+
+def({id:'tree',name:'葉形大樹',hint:'1 張最佳（也可多張）',render(c){
+  const tx=1390,sh=[];
+  const leaf=(L,h,ang,x,y)=>{const pts=rot([[0,0],[L,0],[L/2,-h/2],[L/2,h/2]],ang,x,y);return{el:`<path d="M0,0Q${f1(L/2)},${f1(-h)} ${f1(L)},0Q${f1(L/2)},${f1(h)} 0,0Z" transform="translate(${f1(x)} ${f1(y)}) rotate(${ang})"/>`,b:bbox(pts)}};
+  for(let k=0;k<7;k++){const y=905-k*105,L=330-k*30,h=L*.42;sh.push(leaf(L,h,205,tx-6,y),leaf(L,h,335,tx+6,y-40))}
+  sh.push(leaf(170,80,270,tx,250));
+  return bg(mix(c.col.light,'#ffffff',.5))+`<line x1="${tx}" y1="990" x2="${tx}" y2="260" stroke="${c.col.dark}" stroke-width="7" stroke-linecap="round" opacity=".55"/>`
+   +mosaic(c,sh)+stack(c,{x:150,cy:540,w:640,tSize:80,tColor:c.col.dark,sColor:c.col.main});
+}});
+
+def({id:'triangle',name:'封面・三角切割',hint:'1 張',render(c){
+  const white=[[0,0],[1080,0],[660,540],[1080,1080],[0,1080]],acc=[[1080,0],[1170,0],[750,540],[1170,1080],[1080,1080],[660,540]];
+  return IMG(c.imgs[0],0,0,W,H)+`<path d="${P(white)}" fill="#fff"/><path d="${P(acc)}" fill="${c.col.main}" opacity=".88"/>`
+   +`<path d="${P([[0,1080],[0,820],[260,1080]])}" fill="${c.col.main}" opacity=".9"/>`
+   +stack(c,{x:130,cy:520,w:500,tSize:80,tColor:c.col.dark,sColor:c.col.main,bSize:24});
+}});
+
+def({id:'curve',name:'封面・弧形半版',hint:'1 張',render(c){
+  const cv=dx=>`M${900+dx},0C${1180+dx},320 ${760+dx},700 ${1060+dx},1080L1920,1080L1920,0Z`;const id=c.id();
+  return bg('#fff')+`<path d="${cv(-46)}" fill="${c.col.main}"/><path d="${cv(-22)}" fill="${c.col.soft}"/>`
+   +`<defs><clipPath id="${id}"><path d="${cv(0)}"/></clipPath></defs><g filter="url(#${c.sh})">${IMG(c.imgs[0],760,0,1160,1080,`clip-path="url(#${id})"`)}</g>`
+   +stack(c,{x:150,cy:540,w:600,tSize:84,tColor:c.col.dark,sColor:c.col.main});
+}});
+
+def({id:'pills',name:'封面・膠囊豎條',hint:'1 張最佳',render(c){
+  const g=c.id(),tops=[430,300,200,330,150,260,380,220,320,460],bots=[760,880,700,940,820,980,760,900,700,860],sh=[];
+  tops.forEach((t,i)=>{const x=980+i*86;sh.push({el:`<rect x="${x}" y="${t}" width="64" height="${bots[i]-t}" rx="32"/>`,b:[x,t,64,bots[i]-t]})});
+  return IMG(c.imgs[0],0,0,W,H)+`<defs><linearGradient id="${g}"><stop offset="0" stop-color="#fff"/><stop offset=".45" stop-color="#fff" stop-opacity=".93"/><stop offset="1" stop-color="#fff" stop-opacity=".6"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#${g})"/>`
+   +mosaic(c,sh,{box:[0,0,W,H]})+stack(c,{x:150,cy:540,w:680,tSize:84,tColor:c.col.dark,sColor:c.col.main});
+}});
+
+def({id:'waves',name:'封面・層疊色帶',hint:'1 張',render(c){
+  const wv=(x,a)=>`M0,0L${x},0C${x+a},270 ${x-a},520 ${x+a*.4},700S${x+a},960 ${x-a*.3},1080L0,1080Z`;
+  return IMG(c.imgs[0],0,0,W,H)+`<path d="${wv(930,120)}" fill="${c.col.soft}" opacity=".6"/><path d="${wv(850,140)}" fill="${c.col.main}" opacity=".85"/><path d="${wv(770,100)}" fill="${c.col.dark}"/>`
+   +stack(c,{x:130,cy:540,w:560,tSize:84,tColor:'#fff',sColor:'#fff',bColor:'rgba(255,255,255,.88)'});
+}});
+
+def({id:'knockout',name:'大字鏤空＋豎條',hint:'1 張',render(c){
+  const t=c.t.title||' ',size=Math.min(210,100*1080/Math.max(1,tw(t,100,c.tf,800))),id=c.id(),bl=c.id();
+  const tops=[380,250,320,180,290,420,260,350],bots=[700,820,640,860,760,900,700,800],sh=[];
+  tops.forEach((y,i)=>{const x=1220+i*76;sh.push({el:`<rect x="${x}" y="${y}" width="56" height="${bots[i]-y}" rx="28"/>`,b:[x,y,56,bots[i]-y]})});
+  const tt=`<text x="130" y="560" font-size="${f1(size)}" font-family="${esc(c.tf)}" font-weight="800">${esc(t)}</text>`;
+  return IMG(c.imgs[0],0,0,W,H)+`<rect width="${W}" height="${H}" fill="#fff" opacity=".8"/>`+mosaic(c,sh,{box:[0,0,W,H]})
+   +`<defs><clipPath id="${id}">${tt}</clipPath><filter id="${bl}"><feGaussianBlur stdDeviation="5"/></filter></defs>`
+   +`<g opacity=".22" fill="${c.col.dark}" filter="url(#${bl})" transform="translate(5 8)">${tt}</g>`+IMG(c.imgs[0],0,0,W,H,`clip-path="url(#${id})"`)
+   +`<g fill="none" stroke="${c.col.dark}" stroke-opacity=".35" stroke-width="2">${tt}</g>`
+   +T([c.t.subtitle],{x:136,y:560+64,size:48,fill:c.col.dark,font:c.bf,weight:700})
+   +T(wrap(c.t.body,900,24,c.bf).slice(0,3),{x:136,y:700,size:24,lh:1.7,fill:'#555',font:c.bf});
+}});
+
+def({id:'fanToc',name:'目錄・半環扇形',hint:'每個項目 1 張',render(c){
+  const it=items(c),n=Math.max(2,Math.min(8,it.length)),R=720,r=250,cx=960,cy=1080,g=.012,sh=[];let lab='';
+  for(let i=0;i<n;i++){const a0=Math.PI+i*Math.PI/n+g/2,a1=Math.PI+(i+1)*Math.PI/n-g/2,am=(a0+a1)/2;sh.push(annular(cx,cy,R,r,a0,a1));
+    const lx=cx+(R+r)/2*Math.cos(am)*1.04,ly=cy+(R+r)/2*Math.sin(am)*1.04;
+    lab+=T([it[i]?.a||''],{x:lx,y:ly,size:36,fill:'#fff',font:c.tf,weight:700,anchor:'middle',extra:`filter="url(#${c.ts})"`})
+       +T([it[i]?.b||''],{x:lx,y:ly+34,size:18,fill:'#fff',font:c.bf,anchor:'middle',ls:1,extra:`filter="url(#${c.ts})"`});}
+  return IMG(c.imgs[0],0,0,W,H)+`<rect width="${W}" height="${H}" fill="#fff" opacity=".86"/>`+mosaic(c,sh)+lab
+   +T([c.t.title],{x:960,y:180,size:84,fill:c.col.dark,font:c.tf,weight:700,anchor:'middle',ls:8})
+   +T([c.t.subtitle],{x:960,y:236,size:24,fill:c.col.main,font:c.bf,weight:600,anchor:'middle',ls:6});
+}});
+
+def({id:'glass',name:'目錄・霧面豎板',hint:'1 張背景',render(c){
+  const it=items(c),n=Math.max(2,Math.min(6,it.length)),cols=strip(200,1720,n,36),cl=c.id(),bl=c.id();let rects='',txt='';
+  cols.forEach(([a,b],i)=>{const w=b-a,x=a+w/2;rects+=`<rect x="${f1(a)}" y="250" width="${f1(w)}" height="640" rx="22"/>`;
+    txt+=T([pad2(i)],{x,y:440,size:100,fill:c.col.main,font:c.tf,weight:300,anchor:'middle'})+`<rect x="${f1(x-24)}" y="478" width="48" height="4" rx="2" fill="${c.col.main}" opacity=".7"/>`
+      +T(wrap(it[i]?.a||'',w-40,38,c.tf,700).slice(0,2),{x,y:560,size:38,fill:c.col.dark,font:c.tf,weight:700,anchor:'middle',lh:1.25})
+      +T(wrap(it[i]?.b||'',w-50,21,c.bf).slice(0,4),{x,y:660,size:21,fill:'#555',font:c.bf,anchor:'middle',lh:1.5})});
+  return IMG(c.imgs[0],0,0,W,H)+`<defs><clipPath id="${cl}">${rects}</clipPath><filter id="${bl}" x="0" y="0" width="1" height="1"><feGaussianBlur stdDeviation="24" edgeMode="duplicate"/></filter></defs>`
+   +`<g filter="url(#${c.sh})"><g clip-path="url(#${cl})">${IMG(c.imgs[0],0,0,W,H,`filter="url(#${bl})"`)}<rect width="${W}" height="${H}" fill="#fff" opacity=".58"/></g></g>`
+   +`<g fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="2">${rects}</g>`+txt
+   +T([c.t.title],{x:960,y:170,size:66,fill:'#fff',font:c.tf,weight:700,anchor:'middle',ls:6,extra:`filter="url(#${c.ts})"`});
+}});
+
+def({id:'screens',name:'目錄・弧面屏',hint:'1 張連續 / 多張分屏',render(c){
+  const it=items(c),n=Math.max(2,Math.min(6,it.length)),u=x=>(x-960)/810,top=x=>300-100*u(x)**2,bot=x=>820+100*u(x)**2;let lab='';
+  const sh=strip(150,1770,n,30).map(([a,b],i)=>{const xc=(a+b)/2;
+    lab+=T([pad2(i)],{x:xc,y:bot(xc)+58,size:40,fill:c.col.main,font:c.tf,weight:800,anchor:'middle'})+T([it[i]?.a||''],{x:xc,y:bot(xc)+100,size:28,fill:c.col.dark,font:c.tf,weight:700,anchor:'middle'});
+    return polyShape(band(a,b,top,bot));});
+  return IMG(c.imgs[0],0,0,W,H)+`<rect width="${W}" height="${H}" fill="#fff" opacity=".84"/>`+mosaic(c,sh,{box:[150,180,1620,760]})+lab
+   +T([c.t.title],{x:960,y:140,size:68,fill:c.col.dark,font:c.tf,weight:700,anchor:'middle',ls:6})
+   +T([c.t.subtitle],{x:960,y:190,size:22,fill:c.col.main,font:c.bf,weight:600,anchor:'middle',ls:5});
+}});
+
+def({id:'waveBand',name:'波浪分格',hint:'3–6 張（或 1 張連續）',render(c){
+  const n=nOf(c,2,6,4),top=x=>230+60*Math.sin((x-120)/1680*Math.PI*2+.6),bot=x=>top(x)+420,g=c.id();
+  const sh=strip(120,1800,n,16).map(([a,b])=>polyShape(band(a,b,top,bot)));
+  return `<defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="${c.col.light}"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#${g})"/>`
+   +mosaic(c,sh)+T(['›››'],{x:1790,y:150,size:90,fill:c.col.soft,font:'Arial',weight:700,anchor:'end'})
+   +T([c.t.title],{x:960,y:830,size:62,fill:c.col.main,font:c.tf,weight:700,anchor:'middle'})
+   +T(wrap(c.t.body,1350,24,c.bf).slice(0,3),{x:960,y:890,size:24,lh:1.7,fill:'#555',font:c.bf,anchor:'middle'});
+}});
+
+def({id:'arch',name:'弧頂分格',hint:'3–6 張（或 1 張連續）',render(c){
+  const n=nOf(c,2,6,4),top=x=>410+120*(1-((x-960)/840)**2),bot=()=>990,g=c.id();
+  const sh=strip(120,1800,n,14).map(([a,b])=>polyShape(band(a,b,top,bot)));
+  return `<defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.col.light}"/><stop offset="1" stop-color="#fff"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#${g})"/>`
+   +mosaic(c,sh)+T([c.t.title],{x:960,y:180,size:66,fill:c.col.main,font:c.tf,weight:700,anchor:'middle'})
+   +T(wrap(c.t.body,1300,24,c.bf).slice(0,3),{x:960,y:250,size:24,lh:1.7,fill:'#555',font:c.bf,anchor:'middle'});
+}});
+
+def({id:'fan',name:'扇形畫廊',hint:'3–6 張（或 1 張連續）',render(c){
+  const n=nOf(c,2,7,5),cx=960,cy=1650,R=1250,r=760,A0=236*Math.PI/180,A1=304*Math.PI/180,g=.006,sh=[];
+  for(let i=0;i<n;i++)sh.push(annular(cx,cy,R,r,A0+(A1-A0)*i/n+g/2,A0+(A1-A0)*(i+1)/n-g/2));
+  return bg(mix(c.col.light,'#ffffff',.3))+mosaic(c,sh)+T([c.t.title],{x:960,y:170,size:66,fill:c.col.main,font:c.tf,weight:700,anchor:'middle'})
+   +T(wrap(c.t.body,1300,24,c.bf).slice(0,3),{x:960,y:240,size:24,lh:1.7,fill:'#555',font:c.bf,anchor:'middle'});
+}});
+
+def({id:'bignum',name:'大數字鏤空',hint:'1 張',render(c){
+  const num=c.t.number||'01',size=Math.min(780,100*860/Math.max(1,tw(num,100,c.tf,900))),id=c.id(),cl=c.id();
+  const tt=`<text x="120" y="790" font-size="${f1(size)}" font-family="${esc(c.tf)}" font-weight="900">${esc(num)}</text>`,poly=[[1000,0],[1920,0],[1920,1080],[780,1080]];
+  return bg(c.col.dark)+`<defs><clipPath id="${id}">${tt}</clipPath><clipPath id="${cl}"><path d="${P(poly)}"/></clipPath></defs>`
+   +IMG(c.imgs[0],0,0,W,H,`clip-path="url(#${cl})"`)+IMG(c.imgs[0],0,0,W,H,`clip-path="url(#${id})"`)
+   +`<g fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="3">${tt}</g>`
+   +T([c.t.title],{x:140,y:930,size:60,fill:'#fff',font:c.tf,weight:700})+T([c.t.subtitle],{x:142,y:984,size:24,fill:'#fff',op:.75,font:c.bf,ls:5});
+}});
+
+def({id:'ring',name:'目錄・圓環',hint:'1 張',render(c){
+  const it=items(c),n=Math.min(7,it.length),cx=1720,cy=540,R=440,r=270,id=c.id(),st=Math.min(160,660/n),y0=540-st*(n-1)/2;
+  const ring=`M${cx-R},${cy}a${R},${R} 0 1,0 ${2*R},0a${R},${R} 0 1,0 ${-2*R},0ZM${cx-r},${cy}a${r},${r} 0 1,0 ${2*r},0a${r},${r} 0 1,0 ${-2*r},0Z`;
+  const ch=[...String(c.t.title||'')],ts=Math.min(120,440/Math.max(1,ch.length*1.12));let list='';
+  it.slice(0,n).forEach((o,i)=>{const y=y0+i*st;list+=`<circle cx="270" cy="${f1(y)}" r="42" fill="${c.col.main}"/>`+T([pad2(i)],{x:270,y:y+12,size:34,fill:'#fff',font:c.bf,weight:700,anchor:'middle'})
+    +T([o.a],{x:350,y:y+(o.b?4:16),size:50,fill:c.col.dark,font:c.tf,weight:700})+T([o.b],{x:352,y:y+44,size:24,fill:'#777',font:c.bf,ls:1})});
+  return bg('#fff')+`<circle cx="${cx}" cy="${cy}" r="${R+36}" fill="none" stroke="${c.col.soft}" stroke-width="4" stroke-dasharray="2 14" stroke-linecap="round"/>`
+   +`<defs><clipPath id="${id}"><path d="${ring}" clip-rule="evenodd"/></clipPath></defs><g filter="url(#${c.sh})">${IMG(c.imgs[0],cx-R,cy-R,2*R,2*R,`clip-path="url(#${id})"`)}</g>`
+   +VT(c.t.title,{x:cx-30,y:cy-ch.length*ts*1.12/2+ts*.85,size:ts,fill:c.col.main,font:c.tf,weight:700})
+   +T([c.t.subtitle],{x:230,y:140,size:24,fill:c.col.main,font:c.bf,weight:700,ls:6})+list;
+}});
+
+def({id:'vertical',name:'中國風・直排',hint:'1 張',render(c){
+  const g=c.id(),title=[...String(c.t.title||'')],ts=Math.min(118,820/Math.max(1,title.length*1.1)),body=String(c.t.body||'').replace(/\s+/g,''),per=17;let cols='';
+  for(let k=0;k*per<body.length&&k<9;k++)cols+=VT(body.slice(k*per,(k+1)*per),{x:1430-k*50,y:300,size:28,gap:1.3,fill:'#fff',op:.88,font:c.bf});
+  return IMG(c.imgs[0],0,0,W,H)+`<defs><linearGradient id="${g}" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".72"/><stop offset=".62" stop-color="#000" stop-opacity="0"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#${g})"/>`
+   +VT(c.t.title,{x:1710,y:170+ts*.85,size:ts,gap:1.1,fill:'#fff',font:c.tf,weight:700})
+   +`<rect x="1686" y="${f1(170+title.length*ts*1.1+30)}" width="48" height="48" rx="6" fill="${c.col.main}"/>`
+   +VT(c.t.subtitle,{x:1570,y:300,size:30,gap:1.15,fill:'#fff',op:.9,font:c.bf})
+   +`<line x1="1505" y1="270" x2="1505" y2="860" stroke="#fff" stroke-opacity=".5"/>`+cols;
+}});
+
+def({id:'circles',name:'圓形拼貼',hint:'多張循環（約 20 格）',render(c){
+  const r=92,cx=1440,cy=540,sh=[];
+  for(let j=-3;j<=3;j++)for(let i=-4;i<=4;i++){const x=cx+(i+(j&1)*.5)*176,y=cy+j*152;if(((x-cx)/450)**2+((y-cy)/430)**2<=1)sh.push({el:`<circle cx="${f1(x)}" cy="${y}" r="${r}"/>`,b:[x-r,y-r,2*r,2*r],x,y})}
+  let rings=sh.map(s=>`<circle cx="${f1(s.x)}" cy="${s.y}" r="${r+7}" fill="#fff"/>`).join('');
+  return bg(c.col.light)+`<g filter="url(#${c.sh})">${rings}</g>`+mosaic(c,sh,{shadow:false})
+   +stack(c,{x:150,cy:540,w:600,tSize:104,tColor:c.col.dark,sColor:c.col.main});
+}});
+
+def({id:'ocean',name:'大標題・漸層淡出',hint:'1 張',render(c){
+  const g=c.id(),t=c.t.title||' ',size=Math.min(190,100*1500/Math.max(1,tw(t,100,c.tf,700)));
+  return IMG(c.imgs[0],0,0,W,H)+`<defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".7" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#fff"/></linearGradient></defs><rect y="420" width="${W}" height="660" fill="url(#${g})"/>`
+   +`<text x="960" y="880" font-size="${f1(size)}" font-family="${esc(c.tf)}" font-weight="700" fill="${c.col.main}" stroke="#fff" stroke-width="10" paint-order="stroke" text-anchor="middle" letter-spacing="6">${esc(t)}</text>`
+   +T([c.t.subtitle],{x:960,y:960,size:28,fill:c.col.dark,op:.75,font:c.bf,anchor:'middle',ls:6})
+   +`<line x1="560" y1="950" x2="680" y2="950" stroke="${c.col.dark}" stroke-opacity=".4"/><line x1="1240" y1="950" x2="1360" y2="950" stroke="${c.col.dark}" stroke-opacity=".4"/>`;
+}});
+
+def({id:'pixel',name:'方塊溶解',hint:'1 張（人像很適合）',render(c){
+  const m=c.id(),rnd=rng(7);let sq='',acc='';
+  for(let col=0;col<6;col++)for(let row=0;row<14;row++){const x=520+col*80,y=row*80,p=(col+1)/7;
+    if(rnd()<p){const v=Math.round(255*(.3+.7*rnd()));sq+=`<rect x="${x+4}" y="${y+4}" width="72" height="72" fill="rgb(${v},${v},${v})"/>`}
+    else if(rnd()<.18)acc+=`<rect x="${x+4}" y="${y+4}" width="72" height="72" fill="${c.col.main}" opacity=".18"/>`}
+  return bg('#fff')+`<defs><mask id="${m}" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}"><rect x="1000" width="920" height="${H}" fill="#fff"/>${sq}</mask></defs>`
+   +acc+IMG(c.imgs[0],520,0,1400,H,`mask="url(#${m})"`)
+   +T([String(c.t.subtitle||'').toUpperCase()],{x:90,y:1040,size:190,fill:c.col.main,op:.09,font:'Arial Black,Arial',weight:900})
+   +stack(c,{x:130,cy:500,w:420,tSize:110,tColor:c.col.main,sColor:c.col.dark,bSize:24});
+}});
+
+/* ---------- state ---------- */
+let S;try{S={...DEF,...JSON.parse(localStorage.getItem('layoutGen')||'{}')}}catch(e){S={...DEF}}
+const lib=[];let sel=[];let samples=[];
+const save=()=>{try{localStorage.setItem('layoutGen',JSON.stringify(S))}catch(e){}};
+const $=id=>document.getElementById(id);
+const toast=m=>{const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200)};
+
+function makeSamples(){
+  const hues=[[200,35],[140,90],[30,200],[330,280],[260,180],[90,40]];
+  return hues.map(([h1,h2],k)=>{const cv=document.createElement('canvas');cv.width=1200;cv.height=800;const x=cv.getContext('2d');
+    const g=x.createLinearGradient(0,0,0,800);g.addColorStop(0,`hsl(${h1},70%,78%)`);g.addColorStop(1,`hsl(${h2},60%,88%)`);x.fillStyle=g;x.fillRect(0,0,1200,800);
+    x.fillStyle=`hsla(${h2},90%,92%,.9)`;x.beginPath();x.arc(820,260,90,0,7);x.fill();const r=rng(k+3);
+    for(let l=0;l<4;l++){x.fillStyle=`hsl(${(h1+l*25)%360},${45+l*8}%,${62-l*12}%)`;x.beginPath();x.moveTo(0,800);const base=380+l*110,a=r()*6;
+      for(let i=0;i<=1200;i+=20)x.lineTo(i,base-Math.sin(i/180+a)*60-Math.sin(i/63+a*2)*18);x.lineTo(1200,800);x.fill()}
+    const d=cv.toDataURL('image/jpeg',.85);return{src:d,thumb:d,full:d,data:d}});
+}
+function scaleBlob(bmp,max,q){const s=Math.min(1,max/Math.max(bmp.width,bmp.height)),cv=document.createElement('canvas');cv.width=Math.round(bmp.width*s);cv.height=Math.round(bmp.height*s);
+  cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);return new Promise(r=>cv.toBlob(r,'image/jpeg',q))}
+let nid=0;
+async function addFiles(files){
+  const fs=[...files].filter(f=>f.type.startsWith('image/'));if(!fs.length)return;toast(`處理 ${fs.length} 張圖片中…`);
+  for(const f of fs){try{const bmp=await createImageBitmap(f);const full=await scaleBlob(bmp,2400,.9),th=await scaleBlob(bmp,520,.82);
+    const it={id:++nid,name:f.name,full:URL.createObjectURL(full),thumb:URL.createObjectURL(th),blob:full};lib.push(it);sel.push(it.id)}catch(e){console.warn(e)}}
+  drawLib();refresh();toast(`已加入 ${fs.length} 張`);
+}
+const blobToData=b=>new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(b)});
+
+function chosen(kind){const L=sel.map(id=>lib.find(x=>x.id===id)).filter(Boolean);
+  if(!L.length)return samples.map(s=>({src:s.src}));return L.map(x=>({src:x[kind]}))}
+function colors(){const m=S.color;return{main:m,dark:mix(m,'#000000',.45),soft:mix(m,'#ffffff',.55),light:mix(m,'#ffffff',.9)}}
+function renderSVG(tpl,imgs,pre){
+  let k=0;const c={imgs,t:S,col:colors(),tf:FONTS[S.tf][1],bf:FONTS[S.bf][1],single:S.single,id:()=>pre+'x'+(k++),sh:pre+'sh',ts:pre+'ts'};
+  const inner=tpl.render(c);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}"><defs><clipPath id="${pre}frame"><rect width="${W}" height="${H}"/></clipPath>`+
+   `<filter id="${pre}sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000" flood-opacity=".22"/></filter>`+
+   `<filter id="${pre}ts" x="-20%" y="-40%" width="140%" height="180%"><feDropShadow dx="0" dy="2" stdDeviation="5" flood-color="#000" flood-opacity=".55"/></filter></defs><g clip-path="url(#${pre}frame)">${inner}</g></svg>`;
+}
+
+/* ---------- UI ---------- */
+function drawLib(){
+  $('lib').innerHTML=lib.map(it=>{const n=sel.indexOf(it.id);return`<div class="it ${n>=0?'on':''}" data-id="${it.id}" data-n="${n+1}" title="${esc(it.name)}"><img src="${it.thumb}" alt=""></div>`}).join('');
+  $('libInfo').textContent=lib.length?`共 ${lib.length} 張，已選 ${sel.length} 張`:'';
+  $('order').innerHTML=sel.length?sel.map((id,i)=>{const it=lib.find(x=>x.id===id);return`<div class="o" draggable="true" data-i="${i}"><img src="${it.thumb}" alt=""><span class="b">${i+1}</span><div class="ctl"><button data-a="l">◀</button><button data-a="x">✕</button><button data-a="r">▶</button></div></div>`}).join(''):'<span class="empty">尚未選擇（預覽暫用示意圖）</span>';
+}
+$('lib').onclick=e=>{const d=e.target.closest('.it');if(!d)return;const id=+d.dataset.id,i=sel.indexOf(id);i>=0?sel.splice(i,1):sel.push(id);drawLib();refresh()};
+$('order').onclick=e=>{const b=e.target.closest('button');if(!b)return;const i=+b.closest('.o').dataset.i,a=b.dataset.a;
+  if(a==='x')sel.splice(i,1);else{const j=a==='l'?i-1:i+1;if(j<0||j>=sel.length)return;[sel[i],sel[j]]=[sel[j],sel[i]]}drawLib();refresh()};
+let dragI=null;
+$('order').addEventListener('dragstart',e=>{const o=e.target.closest('.o');if(!o)return;dragI=+o.dataset.i;o.classList.add('drag')});
+$('order').addEventListener('dragover',e=>e.preventDefault());
+$('order').addEventListener('drop',e=>{e.preventDefault();const o=e.target.closest('.o');if(o==null||dragI==null)return;const j=+o.dataset.i;const [m]=sel.splice(dragI,1);sel.splice(j,0,m);dragI=null;drawLib();refresh()});
+$('order').addEventListener('dragend',()=>{dragI=null;drawLib()});
+$('selAll').onclick=()=>{for(const it of lib)if(!sel.includes(it.id))sel.push(it.id);drawLib();refresh()};
+$('selNone').onclick=()=>{sel=[];drawLib();refresh()};
+$('delUnsel').onclick=()=>{for(let i=lib.length-1;i>=0;i--)if(!sel.includes(lib[i].id)){URL.revokeObjectURL(lib[i].full);URL.revokeObjectURL(lib[i].thumb);lib.splice(i,1)}drawLib()};
+const drop=$('drop');drop.onclick=()=>$('file').click();$('file').onchange=e=>{addFiles(e.target.files);e.target.value=''};
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop',e=>addFiles(e.dataTransfer.files));
+document.addEventListener('paste',e=>{const fs=[...(e.clipboardData?.files||[])];if(fs.length)addFiles(fs)});
+
+for(const k of['title','subtitle','body','items','number']){$(k).value=S[k]??'';$(k).oninput=()=>{S[k]=$(k).value;save();refresh()}}
+const fo=FONTS.map((f,i)=>`<option value="${i}">${f[0]}</option>`).join('');
+$('tf').innerHTML=fo;$('bf').innerHTML=fo;$('tf').value=S.tf;$('bf').value=S.bf;
+$('tf').onchange=()=>{S.tf=+$('tf').value;save();refresh()};$('bf').onchange=()=>{S.bf=+$('bf').value;save();refresh()};
+$('color').value=S.color;$('color').oninput=()=>{S.color=$('color').value;save();refresh()};
+$('sw').innerHTML=SWATCH.map(c=>`<button style="background:${c}" data-c="${c}" title="${c}"></button>`).join('');
+$('sw').onclick=e=>{const c=e.target.dataset.c;if(!c)return;S.color=c;$('color').value=c;save();refresh()};
+$('single').checked=!!S.single;$('single').onchange=()=>{S.single=$('single').checked;save();refresh()};
+$('pick').onclick=()=>{const src=chosen('thumb')[0].src,im=new Image();im.onload=()=>{const cv=document.createElement('canvas');cv.width=cv.height=40;const x=cv.getContext('2d');x.drawImage(im,0,0,40,40);
+  const d=x.getImageData(0,0,40,40).data,bins=Array.from({length:12},()=>({w:0,r:0,g:0,b:0}));
+  for(let i=0;i<d.length;i+=4){const[r,g,b]=[d[i],d[i+1],d[i+2]],mx=Math.max(r,g,b),mn=Math.min(r,g,b),s=mx?(mx-mn)/mx:0;if(s<.15||mx<40)continue;
+    let h;if(mx===r)h=((g-b)/(mx-mn)+6)%6;else if(mx===g)h=(b-r)/(mx-mn)+2;else h=(r-g)/(mx-mn)+4;const bi=bins[Math.floor(h*2)%12],w=s*mx;bi.w+=w;bi.r+=r*w;bi.g+=g*w;bi.b+=b*w}
+  const best=bins.sort((a,b)=>b.w-a.w)[0];if(!best.w){toast('這張圖顏色太淡，取不到主色');return}
+  let col='#'+[best.r,best.g,best.b].map(v=>Math.round(v/best.w).toString(16).padStart(2,'0')).join('');
+  const[r,g,b]=hex2rgb(col),L=(Math.max(r,g,b)+Math.min(r,g,b))/510;if(L>.5)col=mix(col,'#000000',(L-.45)/L);
+  S.color=col;$('color').value=col;save();refresh();toast('已套用圖片主色 '+col)};im.src=src};
+
+function refresh(){clearTimeout(refresh._t);refresh._t=setTimeout(draw,120)}
+function draw(){
+  const tpl=TPL.find(t=>t.id===S.tpl)||TPL[0];S.tpl=tpl.id;
+  $('curName').innerHTML=`${esc(tpl.name)}<small>建議：${esc(tpl.hint)}</small>`;
+  $('stage').innerHTML=renderSVG(tpl,chosen('full'),'m_');
+  $('note').textContent=sel.length?'':'※ 目前用的是示意圖，上傳並點選圖片後就會換成你的圖片。';
+  const th=chosen('thumb');
+  $('gal').innerHTML=TPL.map(t=>`<div class="card ${t.id===tpl.id?'on':''}" data-id="${t.id}">${renderSVG(t,th,'g'+t.id+'_')}<div class="meta"><div class="nm">${esc(t.name)}</div><div class="hint">${esc(t.hint)}</div></div></div>`).join('');
+}
+$('gal').onclick=e=>{const c=e.target.closest('.card');if(!c)return;S.tpl=c.dataset.id;save();draw();window.scrollTo({top:0,behavior:'smooth'});document.querySelector('main').scrollTo({top:0,behavior:'smooth'})};
+
+async function toPNG(scale){
+  const tpl=TPL.find(t=>t.id===S.tpl);const L=sel.map(id=>lib.find(x=>x.id===id)).filter(Boolean);
+  const imgs=L.length?await Promise.all(L.map(async it=>({src:it.data||(it.data=await blobToData(it.blob))}))):samples.map(s=>({src:s.data}));
+  const svg=renderSVG(tpl,imgs,'e_'),url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
+  const im=new Image();await new Promise((res,rej)=>{im.onload=res;im.onerror=rej;im.src=url});await new Promise(r=>setTimeout(r,60));
+  const cv=document.createElement('canvas');cv.width=W*scale;cv.height=H*scale;cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);URL.revokeObjectURL(url);
+  return new Promise(r=>cv.toBlob(r,'image/png'));
+}
+async function download(scale){try{toast('產生圖片中…');const b=await toPNG(scale),a=document.createElement('a');a.href=URL.createObjectURL(b);
+  a.download=`${(S.title||'排版').replace(/[\\/:*?"<>|]/g,'')}_${S.tpl}${scale>1?'_2x':''}.png`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000);toast('已下載')}catch(e){console.error(e);toast('下載失敗：'+e.message)}}
+$('dl1').onclick=()=>download(1);$('dl2').onclick=()=>download(2);
+$('copy').onclick=async()=>{try{const b=await toPNG(1);await navigator.clipboard.write([new ClipboardItem({'image/png':b})]);toast('已複製，可直接到 PPT 貼上')}catch(e){toast('此瀏覽器不支援複製，請改用下載')}};
+
+samples=makeSamples();drawLib();draw();
+</script>
+</body>
+</html>
