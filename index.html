@@ -229,6 +229,8 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line);border-rad
   <p class="hintline" id="iosHint" hidden>iPhone／iPad：在 Safari 按「分享」→「加入主畫面」，就能像 App 一樣從桌面開啟、離線使用。</p>
   <label for="fname">檔名（留空＝用標題）</label><input type="text" id="fname" placeholder="2026 提案">
   <div class="row" style="margin-top:8px"><button class="btn" id="zipAll">打包目前分類（ZIP）</button></div>
+  <div class="row" style="margin-top:8px"><button class="btn" id="numBatch">章節頁連續編號輸出</button></div>
+  <p class="hintline">用章節頁範本，把「項目清單」每一行做成一章：數字從「大數字」欄開始自動遞增（01、02、03…），標題換成該行文字、「|」後面是副標，每頁依序換下一張已選圖片。格式選 PPTX 會輸出成一份多頁簡報，其他格式輸出 ZIP。</p>
   <div class="row" style="margin-top:8px"><button class="btn fix" id="projSave">專案存檔</button><button class="btn fix" id="projLoad">載入專案</button><button class="btn fix" id="reset">重設</button></div>
   <input type="file" id="projFile" accept=".json,application/json" hidden>
   <p class="hintline">專案存檔會把文字、配色與已選圖片一起存成 .json，換電腦或隔天再開都能接續。圖片全程只在你的瀏覽器處理。</p>
@@ -278,7 +280,7 @@ const DEF={title:'敦煌鳴沙山月牙泉',subtitle:'Dunhuang · Crescent Lake'
   focal:'xMidYMid',theme:'auto',cat:'all',fmt:'png',scale:2,fname:'',fs:100};
 const BIZ=[['藏青金','#1f3a5f','#c9a24a'],['商務藍','#1d5fa8','#38b2e8'],['深灰橘','#3b3f46','#f08a24'],['墨綠米','#2f5a46','#d8b98a'],['酒紅灰','#7a2635','#a8a8a8'],['科技紫','#3b2f8f','#22c3c3']];
 const FOCAL=['xMinYMin','xMidYMin','xMaxYMin','xMinYMid','xMidYMid','xMaxYMid','xMinYMax','xMidYMax','xMaxYMax'];
-const CATS=[['all','全部'],['cover','封面／標題'],['shape','形狀拼貼'],['toc','目錄'],['grid','圖文分格'],['biz','商務'],['cn','中國風']];
+const CATS=[['all','全部'],['cover','封面／標題'],['shape','形狀拼貼'],['sec','章節頁'],['toc','目錄'],['grid','圖文分格'],['biz','商務'],['cn','中國風']];
 
 /* ---------- helpers ---------- */
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -520,13 +522,47 @@ def({id:'fan',cat:'grid',name:'扇形畫廊',hint:'3–6 張（或 1 張連續�
    +T(wrap(c.t.body,1300,24,c.bf).slice(0,3),{x:960,y:240,size:24,lh:1.7,fill:c.col.mute,font:c.bf,anchor:'middle'});
 }});
 
-def({id:'bignum',cat:'cover',name:'大數字鏤空',hint:'1 張',render(c){
+def({id:'bignum',cat:'sec',name:'章節頁・大數字鏤空',hint:'1 張；可依項目清單連續編號 01、02…',render(c){
   const num=c.t.number||'01',size=Math.min(780,100*860/Math.max(1,tw(num,100,c.tf,900))),id=c.id(),cl=c.id();
   const tt=`<text x="120" y="790" font-size="${f1(size)}" font-family="${esc(c.tf)}" font-weight="900">${esc(num)}</text>`,poly=[[1000,0],[1920,0],[1920,1080],[780,1080]];
   return bg(c.col.dark)+`<defs><clipPath id="${id}">${tt}</clipPath><clipPath id="${cl}"><path d="${P(poly)}"/></clipPath></defs>`
    +IMG(c.imgs[0],0,0,W,H,`clip-path="url(#${cl})"`)+IMG(c.imgs[0],0,0,W,H,`clip-path="url(#${id})"`)
    +`<g fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="3">${tt}</g>`
    +T([c.t.title],{x:140,y:930,size:60,fill:'#fff',font:c.tf,weight:700})+T([c.t.subtitle],{x:142,y:984,size:24,fill:'#fff',op:.75,font:c.bf,ls:5});
+}});
+
+/* 章節頁共用：數字下方的細線＋章名＋副標 */
+function secText(c,{x,y,w=700,tSize=72,tColor,sColor,lineColor}){
+  const tl=wrap(c.t.title,w,tSize,c.tf,700).slice(0,2),k=FS;
+  return `<rect x="${x}" y="${f1(y)}" width="96" height="6" rx="3" fill="${lineColor}"/>`
+   +T(tl,{x,y:y+tSize*k+48,size:tSize,lh:1.18,fill:tColor,font:c.tf,weight:700})
+   +T([c.t.subtitle],{x:x+2,y:y+tSize*k+48+(tl.length-1)*tSize*k*1.18+tSize*k*.4+34,size:28,fill:sColor,font:c.bf,weight:600,ls:4});
+}
+def({id:'secFade',cat:'sec',name:'章節頁・數字＋淡出照片',hint:'1 張；可連續編號 01、02…',render(c){
+  const num=c.t.number||'01',m=c.id(),g=c.id(),ng=c.id(),size=Math.min(400,100*680/Math.max(1,tw(num,100,c.tf,900)));
+  return bg(c.col.paper||'#fff')
+   +`<defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000"/><stop offset=".42" stop-color="#fff"/></linearGradient>`
+   +`<mask id="${m}" maskUnits="userSpaceOnUse" x="700" y="0" width="1220" height="${H}"><rect x="700" width="1220" height="${H}" fill="url(#${g})"/></mask>`
+   +`<linearGradient id="${ng}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.col.acc}"/><stop offset="1" stop-color="${c.col.main}"/></linearGradient></defs>`
+   +IMG(c.imgs[0],700,0,1220,H,`mask="url(#${m})"`)
+   +`<text x="130" y="500" font-size="${f1(size)}" font-family="${esc(c.tf)}" font-weight="900" fill="url(#${ng})">${esc(num)}</text>`
+   +secText(c,{x:150,y:560,tColor:c.col.ink,sColor:c.col.mt,lineColor:c.col.acc});
+}});
+def({id:'secStrip',cat:'sec',name:'章節頁・CHAPTER 豎條照片',hint:'1 張；可連續編號 01、02…',render(c){
+  const num=c.t.number||'01',cl=c.id(),size=Math.min(360,100*820/Math.max(1,tw(num,100,c.tf,900)));
+  return bg(c.col.paper||c.col.light)+`<rect x="1220" width="${W-1220}" height="${H}" fill="${c.col.paper?mix(c.col.paper,c.col.main,.1):'#fff'}"/>`
+   +`<defs><clipPath id="${cl}"><rect x="1300" y="0" width="380" height="${H}"/><rect x="1720" y="0" width="64" height="${H}"/></clipPath></defs>`
+   +`<g filter="url(#${c.sh})">${IMG(c.imgs[0],1300,0,484,H,`clip-path="url(#${cl})"`)}</g>`
+   +`<rect x="1220" y="160" width="6" height="760" fill="${c.col.acc}"/>`
+   +T(['CHAPTER'],{x:150,y:250,size:30,fill:c.col.mt,font:'Arial,'+c.bf,weight:700,ls:14})
+   +T([num],{x:132,y:250+size*.9,size:f1(size),fill:c.col.main,font:c.tf,weight:900,fixed:true})
+   +secText(c,{x:150,y:250+size*.9+70,w:960,tColor:c.col.ink,sColor:c.col.mt,lineColor:c.col.acc});
+}});
+def({id:'secFull',cat:'sec',name:'章節頁・滿版照片＋大數字',hint:'1 張；可連續編號 01、02…',render(c){
+  const num=c.t.number||'01',g=c.id(),size=Math.min(520,100*900/Math.max(1,tw(num,100,c.tf,900)));
+  return IMG(c.imgs[0],0,0,W,H)+`<defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${c.col.dark}" stop-opacity=".9"/><stop offset=".45" stop-color="${c.col.dark}" stop-opacity=".55"/><stop offset=".75" stop-color="${c.col.dark}" stop-opacity="0"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#${g})"/>`
+   +T([num],{x:120,y:600,size:f1(size),fill:'#fff',op:.92,font:c.tf,weight:900,fixed:true})
+   +secText(c,{x:140,y:660,w:900,tSize:76,tColor:'#fff',sColor:c.col.acc,lineColor:c.col.acc});
 }});
 
 def({id:'ring',cat:'toc',name:'目錄・圓環',hint:'1 張',render(c){
@@ -980,7 +1016,7 @@ function drawStage(){
   const svg=renderSVG(tpl,chosen('full'),'m_');
   $('stage').innerHTML=svg;
   const n=overflowNote(svg);
-  $('note').textContent=(sel.length?'':'※ 目前用的是示意圖，上傳並點選圖片後就會換成你的圖片。 ')+(n||'');
+  $('note').textContent=(sel.length?'':'※ 目前用的是示意圖，上傳並點選圖片後就會換成你的圖片。 ')+(tpl.cat==='sec'?'這是章節頁：到「輸出」按「章節頁連續編號輸出」，可依項目清單一次做出每一章。 ':'')+(n||'');
   $('note').classList.toggle('warn',!!n);
 }
 let galSig='';
@@ -1106,6 +1142,48 @@ $('zipAll').onclick=async()=>{
   finally{btn.disabled=false}
 };
 
+/* ---------- 連續編號：項目清單每行一頁，數字自動遞增、每頁換下一張圖 ---------- */
+function withState(ov,fn){
+  if(!ov)return fn();
+  const keep={};for(const k in ov)keep[k]=S[k];
+  Object.assign(S,ov);try{return fn()}finally{Object.assign(S,keep)}
+}
+/* 「01」→ 01,02…；「Part 3」→ Part 3, Part 4…；沒有數字就從 01 開始 */
+function numberSeq(seed,n){
+  const m=String(seed||'').match(/^(.*?)(\d+)(\D*)$/),pre=m?m[1]:'',start=m?+m[2]:1,w=m?m[2].length:2,suf=m?m[3]:'';
+  return[...Array(n)].map((_,i)=>pre+String(start+i).padStart(w,'0')+suf);
+}
+function numberedPages(imgs){
+  const rows=String(S.items||'').split('\n').map(s=>s.trim()).filter(Boolean).map(s=>{const[a,b='']=s.split(/[|｜]/);return{a:a.trim(),b:b.trim()}});
+  const cur=TPLBY[S.tpl],nums=numberSeq(S.number,rows.length),tpl=cur&&cur.cat==='sec'?cur:TPL.find(t=>t.cat==='sec');
+  return rows.map((r,i)=>({tpl,num:nums[i],
+    imgs:imgs.length>1?imgs.map((_,k)=>imgs[(i+k)%imgs.length]):imgs,
+    ov:{number:nums[i],title:r.a,subtitle:r.b||S.subtitle}}));
+}
+$('numBatch').onclick=async()=>{
+  const btn=$('numBatch'),imgs=await currentImages(),pages=numberedPages(imgs);
+  if(!pages.length){toast('請先在「項目清單」每行輸入一個章節標題');setTab('txt');return}
+  btn.disabled=true;
+  try{
+    const tpl=pages[0].tpl,stem=`${baseName()}_${tpl.id}_編號${pages[0].num}-${pages[pages.length-1].num}`.replace(/[\\/:*?"<>|]/g,'');
+    if(S.fmt==='pptx'){
+      saveBlob(await buildPptx(pages,imgs,i=>toast(`製作投影片… ${i+1}/${pages.length}`)),`${stem}.pptx`);
+      toast(`已輸出 ${pages.length} 頁 PPTX（${pages[0].num}–${pages[pages.length-1].num}）`);return;
+    }
+    const ext=S.fmt==='svg'?'svg':S.fmt==='jpeg'?'jpg':'png',files=[];
+    for(let i=0;i<pages.length;i++){
+      const p=pages[i];toast(`輸出中… ${i+1}/${pages.length}（${p.num}）`);
+      const svg=withState(p.ov,()=>renderSVG(p.tpl,p.imgs,'n'+i+'_'));
+      const b=ext==='svg'?new Blob([svg],{type:'image/svg+xml;charset=utf-8'}):await rasterizeSVG(svg,Math.min(S.scale,2),ext==='jpg'?'image/jpeg':'image/png');
+      files.push({name:`${String(i+1).padStart(2,'0')}_${safeName(p.num)}.${ext}`,data:new Uint8Array(await b.arrayBuffer())});
+      await new Promise(r=>setTimeout(r,0));
+    }
+    saveBlob(makeZip(files),`${stem}.zip`);
+    toast(`已輸出 ${files.length} 張（${pages[0].num}–${pages[pages.length-1].num}）`);
+  }catch(e){console.error(e);toast('輸出失敗：'+e.message)}
+  finally{btn.disabled=false}
+};
+
 /* ---------- PPTX：每頁＝一張不含文字的底圖＋可編輯文字框（沿用上面的 ZIP） ---------- */
 const EMU=6350;/* 1920px 寬 = 13.333in = 12192000 EMU；1px = 0.5pt */
 const xesc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'');
@@ -1158,9 +1236,11 @@ async function buildPptx(tpls,imgs,onStep){
   const enc=new TextEncoder(),files=[],add=(name,str)=>files.push({name,data:typeof str==='string'?enc.encode(str):str});
   const slides=[];
   for(let i=0;i<tpls.length;i++){
-    onStep&&onStep(i,tpls[i]);
+    /* 每頁可以是範本本身，或 {tpl,imgs,ov}（連續編號用：換數字、標題、圖片） */
+    const pg=tpls[i].tpl?tpls[i]:{tpl:tpls[i],imgs,ov:null};
+    onStep&&onStep(i,pg.tpl);
     COLLECT=[];let svg,texts;
-    try{svg=renderSVG(tpls[i],imgs,'p'+i+'_')}finally{texts=COLLECT;COLLECT=null}
+    try{svg=withState(pg.ov,()=>renderSVG(pg.tpl,pg.imgs||imgs,'p'+i+'_'))}finally{texts=COLLECT;COLLECT=null}
     const jpg=await rasterizeSVG(svg,2,'image/jpeg');
     slides.push({xml:slideXml(texts),img:new Uint8Array(await jpg.arrayBuffer())});
     await new Promise(r=>setTimeout(r,0));
