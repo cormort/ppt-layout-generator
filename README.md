@@ -35,9 +35,16 @@
 - 圖片只在你的瀏覽器中處理，不會上傳到任何伺服器
 - 單一 HTML 檔，也可下載後離線使用
 
+## 手機與 App（PWA）
+
+- 響應式版面：手機／平板上預覽固定在上方，設定分成底部「圖片／文字／風格／範本／輸出」分頁
+- 可安裝成 App（Android／電腦 Chrome、Edge 會出現「安裝」；iPhone 用 Safari「分享 → 加入主畫面」），安裝後可離線使用
+- Android 安裝後，可從相簿直接「分享」照片到本 App
+- 手機上支援「分享」按鈕，把輸出的圖片或 PPTX 直接傳到 LINE、相簿等；畫布超過裝置上限時自動降倍率輸出
+
 ## 開發
 
-沒有建置流程，`index.html` 就是完整應用（HTML + CSS + JS，零依賴）。直接用瀏覽器開啟即可修改測試。
+沒有建置流程，`index.html` 就是完整應用（HTML + CSS + JS，零依賴）；`manifest.webmanifest`、`sw.js`、`icons/` 提供 PWA 安裝與離線快取。修改後如要讓已安裝的使用者立即更新，請調高 `sw.js` 裡的 `VERSION`。直接用瀏覽器開啟即可修改測試。
 
 範本都放在 `def({id, cat, name, hint, render(c)})` 裡，`render` 回傳 1920×1080 的 SVG 字串：
 

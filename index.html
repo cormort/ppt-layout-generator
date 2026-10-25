@@ -2,7 +2,13 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="排版產生器">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="color-scheme" content="light dark">
 <meta name="description" content="免費的線上圖片排版產生器：上傳照片、選範本、打字，一鍵輸出 16:9 PNG／JPG／SVG 貼進 PPT。27 組版型、商務配色、Logo 與頁尾，圖片全程只在瀏覽器處理。">
 <meta name="theme-color" content="#f3f1ed">
@@ -94,7 +100,56 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line);border-rad
 .toast.show{opacity:1}
 :focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-@media (max-width:900px){.app{grid-template-columns:1fr;height:auto}aside{border-right:0;border-bottom:1px solid var(--line)}main{padding:16px}}
+.mob,.tabs{display:none}
+.outtools:empty{display:none}
+.outtools{flex-wrap:wrap}
+.outtools>*{flex:1 1 auto}
+/* ---------- 手機／平板：預覽固定在上方，設定改成底部分頁 ---------- */
+@media (max-width:900px){
+  html,body{overscroll-behavior-y:none}
+  .app{display:flex;flex-direction:column;height:auto;min-height:100vh;min-height:100dvh}
+  main{order:-1;padding:0;overflow:visible}
+  aside{border:0;overflow:visible;padding:12px 14px calc(84px + env(safe-area-inset-bottom))}
+  .mtop{position:sticky;top:0;z-index:6;background:var(--bg);padding:calc(8px + env(safe-area-inset-top)) 12px 6px;border-bottom:1px solid var(--line)}
+  .bar{margin-bottom:8px;gap:6px;flex-wrap:nowrap}
+  .bar .tt{font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bar .tt small{display:none}
+  .bar select{max-width:118px}
+  .stage{border-radius:6px;box-shadow:0 2px 12px var(--shadow)}
+  .note{margin:4px 0 0;min-height:0;font-size:11px}
+  .note:empty{display:none}
+  .desk{display:none}.mob{display:inline}
+  .drop{padding:20px 12px;font-size:16px}
+  aside .sub{display:none}
+  body:not([data-tab="out"]) aside .hd{display:none}
+  aside .pn{display:none}
+  body[data-tab="img"] .pn[data-pn="img"],body[data-tab="txt"] .pn[data-pn="txt"],body[data-tab="sty"] .pn[data-pn="sty"],body[data-tab="out"] .pn[data-pn="out"]{display:block}
+  body[data-tab="tpl"] aside{display:none}
+  body:not([data-tab="tpl"]) .filters,body:not([data-tab="tpl"]) .gal{display:none}
+  body[data-tab="tpl"] main{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+  .filters{margin:12px 12px 0;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+  .filters button{flex:none;padding:6px 12px}
+  .gal{grid-template-columns:repeat(2,1fr);gap:10px;margin:12px}
+  .card:hover{transform:none}
+  .card .meta{padding:5px 8px 6px}
+  h2:first-child{margin-top:4px}
+  input[type=text],textarea,select{font-size:16px}
+  .btn{min-height:40px}
+  .btn.mini{min-height:32px}
+  .lib{grid-template-columns:repeat(4,1fr)}
+  .order .o{flex-basis:84px}.order .o img{width:84px;height:62px}
+  .order .o button{padding:5px 0;font-size:13px}
+  .focal{grid-template-columns:repeat(3,40px)}.focal button{height:40px}
+  .sw button{width:32px;height:32px}
+  .tabs{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--panel);border-top:1px solid var(--line);padding:4px 4px calc(4px + env(safe-area-inset-bottom))}
+  .tabs button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:none;color:var(--muted);font:inherit;font-size:11px;padding:6px 0;border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .tabs svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .tabs button.on{color:var(--acc);background:var(--chip);font-weight:700}
+  .toast{bottom:calc(80px + env(safe-area-inset-bottom))}
+}
+@media (max-width:900px) and (orientation:landscape) and (max-height:500px){
+  .mtop{position:static}
+}
 </style>
 </head>
 <body>
@@ -106,8 +161,9 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line);border-rad
   </div>
   <p class="sub">上傳圖片 → 點選並排列順序 → 輸入文字 → 選範本 → 下載 16:9 圖片（可直接貼進 PPT）</p>
 
+  <section class="pn" data-pn="img">
   <h2><span><span class="n">1</span>上傳圖片</span><span><button class="btn mini" id="selAll">全選</button> <button class="btn mini" id="selNone">清除選擇</button></span></h2>
-  <div class="drop" id="drop" role="button" tabindex="0">點此選擇或拖曳圖片到這裡（可多張，也可 Ctrl+V 貼上）</div>
+  <div class="drop" id="drop" role="button" tabindex="0"><span class="desk">點此選擇或拖曳圖片到這裡（可多張，也可 Ctrl+V 貼上）</span><span class="mob">＋ 選擇照片（可多張）</span></div>
   <input type="file" id="file" accept="image/*" multiple hidden>
   <div class="lib" id="lib"></div>
   <div class="row" style="margin-top:6px"><span class="empty" id="libInfo"></span><button class="btn mini fix" id="delUnsel">移除未選的圖</button></div>
@@ -121,14 +177,18 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line);border-rad
     <label for="cropZ">放大 — <b id="cropZv" style="font-weight:400;color:var(--ink)"></b></label><input type="range" id="cropZ" min="100" max="400" step="5">
     <div class="row" style="margin-top:6px"><span class="hintline" style="margin:0">點或拖曳圖片，選要留在畫面中央的主體</span><button class="btn mini fix" id="cropReset">還原</button></div>
   </div>
+  </section>
 
+  <section class="pn" data-pn="txt">
   <h2><span><span class="n">3</span>文字</span></h2>
   <label for="title">標題</label><input type="text" id="title">
   <label for="subtitle">副標題 / 英文</label><input type="text" id="subtitle">
   <label for="body">內文</label><textarea id="body"></textarea>
   <label for="items">項目清單（目錄／商務範本用；每行一項，用「|」分隔，例如「85%|客戶滿意度|說明」）</label><textarea id="items"></textarea>
   <label for="number">大數字（大數字範本用）</label><input type="text" id="number">
+  </section>
 
+  <section class="pn" data-pn="sty">
   <h2><span><span class="n">4</span>風格</span></h2>
   <div class="row"><input type="color" id="color" aria-label="主色"><button class="btn" id="pick">從第 1 張圖取色</button></div>
   <div class="sw" id="sw"></div>
@@ -156,15 +216,22 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line);border-rad
   <label for="company">公司／單位名稱</label><input type="text" id="company" placeholder="例如：ABC 股份有限公司">
   <div class="row"><div><label for="date">日期</label><input type="text" id="date" placeholder="2026.10"></div><div><label for="page">頁碼</label><input type="text" id="page" placeholder="P.01"></div></div>
   <label class="chk"><input type="checkbox" id="footer"> 在右下角顯示頁尾（公司｜日期｜頁碼）</label>
+  </section>
 
-  <h2><span><span class="n">6</span>專案與批次</span></h2>
+  <section class="pn" data-pn="out">
+  <h2><span><span class="n">6</span>輸出、專案與批次</span></h2>
+  <div class="row outtools" id="outTools"></div>
+  <div class="row" style="margin-top:8px"><button class="btn" id="install" hidden>安裝成 App</button></div>
+  <p class="hintline" id="iosHint" hidden>iPhone／iPad：在 Safari 按「分享」→「加入主畫面」，就能像 App 一樣從桌面開啟、離線使用。</p>
   <label for="fname">檔名（留空＝用標題）</label><input type="text" id="fname" placeholder="2026 提案">
   <div class="row" style="margin-top:8px"><button class="btn" id="zipAll">打包目前分類（ZIP）</button></div>
   <div class="row" style="margin-top:8px"><button class="btn fix" id="projSave">專案存檔</button><button class="btn fix" id="projLoad">載入專案</button><button class="btn fix" id="reset">重設</button></div>
   <input type="file" id="projFile" accept=".json,application/json" hidden>
   <p class="hintline">專案存檔會把文字、配色與已選圖片一起存成 .json，換電腦或隔天再開都能接續。圖片全程只在你的瀏覽器處理。</p>
+  </section>
 </aside>
 <main>
+  <div class="mtop">
   <div class="bar">
     <div class="tt" id="curName"></div>
     <button class="btn" id="undo" title="復原（Ctrl+Z）" aria-label="復原">↶</button>
@@ -172,14 +239,23 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line);border-rad
     <select id="fmt" aria-label="輸出格式"><option value="png">PNG</option><option value="jpeg">JPG</option><option value="svg">SVG</option><option value="pptx">PPTX（文字可編輯）</option></select>
     <select id="scale" aria-label="輸出倍率"><option value="1">1× 1920×1080</option><option value="2">2× 3840×2160</option><option value="3">3× 5760×3240</option></select>
     <button class="btn" id="copy">複製圖片</button>
+    <button class="btn" id="share" hidden>分享</button>
     <button class="btn pri" id="dl">下載</button>
   </div>
   <div class="stage" id="stage"></div>
   <p class="note" id="note" aria-live="polite"></p>
+  </div>
   <div class="filters" id="filters" role="group" aria-label="範本分類"></div>
   <div class="gal" id="gal"></div>
 </main>
 </div>
+<nav class="tabs" id="tabs" aria-label="功能分頁">
+  <button data-tab="img"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M4 18l5-5 4 4 3-3 4 4"/></svg>圖片</button>
+  <button data-tab="txt"><svg viewBox="0 0 24 24"><path d="M5 6h14M12 6v13M8 19h8"/></svg>文字</button>
+  <button data-tab="sty"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="9" cy="9.5" r="1.3"/><circle cx="14.5" cy="8.5" r="1.3"/><circle cx="16" cy="13" r="1.3"/><path d="M11 20c-2-1-2-4 0-5"/></svg>風格</button>
+  <button data-tab="tpl"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="7" rx="1.5"/><rect x="13" y="4" width="8" height="7" rx="1.5"/><rect x="3" y="13" width="8" height="7" rx="1.5"/><rect x="13" y="13" width="8" height="7" rx="1.5"/></svg>範本</button>
+  <button data-tab="out"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>輸出</button>
+</nav>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
 const W=1920,H=1080,LSKEY='layoutGen2',OLDLKEY='layoutGen';
@@ -921,6 +997,7 @@ function drawAll(){drawStage();drawGallery(true)}
 function pickTpl(id){
   S.tpl=id;save();drawStage();drawGallery();histLater();
   document.querySelector('main').scrollTo({top:0,behavior:'smooth'});
+  if(MQ.matches)toast('已套用：'+(TPLBY[id]?.name||''));
 }
 $('gal').onclick=e=>{const c=e.target.closest('.card');if(!c)return;pickTpl(c.dataset.id)};
 $('gal').onkeydown=e=>{if(e.key!=='Enter'&&e.key!==' ')return;const c=e.target.closest('.card');if(!c)return;e.preventDefault();pickTpl(c.dataset.id)};
@@ -940,13 +1017,18 @@ async function rasterizeSVG(svg,scale,type){
   try{
     const im=new Image();
     await new Promise((res,rej)=>{im.onload=res;im.onerror=()=>rej(new Error('向量圖轉點陣失敗'));im.src=url});
-    const cv=document.createElement('canvas');cv.width=W*scale;cv.height=H*scale;
-    const ctx=cv.getContext('2d');
-    if(type==='image/jpeg'){ctx.fillStyle='#fff';ctx.fillRect(0,0,cv.width,cv.height)}
-    ctx.imageSmoothingQuality='high';ctx.drawImage(im,0,0,cv.width,cv.height);
-    const blob=await new Promise(r=>cv.toBlob(r,type,type==='image/jpeg'?.93:undefined));
-    if(!blob)throw new Error('瀏覽器無法輸出這個格式');
-    return blob;
+    /* 手機（尤其 iOS）的畫布有像素上限，太大時自動降一級倍率重試 */
+    if(isIOS)scale=Math.min(scale,2);
+    for(let s=scale;s>=1;s--){
+      const cv=document.createElement('canvas');cv.width=W*s;cv.height=H*s;
+      const ctx=cv.getContext('2d');if(!ctx)continue;
+      if(type==='image/jpeg'){ctx.fillStyle='#fff';ctx.fillRect(0,0,cv.width,cv.height)}
+      ctx.imageSmoothingQuality='high';ctx.drawImage(im,0,0,cv.width,cv.height);
+      const blob=await new Promise(r=>{try{cv.toBlob(r,type,type==='image/jpeg'?.93:undefined)}catch(e){r(null)}});
+      cv.width=cv.height=0;
+      if(blob){if(s<scale)toast(`此裝置畫布有上限，已改用 ${s}× 輸出`);return blob}
+    }
+    throw new Error('瀏覽器無法輸出這個格式');
   }finally{URL.revokeObjectURL(url)}
 }
 async function exportBlob(tpl,fmt,scale,imgs){
@@ -1169,7 +1251,62 @@ document.addEventListener('keydown',e=>{
   }
 });
 
+/* ---------- 手機版：底部分頁、工具列重排 ---------- */
+const MQ=matchMedia('(max-width:900px)');
+let tab='img';try{tab=sessionStorage.getItem('lgTab')||'img'}catch(e){}
+function setTab(t){
+  tab=t;document.body.dataset.tab=t;
+  [...$('tabs').children].forEach(b=>{b.classList.toggle('on',b.dataset.tab===t);b.setAttribute('aria-pressed',String(b.dataset.tab===t))});
+  try{sessionStorage.setItem('lgTab',t)}catch(e){}
+  if(MQ.matches)window.scrollTo({top:0});
+}
+$('tabs').onclick=e=>{const b=e.target.closest('button');if(b)setTab(b.dataset.tab)};
+/* 窄螢幕時把倍率、複製移到「輸出」分頁，工具列只留最常用的 */
+function placeTools(){
+  const box=MQ.matches?$('outTools'):document.querySelector('.bar'),dl=$('dl');
+  for(const id of['scale','copy']){const el=$(id);if(MQ.matches)box.appendChild(el);else box.insertBefore(el,$('share'))}
+  if(!MQ.matches)document.querySelector('.bar').appendChild(dl);
+}
+MQ.addEventListener('change',placeTools);
+
+/* 分享（手機上可直接傳到相簿、LINE 等） */
+const shareFile=(b,name)=>new File([b],name,{type:b.type});
+if(navigator.canShare&&navigator.canShare({files:[new File([''],'a.png',{type:'image/png'})]})){
+  $('share').hidden=false;
+  $('share').onclick=async()=>{
+    try{
+      const tpl=TPLBY[S.tpl]||TPL[0],imgs=await currentImages();toast('準備分享…');
+      const b=S.fmt==='pptx'?await buildPptx([tpl],imgs):await exportBlob(tpl,S.fmt==='svg'?'png':S.fmt,Math.min(S.scale,2),imgs);
+      const ext=S.fmt==='pptx'?'pptx':S.fmt==='jpeg'?'jpg':'png';
+      await navigator.share({files:[shareFile(b,`${baseName()}_${tpl.id}.${ext}`)],title:S.title||'排版'});
+    }catch(e){if(e&&e.name!=='AbortError')toast('分享失敗：'+e.message)}
+  };
+}
+
+/* 安裝成 App（PWA） */
+let installEvt=null;
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;$('install').hidden=false});
+$('install').onclick=async()=>{if(!installEvt)return;installEvt.prompt();await installEvt.userChoice;installEvt=null;$('install').hidden=true};
+addEventListener('appinstalled',()=>{$('install').hidden=true;toast('已安裝，可從桌面直接開啟')});
+const isIOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+if(isIOS&&!standalone)$('iosHint').hidden=false;
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){
+  navigator.serviceWorker.register('./sw.js').then(reg=>{
+    reg.addEventListener('updatefound',()=>{const w=reg.installing;if(!w)return;
+      w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller)toast('已有新版本，重新開啟後就會套用')})});
+  }).catch(e=>console.warn('SW',e));
+  /* Android 從相簿「分享」到本 App 的圖片：由 sw.js 暫存，這裡讀進圖庫 */
+  if(new URLSearchParams(location.search).has('shared'))(async()=>{
+    try{const c=await caches.open('lg-share'),keys=await c.keys(),files=[];
+      for(const k of keys){const r=await c.match(k);const b=await r.blob();files.push(new File([b],decodeURIComponent(k.url.split('/').pop())||'shared',{type:b.type}));await c.delete(k)}
+      history.replaceState(null,'',location.pathname);
+      if(files.length){setTab('img');await addFiles(files)}
+    }catch(e){console.warn(e)}})();
+}
+
 samples=makeSamples();
+placeTools();setTab(['img','txt','sty','tpl','out'].includes(tab)?tab:'img');
 syncUI();
 drawLib();
 drawAll();
