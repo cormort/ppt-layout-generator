@@ -106,10 +106,9 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line);border-rad
 .outtools>*{flex:1 1 auto}
 /* ---------- 手機／平板：預覽固定在上方，設定改成底部分頁 ---------- */
 @media (max-width:900px){
-  html,body{overscroll-behavior-y:none}
   .app{display:flex;flex-direction:column;height:auto;min-height:100vh;min-height:100dvh}
   main{order:-1;padding:0;overflow:visible}
-  aside{border:0;overflow:visible;padding:12px 14px calc(84px + env(safe-area-inset-bottom))}
+  aside{border:0;overflow:visible;overscroll-behavior:auto;padding:12px 14px calc(84px + env(safe-area-inset-bottom))}
   .mtop{position:sticky;top:0;z-index:6;background:var(--bg);padding:calc(8px + env(safe-area-inset-top)) 12px 6px;border-bottom:1px solid var(--line)}
   .bar{margin-bottom:8px;gap:6px;flex-wrap:nowrap}
   .bar .tt{font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -796,10 +795,12 @@ function overflowNote(svg){
 }
 
 /* ---------- UI ---------- */
+/* 只有滑鼠才用拖曳排序；觸控螢幕上拖曳屬性會吃掉捲動手勢，改用 ◀ ▶ 按鈕 */
+const FINE=matchMedia('(pointer:fine)');
 function drawLib(){
   $('lib').innerHTML=lib.map(it=>{const n=sel.indexOf(it.id);return`<div class="it ${n>=0?'on':''}" data-id="${it.id}" data-n="${n+1}" title="${esc(it.name)}" role="button" tabindex="0" aria-pressed="${n>=0}" aria-label="${esc(it.name)}"><img src="${it.thumb}" alt="" draggable="false"></div>`}).join('');
   $('libInfo').textContent=lib.length?`共 ${lib.length} 張，已選 ${sel.length} 張`:'';
-  $('order').innerHTML=sel.length?sel.map((id,i)=>{const it=lib.find(x=>x.id===id);return`<div class="o${it.crop?' cut':''}${id===cropId?' edit':''}" draggable="true" data-i="${i}"><img src="${it.thumb}" alt="" draggable="false"><span class="b">${i+1}</span><div class="ctl"><button data-a="l" aria-label="往前移">◀</button><button data-a="c" aria-label="裁切" title="放大／裁切">✂</button><button data-a="x" aria-label="移除">✕</button><button data-a="r" aria-label="往後移">▶</button></div></div>`}).join(''):'<span class="empty">尚未選擇（預覽暫用示意圖）</span>';
+  $('order').innerHTML=sel.length?sel.map((id,i)=>{const it=lib.find(x=>x.id===id);return`<div class="o${it.crop?' cut':''}${id===cropId?' edit':''}" draggable="${FINE.matches}" data-i="${i}"><img src="${it.thumb}" alt="" draggable="false"><span class="b">${i+1}</span><div class="ctl"><button data-a="l" aria-label="往前移">◀</button><button data-a="c" aria-label="裁切" title="放大／裁切">✂</button><button data-a="x" aria-label="移除">✕</button><button data-a="r" aria-label="往後移">▶</button></div></div>`}).join(''):'<span class="empty">尚未選擇（預覽暫用示意圖）</span>';
   if(cropId&&!sel.includes(cropId))closeCrop();
   $('delUnsel').disabled=!lib.length;$('delAll').disabled=!lib.length;
 }
