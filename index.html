@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="排版產生器">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="color-scheme" content="light dark">
-<meta name="description" content="免費的線上圖片排版產生器：上傳照片、選範本、打字，一鍵輸出 16:9 PNG／JPG／SVG 貼進 PPT。27 組版型、商務配色、Logo 與頁尾，圖片全程只在瀏覽器處理。">
+<meta name="description" content="免費的線上圖片排版產生器：上傳照片、選範本、打字，一鍵輸出 16:9 PNG／JPG／SVG 貼進 PPT，或用 Markdown 大綱做出含逐字稿的多頁 PPTX。35 組版型、商務配色、Logo 與頁尾，圖片全程只在瀏覽器處理。">
 <meta name="theme-color" content="#f3f1ed">
 <title>圖片排版產生器 · 16:9 簡報排版</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232f5d8a'/%3E%3Crect x='6' y='11' width='20' height='11' rx='2' fill='%23fff'/%3E%3Crect x='6' y='24' width='12' height='2.5' rx='1.2' fill='%23fff'/%3E%3C/svg%3E">
@@ -251,6 +251,12 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line);border-rad
   <div class="row" style="margin-top:8px"><button class="btn" id="zipAll">打包目前分類（ZIP）</button></div>
   <div class="row" style="margin-top:8px"><button class="btn" id="numBatch">章節頁連續編號輸出</button></div>
   <p class="hintline">用章節頁範本，把「項目清單」每一行做成一章：數字從「大數字」欄開始自動遞增（01、02、03…），標題換成該行文字、「|」後面是副標，每頁依序換下一張已選圖片。格式選 PPTX 會輸出成一份多頁簡報，其他格式輸出 ZIP。</p>
+  <h2><span><span class="n">7</span>大綱匯入／匯出（Markdown）</span></h2>
+  <textarea id="mdIn" style="min-height:150px" placeholder="# 封面標題&#10;## 副標題&#10;&#10;---&#10;# 第二頁標題&#10;- 重點一|說明&#10;- 重點二|說明&#10;> 這一頁的逐字稿"></textarea>
+  <div class="row" style="margin-top:6px"><button class="btn fix" id="mdOpen">開啟 .md 檔</button><button class="btn" id="mdAppend">加在後面</button><button class="btn pri" id="mdReplace">取代全部頁面</button></div>
+  <div class="row" style="margin-top:6px"><button class="btn" id="mdExport">把目前的頁面匯出成大綱 .md</button></div>
+  <input type="file" id="mdFile" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden>
+  <p class="hintline">每頁用 <b>---</b> 分隔（或直接用下一個「# 標題」開新頁）：<b>#</b> 標題、<b>##</b> 副標題、<b>數字: 01</b> 大數字、<b>- 重點|說明</b> 或 <b>1.</b> 項目、<b>| 表格 |</b> 每列一行、<b>&gt;</b> 逐字稿、其他文字＝內文；<b>&lt;!-- 版型: tList --&gt;</b> 可指定範本（也可寫「條列、方格、表格、段落、引言、封面、章節」）。沒指定時依內容自動挑選。可以請 AI 照這個格式寫大綱，貼進來就成簡報。</p>
   <div class="row" style="margin-top:8px"><button class="btn fix" id="projSave">專案存檔</button><button class="btn fix" id="projLoad">載入專案</button><button class="btn fix" id="reset">重設</button></div>
   <input type="file" id="projFile" accept=".json,application/json" hidden>
   <p class="hintline">專案存檔會把文字、配色與已選圖片一起存成 .json，換電腦或隔天再開都能接續。圖片全程只在你的瀏覽器處理。</p>
@@ -302,7 +308,7 @@ const DEF={title:'敦煌鳴沙山月牙泉',subtitle:'Dunhuang · Crescent Lake'
   focal:'xMidYMid',theme:'auto',cat:'all',fmt:'png',scale:2,fname:'',fs:100,notes:'',pages:[],cur:0};
 const BIZ=[['藏青金','#1f3a5f','#c9a24a'],['商務藍','#1d5fa8','#38b2e8'],['深灰橘','#3b3f46','#f08a24'],['墨綠米','#2f5a46','#d8b98a'],['酒紅灰','#7a2635','#a8a8a8'],['科技紫','#3b2f8f','#22c3c3']];
 const FOCAL=['xMinYMin','xMidYMin','xMaxYMin','xMinYMid','xMidYMid','xMaxYMid','xMinYMax','xMidYMax','xMaxYMax'];
-const CATS=[['all','全部'],['cover','封面／標題'],['shape','形狀拼貼'],['sec','章節頁'],['toc','目錄'],['grid','圖文分格'],['biz','商務'],['cn','中國風']];
+const CATS=[['all','全部'],['text','文字頁'],['cover','封面／標題'],['shape','形狀拼貼'],['sec','章節頁'],['toc','目錄'],['grid','圖文分格'],['biz','商務'],['cn','中國風']];
 
 /* ---------- helpers ---------- */
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -705,6 +711,97 @@ def({id:'cards',cat:'biz',name:'商務・圖文卡片',hint:'每張卡片 1 張�
      +T(wrap(o.b,w-72,22,c.bf).slice(0,6-tl.length),{x:a+36,y:top+ih+100+tl.length*45+18,size:22,lh:1.6,fill:'#666',font:c.bf})});
   return bg(c.col.paper||c.col.light)+`<defs>${defs}</defs>`+T([c.t.title],{x:960,y:170,size:64,fill:c.col.ink,font:c.tf,weight:700,anchor:'middle'})
    +T([c.t.subtitle],{x:960,y:225,size:24,fill:c.col.mt,font:c.bf,weight:600,anchor:'middle',ls:5})+s;
+}});
+
+/* ---------- 文字頁：不用圖片，文字多時自動縮字／分欄，放不下才截斷（會出現提醒） ---------- */
+/* 共用標題列：長標題縮字，最多兩行；回傳內容區起點 y */
+function head(c){
+  const k=FS,x=120,w=1680;let size=60;
+  while(size>40&&wrap(c.t.title,w,size,c.tf,700).length>2)size-=4;
+  const tl=wrap(c.t.title,w,size,c.tf,700).slice(0,2);
+  let y=112+size*k*.85,s=`<rect x="${x}" y="70" width="80" height="8" rx="4" fill="${c.col.acc}"/>`;
+  s+=T(tl,{x,y,size,lh:1.2,fill:c.col.ink,font:c.tf,weight:700});y+=(tl.length-1)*size*k*1.2;
+  if(c.t.subtitle){const sl=wrap(c.t.subtitle,w,26,c.bf,500).slice(0,2);y+=26*k+22;s+=T(sl,{x,y,size:26,lh:1.45,fill:c.col.mt,font:c.bf,weight:500});y+=(sl.length-1)*26*k*1.45}
+  y+=34;s+=`<rect x="${x}" y="${f1(y)}" width="${w}" height="2" fill="${c.col.dk?'rgba(255,255,255,.18)':c.col.light}"/>`;
+  return{s,y:y+44};
+}
+const tPaper=c=>bg(c.col.paper||'#ffffff');
+const tSoft=c=>c.col.dk?'rgba(255,255,255,.07)':c.col.light;
+const TBOT=1000;
+
+def({id:'tList',cat:'text',name:'文字・條列重點',hint:'不用圖片；項目填「重點|說明」，多項自動分兩欄並縮字',render(c){
+  const h=head(c),it=items(c).slice(0,24),k=FS,top=h.y,nc=it.length>6?2:1,cols=strip(120,1800,nc,90),per=Math.ceil(it.length/nc);
+  const lay=sz=>cols.map(([a,b],ci)=>{let y=0;const rows=it.slice(ci*per,ci*per+per).map((o,j)=>{const w=b-a-76,al=wrap(o.a,w,sz,c.tf,700),bl=wrap([o.b,o.c].filter(Boolean).join('　'),w,sz*.72,c.bf),r={n:ci*per+j,al,bl,y};
+    y+=al.length*sz*k*1.32+(bl.length?bl.length*sz*.72*k*1.5+6:0)+sz*k*.75;return r});return{a,rows,h:y}});
+  let sz=36,L=lay(sz);while(sz>18&&Math.max(...L.map(l=>l.h))>TBOT-top){sz-=2;L=lay(sz)}
+  const bs=Math.max(30,sz*1.05)*k;let s='';
+  for(const col of L)for(const r of col.rows){const y0=top+r.y;if(y0+sz*k>TBOT)break;
+    const by=y0+sz*k*.95-bs*.72;
+    s+=`<rect x="${col.a}" y="${f1(by)}" width="${f1(bs)}" height="${f1(bs)}" rx="${f1(bs*.25)}" fill="${c.col.main}"/>`+T([pad2(r.n)],{x:col.a+bs/2,y:by+bs*.68,size:f1(bs*.48),fill:'#fff',font:c.bf,weight:700,anchor:'middle',fixed:true})
+     +T(r.al,{x:col.a+76,y:y0+sz*k*.95,size:sz,lh:1.32,fill:c.col.ink,font:c.tf,weight:700})
+     +T(r.bl,{x:col.a+78,y:y0+r.al.length*sz*k*1.32+sz*.72*k*1.05,size:f1(sz*.72),lh:1.5,fill:c.col.mute,font:c.bf})}
+  return tPaper(c)+h.s+s;
+}});
+
+def({id:'tGrid',cat:'text',name:'文字・重點方格',hint:'不用圖片；項目填「重點|說明」，2–12 格自動排列',render(c){
+  const h=head(c),it=items(c).slice(0,12),n=it.length,k=FS,nc=n<=3?n:n===4?2:n<=6?3:n===9?3:4,nr=Math.ceil(n/nc),gap=28,cols=strip(120,1800,nc,gap);
+  let top=h.y,ch=(TBOT-top-(nr-1)*gap)/nr;
+  const body=o=>[o.b,o.c].filter(Boolean).join('　');
+  const need=sz=>Math.max(...it.map((o,i)=>{const w=cols[i%nc][1]-cols[i%nc][0]-64;return wrap(o.a,w,sz,c.tf,700).length*sz*k*1.3+wrap(body(o),w,sz*.62,c.bf).length*sz*.62*k*1.5+76}));
+  let sz=40;while(sz>18&&need(sz)>ch)sz-=2;
+  /* 字少時方格不必撐滿：高度跟著內容，整組垂直置中 */
+  const fitH=Math.min(ch,Math.max(need(sz)+40,220)),used=nr*fitH+(nr-1)*gap;top+=(TBOT-top-used)/2;ch=fitH;
+  let s='';
+  it.forEach((o,i)=>{const[a,b]=cols[i%nc],y=top+Math.floor(i/nc)*(ch+gap),w=b-a-64,al=wrap(o.a,w,sz,c.tf,700),bl=wrap(body(o),w,sz*.62,c.bf);
+    const maxA=Math.max(1,Math.floor((ch-70)/(sz*k*1.3))),aa=al.slice(0,maxA),maxB=Math.max(0,Math.floor((ch-76-aa.length*sz*k*1.3)/(sz*.62*k*1.5)));
+    s+=`<rect x="${f1(a)}" y="${f1(y)}" width="${f1(b-a)}" height="${f1(ch)}" rx="18" fill="${tSoft(c)}"/><rect x="${f1(a)}" y="${f1(y+18)}" width="7" height="${f1(Math.max(0,ch-36))}" rx="3.5" fill="${c.col.main}"/>`
+     +T([pad2(i)],{x:a+32,y:y+48,size:22,fill:c.col.acc,font:c.bf,weight:800,ls:2})
+     +T(aa,{x:a+32,y:y+60+sz*k,size:sz,lh:1.3,fill:c.col.ink,font:c.tf,weight:700})
+     +T(bl.slice(0,maxB),{x:a+32,y:y+60+aa.length*sz*k*1.3+sz*.62*k*1.2,size:f1(sz*.62),lh:1.5,fill:c.col.mute,font:c.bf})});
+  return tPaper(c)+h.s+s;
+}});
+
+def({id:'tTable',cat:'text',name:'文字・表格',hint:'不用圖片；項目每行一列、用「|」分欄，第一行是表頭',render(c){
+  const h=head(c),k=FS,x0=120,W0=1680,top=h.y;
+  let R=String(c.t.items||'').split('\n').map(s=>s.trim()).filter(Boolean).map(s=>s.split(/[|｜]/).map(v=>v.trim()));
+  if(!R.length)R=[['項目','說明'],['範例','每行一列，用「|」分隔欄位']];R=R.slice(0,18);
+  const nc=Math.max(...R.map(r=>r.length));
+  /* 欄寬依各欄最長內容分配（單欄上限避免一欄吃掉全部） */
+  const need=[...Array(nc)].map((_,j)=>Math.max(120,...R.map(r=>Math.min(820,tw(r[j]||'',24,c.bf)+40)))),tot=need.reduce((a,b)=>a+b,0),cw=need.map(v=>v/tot*W0);
+  const wt=(i,j)=>i===0||j===0?700:400,fo=(i,j)=>i===0?c.tf:c.bf;
+  const lay=sz=>R.map((r,i)=>cw.map((w,j)=>wrap(r[j]||'',w-36,sz,fo(i,j),wt(i,j))));
+  const rh=(L,sz)=>L.map(cells=>Math.max(1,...cells.map(l=>l.length))*sz*k*1.4+sz*k*.95);
+  let sz=28,L=lay(sz);while(sz>15&&rh(L,sz).reduce((a,b)=>a+b,0)>TBOT-top){sz-=1;L=lay(sz)}
+  const hs=rh(L,sz);let s='',y=top;
+  for(let i=0;i<R.length;i++){if(y+hs[i]>TBOT+4)break;
+    s+=`<rect x="${x0}" y="${f1(y)}" width="${W0}" height="${f1(hs[i])}" fill="${i===0?c.col.main:i%2===0?tSoft(c):'none'}"/>`;
+    let x=x0;cw.forEach((w,j)=>{s+=T(L[i][j],{x:x+18,y:y+sz*k*.45+sz*k,size:sz,lh:1.4,fill:i===0?'#fff':c.col.ink,font:fo(i,j),weight:wt(i,j)});x+=w});
+    y+=hs[i]}
+  return tPaper(c)+h.s+s+`<rect x="${x0}" y="${f1(y)}" width="${W0}" height="3" fill="${c.col.main}"/>`;
+}});
+
+def({id:'tText',cat:'text',name:'文字・標題＋段落',hint:'不用圖片；內文多段自動縮字，項目接在內文後面當條列',render(c){
+  const h=head(c),k=FS,top=h.y,w=1680;
+  const paras=[...String(c.t.body||'').split('\n').filter(s=>s.trim()).map(t=>({t,b:false})),
+    ...String(c.t.items||'').split('\n').map(s=>s.trim()).filter(Boolean).map(t=>({t:t.replace(/[|｜]/,'：').replace(/[|｜]/g,'　'),b:true}))];
+  const lay=sz=>paras.map(p=>wrap(p.t,p.b?w-50:w,sz,c.bf));
+  let sz=34,L=lay(sz);const hh=()=>L.reduce((a,l)=>a+l.length*sz*k*1.6+sz*k*.7,0);
+  while(sz>18&&hh()>TBOT-top){sz-=1;L=lay(sz)}
+  let s='',y=top+sz*k*.9;
+  paras.forEach((p,i)=>{if(y>TBOT)return;const ls=L[i].filter((_,j)=>y+j*sz*k*1.6<=TBOT+sz*k*.2);
+    if(p.b)s+=`<circle cx="134" cy="${f1(y-sz*k*.33)}" r="${f1(sz*k*.17)}" fill="${c.col.main}"/>`;
+    s+=T(ls,{x:p.b?170:120,y,size:sz,lh:1.6,fill:c.col.ink,font:c.bf});y+=L[i].length*sz*k*1.6+sz*k*.7});
+  return tPaper(c)+h.s+s;
+}});
+
+def({id:'tQuote',cat:'text',name:'文字・引言金句',hint:'不用圖片；標題放金句，副標題放出處，內文放補充',render(c){
+  const k=FS,w=1460;let sz=72;while(sz>40&&wrap(c.t.title,w,sz,c.tf,700).length>4)sz-=4;
+  const tl=wrap(c.t.title,w,sz,c.tf,700).slice(0,4),sl=wrap(c.t.subtitle,w,30,c.bf,600).slice(0,2),bl=wrap(c.t.body,w,24,c.bf).slice(0,3);
+  const th=(tl.length-1)*sz*k*1.35,tot=th+(sl.length?90+sl.length*42:0)+(bl.length?60+bl.length*38:0),y0=560-tot/2;
+  return bg(c.col.paper||c.col.light)+`<text x="170" y="${f1(y0+90)}" font-size="300" font-family="Georgia,serif" fill="${c.col.acc}" opacity=".45">“</text>`
+   +T(tl,{x:300,y:y0,size:sz,lh:1.35,fill:c.col.ink,font:c.tf,weight:700})
+   +(sl.length?`<rect x="302" y="${f1(y0+th+48)}" width="90" height="6" rx="3" fill="${c.col.acc}"/>`+T(sl,{x:302,y:y0+th+112,size:30,lh:1.4,fill:c.col.mt,font:c.bf,weight:600}):'')
+   +T(bl,{x:302,y:y0+th+(sl.length?112+sl.length*42+30:80),size:24,lh:1.6,fill:c.col.mute,font:c.bf});
 }});
 
 /* ---------- state ---------- */
@@ -1159,6 +1256,81 @@ $('deckOut').onclick=async()=>{
   }catch(e){console.error(e);toast('輸出失敗：'+e.message)}
   finally{btn.disabled=false}
 };
+
+/* ---------- Markdown 大綱：匯入成頁面、把頁面匯出成大綱 ---------- */
+const TPL_ALIAS={封面:'split',章節:'bignum',條列:'tList',方格:'tGrid',表格:'tTable',段落:'tText',內文:'tText',引言:'tQuote',金句:'tQuote',大標題:'ocean'};
+function tplFrom(v){
+  v=String(v||'').trim();if(!v)return '';
+  if(TPLBY[v])return v;if(TPL_ALIAS[v])return TPL_ALIAS[v];
+  const t=TPL.find(t=>t.id.toLowerCase()===v.toLowerCase())||TPL.find(t=>t.name.includes(v));return t?t.id:'';
+}
+/* 沒指定版型時依內容挑：章節數字→大數字、表格→表格、第一頁→封面、只有標題→大標題、有項目→條列、只有內文→段落 */
+function autoTpl(p,i,table){
+  const n=p.items.split('\n').filter(s=>s.trim()).length;
+  if(p.number&&n<=1)return 'bignum';
+  if(table)return 'tTable';
+  if(i===0&&!n)return 'split';
+  if(!n&&!p.body)return 'ocean';
+  if(n)return 'tList';
+  return 'tText';
+}
+const mdPlain=s=>s.replace(/\*\*(.+?)\*\*|__(.+?)__/g,'$1$2').replace(/`([^`]+)`/g,'$1').trim();
+function parseOutline(src){
+  const pages=[];let p=null,body=[],items=[],notes=[],tpl='',nextTpl='',table=false;
+  const cur=()=>p||(p={title:'',subtitle:'',body:'',items:'',number:'',notes:''});
+  const flush=()=>{
+    if(p){p.body=body.join('\n').replace(/^\n+|\n+$/g,'');p.items=items.join('\n');p.notes=notes.join('\n').replace(/^\n+|\n+$/g,'');
+      if(p.title||p.subtitle||p.body||p.items||p.notes||p.number)pages.push(cleanPage({...p,tpl:tplFrom(tpl)||autoTpl(p,pages.length,table)}))}
+    p=null;body=[];items=[];notes=[];tpl=nextTpl;nextTpl='';table=false;
+  };
+  /* 版型註解寫在「# 標題」前面時屬於下一頁；後面先出現其他內容就歸目前這一頁 */
+  const content=()=>{if(nextTpl){tpl=nextTpl;nextTpl=''}return cur()};
+  for(const raw of String(src).replace(/\r\n?/g,'\n').split('\n')){
+    const line=raw.replace(/\s+$/,'');let m;
+    if(/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(line)){flush();continue}
+    if((m=line.match(/^\s*<!--\s*(?:版型|範本|template)\s*[:：]\s*(.+?)\s*-->\s*$/i))){if(p&&p.title)nextTpl=m[1];else tpl=m[1];continue}
+    if(/^\s*<!--.*-->\s*$/.test(line))continue;
+    if((m=line.match(/^#\s+(.*)/))){if(p&&p.title)flush();if(nextTpl){tpl=nextTpl;nextTpl=''}cur().title=mdPlain(m[1]);continue}
+    if((m=line.match(/^##\s+(.*)/))){const q=content();if(q.subtitle)body.push(mdPlain(m[1]));else q.subtitle=mdPlain(m[1]);continue}
+    if((m=line.match(/^#{3,6}\s+(.*)/))){content();body.push(mdPlain(m[1]));continue}
+    if((m=line.match(/^\s*(?:數字|編號|number)\s*[:：]\s*(.*)/i))){content().number=mdPlain(m[1]);continue}
+    if((m=line.match(/^\s*>\s?(.*)/))){content();notes.push(m[1].trim());continue}
+    if((m=line.match(/^\s*\|(.*)\|\s*$/))){content();if(!/^[\s|:-]+$/.test(m[1])){items.push(m[1].split('|').map(mdPlain).join('|'));table=true}continue}
+    if((m=line.match(/^\s*(?:[-*+]|\d+[.)、])\s+(.*)/))){content();items.push(mdPlain(m[1]));continue}
+    if(!line.trim()){if(body.length&&body[body.length-1]!=='')body.push('');continue}
+    content();body.push(mdPlain(line));
+  }
+  flush();
+  return pages;
+}
+function outlineOf(pages){
+  return pages.map((p,i)=>{
+    const o=[`<!-- 第 ${i+1} 頁 -->`,`<!-- 版型: ${p.tpl} -->`];
+    if(p.title)o.push('# '+p.title);if(p.subtitle)o.push('## '+p.subtitle);if(p.number)o.push('數字: '+p.number);
+    if(p.body.trim())o.push('',...p.body.split('\n'));
+    const it=p.items.split('\n').filter(s=>s.trim());
+    if(it.length)o.push('',...(p.tpl==='tTable'?it.map(s=>'| '+s.split(/[|｜]/).join(' | ')+' |'):it.map(s=>'- '+s)));
+    if(p.notes.trim())o.push('',...p.notes.split('\n').map(l=>l.trim()?'> '+l:'>'));
+    return o.join('\n');
+  }).join('\n\n---\n\n')+'\n';
+}
+function importOutline(src,mode){
+  const ps=parseOutline(src);
+  if(!ps.length){toast('沒有讀到任何頁面：每頁用「# 標題」開頭，或用 --- 分頁');return}
+  storePage();
+  if(mode==='replace'){
+    if(S.pages.length>1&&!confirm(`用大綱的 ${ps.length} 頁取代目前的 ${S.pages.length} 頁？（可按復原）`))return;
+    S.pages=ps;usePage(0);
+  }else{const at=S.pages.length;S.pages.push(...ps);usePage(at)}
+  const nn=ps.filter(p=>p.notes.trim()).length;
+  pageChanged(`已匯入 ${ps.length} 頁`+(nn?`（${nn} 頁有逐字稿）`:''));
+}
+$('mdReplace').onclick=()=>importOutline($('mdIn').value,'replace');
+$('mdAppend').onclick=()=>importOutline($('mdIn').value,'append');
+$('mdOpen').onclick=()=>$('mdFile').click();
+$('mdFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{$('mdIn').value=await f.text();toast(`已讀入 ${f.name}，按「取代全部頁面」或「加在後面」`)}catch(err){toast('讀取失敗：'+err.message)}};
+$('mdExport').onclick=()=>{storePage();saveBlob(new Blob([outlineOf(S.pages)],{type:'text/markdown;charset=utf-8'}),`${deckName()}_大綱.md`);toast(`已匯出 ${S.pages.length} 頁大綱`)};
 
 /* ---------- 輸出 ---------- */
 const safeName=s=>String(s||'').replace(/[\\/:*?"<>|\r\n\t]/g,'').trim().slice(0,60)||'排版';
