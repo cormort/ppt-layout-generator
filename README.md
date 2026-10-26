@@ -186,9 +186,20 @@ node test/run.mjs --grep=00-    # 只跑某一支（npm 會把 --grep 當成自�
 
 ### 自動測試（GitHub Actions）
 
-`.github/workflows/test.yml` 在每次 push 到 `main` 與每個 PR 上跑：先 `node build.mjs --check`（幾秒，抓「改了 src/ 忘記 build」），再跑完整測試。跑在 `ubuntu-latest`，用 runner 內建的 Chrome；容器需要 `--no-sandbox`，所以 workflow 設了 `CHROME_FLAGS`（本機預設不加，沙箱照開）。
+`.github/workflows/test.yml` 在每次 push 到 `main` 與每個 PR 上跑：先 `node build.mjs --check`（幾秒，抓「改了 src/ 忘記 build」），再跑完整測試。跑在 `ubuntu-latest`，用 runner 內建的 Chrome；容器需要 `--no-sandbox`，所以 workflow 設了 `CHROME_FLAGS`（本機預設不加，沙箱照開）。失敗時會把失敗的測試名稱與訊息變成 **annotation**（`/check-runs/{id}/annotations` 公開可讀，不必登入抓 log）。
 
-⚠ Pages 是「push 就部署」，Actions 是平行跑的——**測試紅了不會自動阻止部署**。要真正擋在中間，得把 Pages 來源改成 GitHub Actions，流程變成「測試過 → 上傳 artifact → 部署」；需要改 repo 設定，所以沒有預設做。
+`.github/workflows/smoke.yml` 在 Pages 部署完成後（workflow 名稱是 `pages-build-deployment`）、每天一次、或手動觸發，用**真實網址**檢查本機與 CI 都看不到的事：
+
+```sh
+node test/smoke.mjs https://cormort.github.io/ppt-layout-generator/    # 也可以自己跑
+```
+
+- 線上的 `index.html` 與 repo 的檔案**逐字元相同**（CRLF 正規化；Pages 傳播可能幾十秒，會重試 90 秒）→ 抓「線上還是舊版」
+- 線上 `sw.js` 的 `VERSION` 與 repo 一致 → 抓「舊 service worker 卡住」
+- `manifest.webmanifest` 解析得開、每個 icon 都回 200 → 抓 PWA 安裝壞掉
+- headless Chrome 開真的網址：版型數量與 repo 一致、沒有 console 錯誤
+
+⚠ Pages 是「push 就部署」，Actions 是平行跑的——**測試紅了不會自動阻止部署**。這是刻意的取捨：這道門還年輕（第一次紅是因為 runner 比本機慢、匯出逾時），而單人專案的回復成本只有一分鐘的 revert。等 CI 連續一段時間穩定、或開始在手機／GitHub 網頁上直接改檔案，再考慮改成 `deploy.yml`（測試過 → artifact → deploy-pages）把門裝起來。
 
 範本都放在 `def({id, cat, name, hint, render(c)})` 裡，`render` 回傳 1920×1080 的 SVG 字串：
 
