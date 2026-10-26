@@ -2,8 +2,10 @@
   "name": "ppt-layout-generator",
   "private": true,
   "type": "module",
-  "description": "單檔 PPT 版面產生器；這個 package.json 只為了 npm test，App 本身零依賴、不需要建置",
+  "description": "單檔 PPT 版面產生器。源碼在 src/，node build.mjs 產生零依賴的 index.html；這個 package.json 只為了 build 與 test。",
   "scripts": {
+    "build": "node build.mjs",
+    "check": "node build.mjs --check",
     "test": "node test/run.mjs"
   }
 }

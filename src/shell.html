@@ -1,0 +1,219 @@
+<!doctype html>
+<!-- 這個檔案是 node build.mjs 從 src/ 產生的：要改請改 src/ 底下的檔案，直接改這裡下次 build 會被蓋掉。 -->
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="排版產生器">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="免費的線上圖片排版產生器：上傳照片、選範本、打字，一鍵輸出 16:9 PNG／JPG／SVG 貼進 PPT，或用 Markdown 大綱做出含逐字稿的多頁 PPTX。35 組版型、商務配色、Logo 與頁尾，圖片全程只在瀏覽器處理。">
+<meta name="theme-color" content="#f3f1ed">
+<title>圖片排版產生器 · 16:9 簡報排版</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232f5d8a'/%3E%3Crect x='6' y='11' width='20' height='11' rx='2' fill='%23fff'/%3E%3Crect x='6' y='24' width='12' height='2.5' rx='1.2' fill='%23fff'/%3E%3C/svg%3E">
+<style>/*@CSS@*/</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#2f5d8a"/><rect x="6" y="9" width="20" height="12" rx="2" fill="#fff"/><rect x="6" y="23" width="12" height="2.5" rx="1.2" fill="#fff"/></svg>
+    <div class="doc"><b id="docTitle">排版產生器</b><span id="docStat"></span></div>
+  </div>
+  <div class="menuwrap">
+    <button class="btn sq" id="fileBtn" aria-haspopup="true" aria-expanded="false" aria-controls="fileMenu"><span class="lbl-d">檔案</span><svg class="lbl-m" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg><span class="lbl-m" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">檔案</span><svg class="lbl-d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="menu" id="fileMenu" hidden>
+      <span class="mh">開啟既有簡報（PPTX）</span>
+      <button class="mi" id="pptxReplace"><span class="tx">開啟 PPTX…<small>取代目前全部頁面</small></span></button>
+      <button class="mi" id="pptxAppend"><span class="tx">開啟 PPTX，加在後面…</span></button>
+      <div class="pad"><label class="chk" style="margin:0"><input type="checkbox" id="pptxImg" checked> 一併匯入投影片上的照片（小圖示與 Logo 會略過）</label></div>
+      <input type="file" id="pptxFile" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" hidden>
+      <hr>
+      <button class="mi" id="mdDlgBtn"><span class="tx">大綱（Markdown）…<small>貼上或開啟 .md，AI 寫的大綱直接變簡報</small></span></button>
+      <hr>
+      <span class="mh">專案</span>
+      <button class="mi" id="projLoad"><span class="tx">開啟專案 .pptgen.json…</span></button>
+      <button class="mi" id="projSave"><span class="tx">另存專案<small>所有頁面、逐字稿與照片存成一個檔，換電腦也能接續</small></span></button>
+      <input type="file" id="projFile" accept=".json,application/json" hidden>
+      <hr>
+      <button class="mi" id="reset"><span class="tx">新簡報（重設）</span></button>
+      <button class="mi" id="install" hidden><span class="tx">安裝成 App</span></button>
+      <p class="hintline pad" id="iosHint" hidden>iPhone／iPad：在 Safari 按「分享」→「加入主畫面」，就能像 App 一樣從桌面開啟、離線使用。</p>
+      <hr>
+      <div class="pad"><span class="lab" style="margin-top:4px">介面外觀</span><div class="seg" id="theme" role="group" aria-label="介面外觀"></div></div>
+    </div>
+  </div>
+  <button class="btn ico" id="undo" title="復原（Ctrl+Z）" aria-label="復原"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-3"/></svg></button>
+  <button class="btn ico lbl-d" id="redo" title="重做（Ctrl+Y）" aria-label="重做"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 000 10h3"/></svg></button>
+  <div class="grow"></div>
+  <div class="menuwrap">
+    <button class="btn sq" id="expBtn" aria-haspopup="true" aria-expanded="false" aria-controls="expMenu"><span class="lbl-d">匯出</span><svg class="lbl-d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg><svg class="lbl-m" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 9l5-5 5 5M5 20h14"/></svg><span class="lbl-m" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">匯出</span></button>
+    <div class="menu right" id="expMenu" hidden>
+      <span class="mh" id="expDeckHd">整份簡報</span>
+      <button class="mi" id="deckOut"><span class="tag" style="background:#c4572d">PPTX</span><span class="tx">PowerPoint 檔<small>文字可修改，逐字稿寫進備忘稿</small></span></button>
+      <button class="mi" id="htmlOut"><span class="tag" style="background:#2f5d8a">HTML</span><span class="tx">HTML 簡報<small>單一檔案，瀏覽器開啟即可播放</small></span></button>
+      <button class="mi" id="handout"><span class="tag" style="background:#3f6b3a">PDF</span><span class="tx">講義（列印／存成 PDF）<small>每頁投影片＋逐字稿</small></span></button>
+      <hr>
+      <span class="mh">目前這一頁</span>
+      <div class="pad row"><select id="fmt" aria-label="格式"><option value="png">PNG</option><option value="jpeg">JPG</option><option value="svg">SVG</option><option value="pptx">PPTX（單頁）</option></select><select id="scale" aria-label="倍率"><option value="1">1×</option><option value="2">2×</option><option value="3">3×</option></select><button class="btn pri fix" id="dl">下載</button></div>
+      <button class="mi" id="copy"><span class="tx">複製圖片（直接貼進 PPT）</span><span class="kbd">Ctrl+Shift+C</span></button>
+      <button class="mi" id="share" hidden><span class="tx">分享…</span></button>
+      <hr>
+      <span class="mh">其他</span>
+      <button class="mi" id="mdExport"><span class="tx">大綱 .md<small>交給 AI 改寫後再匯入</small></span></button>
+      <button class="mi" id="zipAll"><span class="tx">目前分類的所有版型（ZIP）</span></button>
+      <button class="mi" id="numBatch"><span class="tx">章節頁連續編號<small>用「項目」每一行做一章，數字自動遞增</small></span></button>
+      <details>
+        <summary>選項：PPTX 文字、底圖品質、檔名</summary>
+        <div class="pad">
+          <label for="pptText" style="margin-top:4px">PPTX 文字</label><select id="pptText"><option value="edit">可修改・逐行（外觀最接近）</option><option value="flow">可修改・整段（改字會自動重排）</option><option value="image">轉成圖片（外觀完全一致）</option></select>
+          <label for="pptQ">PPTX 底圖品質</label><select id="pptQ"><option value="std">標準（2 倍，清晰）</option><option value="small">精簡（1 倍，檔案約小一半）</option></select>
+          <label for="fname">檔名（留空＝用第一頁標題）</label><input type="text" id="fname" placeholder="2026 提案">
+          <p class="hintline">文字框位置依字型估算；換到沒有相同字型的電腦若有偏移，可選「轉成圖片」。逐字稿三種模式都會保留。</p>
+        </div>
+      </details>
+    </div>
+  </div>
+  <button class="btn pri sq" id="playBtn" title="從目前這一頁開始播放"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg><span class="lbl-d">播放</span><span class="lbl-m" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">播放</span></button>
+</header>
+
+<div class="work">
+  <nav class="side" aria-label="頁面清單">
+    <div class="sh"><b>頁面 <span id="pgCount"></span></b><span>拖曳排序</span></div>
+    <div class="pages" id="pages"></div>
+  </nav>
+
+  <main class="center">
+    <div class="cbar">
+      <button class="btn ico mob" id="prevPg" aria-label="上一頁"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="tt" id="curName"></div>
+      <button class="btn ico mob" id="nextPg" aria-label="下一頁"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+      <p class="note" id="note" aria-live="polite"></p>
+    </div>
+    <div class="stage" id="stage"></div>
+    <section class="notesbox" id="notesBox" aria-label="逐字稿">
+      <div class="nh"><label for="notes">逐字稿</label><span class="empty">寫進 PPTX 備忘稿，播放時顯示在簡報者檢視</span><span class="cnt" id="notesCount"></span></div>
+      <textarea id="notes" rows="4" placeholder="這一頁要講的內容…"></textarea>
+    </section>
+  </main>
+
+  <aside class="insp" aria-label="這一頁的設定">
+    <div class="itabs" id="itabs" role="tablist" aria-label="設定分類">
+      <button role="tab" data-tab="content">內容</button><button role="tab" data-tab="tpl">版型</button><button role="tab" data-tab="photo">照片</button><button role="tab" data-tab="style">樣式</button>
+    </div>
+
+    <section class="pn" data-pn="content" id="pnContent">
+      <div class="tplcard"><div class="tthumb" id="tplThumb"></div><div class="tx"><b id="tplName"></b><span id="tplHint"></span></div><button class="btn mini fix" id="tplChange">換版型</button></div>
+      <label class="chk" id="secSyncRow" hidden><input type="checkbox" id="secSync"> 章節頁同步：所有章節頁用同一個版型與照片（各頁的章節數字、標題不變）</label>
+      <label for="title">標題</label><input type="text" id="title">
+      <label for="subtitle">副標題</label><input type="text" id="subtitle">
+      <div class="sec" style="margin-top:14px"><span>項目 <span id="itemsN"></span></span><button class="btn mini" id="itemsMode" aria-pressed="false">文字模式</button></div>
+      <div class="ied" id="itemsEd"></div>
+      <textarea id="items" hidden aria-label="項目（每行一項，用 | 分欄）" placeholder="每行一項，用「|」分欄：重點|說明"></textarea>
+      <button class="btn ghost" id="itemAdd" style="width:100%;margin-top:6px">＋ 新增項目</button>
+      <p class="hintline">可直接貼上 Excel 表格（第一欄類別、其餘欄數字），會自動變成圖表。</p>
+      <details class="more" id="moreFields">
+        <summary>更多欄位：內文、大數字</summary>
+        <label for="body">內文</label><textarea id="body"></textarea>
+        <label for="number">大數字（章節頁、大數字範本用）</label><input type="text" id="number">
+      </details>
+    </section>
+
+    <section class="pn" data-pn="tpl">
+      <div class="filters" id="filters" role="group" aria-label="版型分類"></div>
+      <div class="gal" id="gal"></div>
+    </section>
+
+    <section class="pn" data-pn="photo">
+      <div class="sec"><span>照片庫</span><span><button class="btn mini" id="selAll">全選</button> <button class="btn mini" id="selNone">清除選擇</button></span></div>
+      <div class="drop" id="drop" role="button" tabindex="0"><span class="desk">點此選擇或拖曳照片（可多張，也可 Ctrl+V 貼上）</span><span class="mob">＋ 選擇照片（可多張）</span></div>
+      <input type="file" id="file" accept="image/*" multiple hidden>
+      <div class="lib" id="lib"></div>
+      <div class="row" style="margin-top:6px"><span class="empty" id="libInfo"></span><button class="btn mini fix" id="delUnsel">移除沒用到的</button><button class="btn mini fix" id="delAll">清空</button></div>
+      <div class="sec"><span>這一頁的照片順序（可拖曳；✂ 裁切）</span></div>
+      <div class="order" id="order"></div>
+      <div class="crop" id="cropEd" hidden>
+        <div class="row"><b id="cropName" class="cropname"></b><button class="btn mini fix" id="cropDone">完成</button></div>
+        <div class="cropwrap" id="cropWrap"><img id="cropImg" alt="" draggable="false"><i id="cropDot"></i></div>
+        <label for="cropZ">放大 — <b id="cropZv" style="font-weight:400;color:var(--ink)"></b></label><input type="range" id="cropZ" min="100" max="400" step="5">
+        <div class="row" style="margin-top:6px"><span class="hintline" style="margin:0">點或拖曳圖片，選要留在畫面中央的主體</span><button class="btn mini fix" id="cropReset">還原</button></div>
+        <div class="cutbox" id="cutBox">
+          <div class="row"><span class="hintline" style="margin:0">去背（把背景變透明，適合商品、人像、剪影）</span></div>
+          <div class="row"><label for="cutTol" style="margin:0">容許度 — <b id="cutTolv" style="font-weight:400;color:var(--ink)"></b></label><button class="btn mini fix" id="cutGo">去背</button></div>
+          <input type="range" id="cutTol" min="8" max="80" step="2" value="32">
+          <p class="hintline" id="cutTip" style="margin:4px 0 0">背景單一色（白底、去背攝影棚）效果最好；會另存一張「（去背）」照片，原圖保留。</p>
+        </div>
+        <div class="cutbox" id="fxBox">
+          <div class="row"><span class="hintline" style="margin:0">混色與透明度（讓照片和底色融在一起）</span></div>
+          <div class="row"><label for="fxBlend" style="margin:0">混色</label><select id="fxBlend" style="flex:1;max-width:150px">
+            <option value="">正常</option>
+            <option value="multiply">色彩增值</option>
+            <option value="screen">濾色</option>
+            <option value="overlay">重疊</option>
+            <option value="darken">變暗</option>
+            <option value="lighten">變亮</option>
+          </select></div>
+          <label for="fxOp">不透明度 — <b id="fxOpv" style="font-weight:400;color:var(--ink)"></b></label>
+          <input type="range" id="fxOp" min="10" max="100" step="5" value="100">
+        </div>
+      </div>
+      <span class="lab" id="focalLabel">所有照片的預設焦點</span>
+      <div class="focal" id="focal" role="group" aria-labelledby="focalLabel"></div>
+      <label class="chk"><input type="checkbox" id="single"> 多張時也只用第 1 張，讓所有形狀連成一張完整畫面</label>
+    </section>
+
+    <section class="pn" data-pn="style">
+      <p class="hintline" style="margin:0 0 4px">這裡的設定<b>整份共用</b>，每一頁都會套用。</p>
+      <span class="lab" id="ratioLab">版面尺寸</span>
+      <div class="seg" id="ratioSeg" role="group" aria-labelledby="ratioLab"></div>
+      <p class="hintline">16:9 是簡報；1:1、4:5、9:16 是社群貼文、LINE 公告、限時動態用的圖卡（可用圖卡、圖表版型）。</p>
+      <span class="lab">主色</span>
+      <div class="row"><input type="color" id="color" aria-label="主色"><button class="btn" id="pick">從第 1 張照片取色</button></div>
+      <div class="sw" id="sw"></div>
+      <label for="accent">輔色</label>
+      <div class="row"><input type="color" id="accent" aria-label="輔色"><span class="empty">數字、線條、色塊點綴</span></div>
+      <label for="biz">配色組（主色＋輔色）</label>
+      <div class="biz" id="biz"></div>
+      <label class="chk"><input type="checkbox" id="bgOn"> 自訂底色（不勾選＝各版型預設的淡色底）</label>
+      <div class="row" style="margin-top:6px"><input type="color" id="bg" aria-label="底色"><div class="sw" id="bgSw" style="margin:0"></div></div>
+      <label for="tf">標題字體</label><select id="tf"></select>
+      <label for="bf">內文字體</label><select id="bf"></select>
+      <label for="fs">全域字級 — <b id="fsVal" style="font-weight:400;color:var(--ink)"></b></label><input type="range" id="fs" min="70" max="140" step="5">
+      <div class="sec" style="margin-top:20px"><span>Logo 與頁尾</span></div>
+      <div class="row"><button class="btn" id="logoBtn">上傳 Logo</button><button class="btn fix" id="logoDel">移除</button></div>
+      <input type="file" id="logoFile" accept="image/*" hidden>
+      <div class="row" style="margin-top:6px"><img id="logoPrev" alt="Logo 預覽" style="max-height:40px;max-width:140px;flex:none;display:none"><select id="logoPos" aria-label="Logo 位置"><option value="tr">右上角</option><option value="tl">左上角</option><option value="br">右下角</option><option value="bl">左下角</option></select></div>
+      <label for="logoSize">Logo 大小 — <b id="logoSizeVal" style="font-weight:400;color:var(--ink)"></b></label><input type="range" id="logoSize" min="30" max="160" step="5">
+      <label class="chk"><input type="checkbox" id="logoBg"> Logo 加白色底框（放在照片上比較清楚）</label>
+      <label class="chk"><input type="checkbox" id="footer"> 顯示頁尾（單位｜日期｜頁碼）</label>
+      <label for="company">單位名稱</label><input type="text" id="company" placeholder="例如：○○處">
+      <div class="row"><div><label for="date">日期</label><input type="text" id="date" placeholder="2026.10"></div><div><label for="page">第 1 頁頁碼</label><input type="text" id="page" placeholder="P.01"></div></div>
+      <p class="hintline">頁碼之後每頁自動 +1（P.01、P.02…）。</p>
+    </section>
+  </aside>
+</div>
+
+<dialog class="dlg" id="mdDlg" aria-labelledby="mdDlgT">
+  <div class="dh"><b id="mdDlgT">大綱（Markdown）</b><button class="btn ico" id="mdClose" aria-label="關閉"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="db">
+    <textarea id="mdIn" aria-label="大綱內容" placeholder="# 封面標題&#10;## 副標題&#10;&#10;---&#10;# 第二頁標題&#10;- 重點一|說明&#10;- 重點二|說明&#10;> 這一頁的逐字稿"></textarea>
+    <div class="row" style="margin-top:10px"><button class="btn fix" id="mdOpen">開啟 .md 檔…</button><div></div><button class="btn fix" id="mdAppend">加在後面</button><button class="btn pri fix" id="mdReplace">取代全部頁面</button></div>
+    <input type="file" id="mdFile" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden>
+    <p class="hintline">每頁用 <b>---</b> 分隔（或直接用下一個「# 標題」開新頁）：<b>#</b> 標題、<b>##</b> 副標題、<b>數字: 01</b> 大數字、<b>- 重點|說明</b> 或 <b>1.</b> 項目、<b>| 表格 |</b> 每列一行、<b>&gt;</b> 逐字稿、其他文字＝內文；<b>&lt;!-- 版型: tList --&gt;</b> 可指定版型（也可寫「條列、方格、表格、段落、引言、封面、章節」）。沒指定時依內容自動挑選。</p>
+  </div>
+</dialog>
+
+<nav class="tabs" id="tabs" aria-label="功能分頁">
+  <button data-tab="pages"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="7" rx="1.5"/><rect x="4" y="13" width="16" height="7" rx="1.5"/></svg>頁面</button>
+  <button data-tab="content"><svg viewBox="0 0 24 24"><path d="M5 6h14M12 6v13M8 19h8"/></svg>內容</button>
+  <button data-tab="tpl"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="7" rx="1.5"/><rect x="13" y="4" width="8" height="7" rx="1.5"/><rect x="3" y="13" width="8" height="7" rx="1.5"/><rect x="13" y="13" width="8" height="7" rx="1.5"/></svg>版型</button>
+  <button data-tab="photo"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M4 18l5-5 4 4 3-3 4 4"/></svg>照片</button>
+  <button data-tab="style"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v16"/></svg>樣式</button>
+</nav>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>/*@JS@*/</script>
+</body>
+</html>

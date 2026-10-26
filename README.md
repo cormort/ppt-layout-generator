@@ -145,19 +145,35 @@ node cli/pptgen.mjs install-skill                     # 安裝 Claude Skill 到 
 
 ## 開發
 
-沒有建置流程，`index.html` 就是完整應用（HTML + CSS + JS，零依賴）；`manifest.webmanifest`、`sw.js`、`icons/` 提供 PWA 安裝與離線快取。修改後如要讓已安裝的使用者立即更新，請調高 `sw.js` 裡的 `VERSION`。直接用瀏覽器開啟即可修改測試。
+**源碼在 `src/`，`index.html` 是產生出來的**：
+
+```
+src/shell.html    HTML 骨架（含 /*@CSS@*/ 與 /*@JS@*/ 兩個佔位符）
+src/style.css     <style> 的內容
+src/js/*.js       依檔名排序串成一支 <script>（同一支 script 內 const／let 才是同一個作用域）
+```
+
+```sh
+node build.mjs            # 產生 index.html（或 npm run build）
+node build.mjs --check    # 只檢查 index.html 是否與 src/ 同步（npm run check）
+```
+
+改完 `src/` 一定要 build，再把 `index.html` 一起 commit —— GitHub Pages 送的是 `index.html`。**不要直接改 `index.html`**（檔案開頭有標記提醒），下次 build 會蓋掉；`npm test` 也會抓「src/ 改了但忘記 build」。
+
+產出的 `index.html` 仍然是**單一檔案、零依賴**（HTML + CSS + JS 全部內嵌），可以直接用瀏覽器開、可以下載離線用；`manifest.webmanifest`、`sw.js`、`icons/` 提供 PWA 安裝與離線快取。修改後如要讓已安裝的使用者立即更新，請調高 `sw.js` 裡的 `VERSION`。
 
 ### 自動測試
 
 ```sh
-npm test                        # 全部跑一輪，約 90 秒
-node test/run.mjs --grep=02-    # 只跑某一支（npm 會把 --grep 當成自己的設定，所以用 node 直接跑）
+npm test                        # 全部跑一輪，約 95 秒
+node test/run.mjs --grep=00-    # 只跑某一支（npm 會把 --grep 當成自己的設定，所以用 node 直接跑）
 ```
 
-會起一個本機靜態伺服器，用 headless Chrome 開真的 `index.html`（App 本身仍然是零依賴、不用建置；約 90 秒是因為要跑 5 種尺寸的 PNG／PPTX 匯出）。需要 Chrome 或 Edge，找不到時用環境變數 `CHROME_PATH` 指定。
+會起一個本機靜態伺服器，用 headless Chrome 開真的 `index.html`（約 95 秒是因為要跑 5 種尺寸的 PNG／PPTX 匯出）。需要 Chrome 或 Edge，找不到時用環境變數 `CHROME_PATH` 指定。
 
 | 檔案 | 檢查什麼 |
 |---|---|
+| `test/00-build.mjs` | `index.html` 是否與 `src/` 同步（抓「改了 src/ 忘記 build」與「直接手改 index.html」）、每個片段非空、產物頭尾完整 |
 | `test/01-shell.mjs` | 載入無錯誤、程式碼用到的 id 都存在、比例按鈕、手機 44px 觸控目標、分類完整性 |
 | `test/02-templates.mjs` | 每個版型在每個支援尺寸都畫得出來（viewBox、NaN、文字不出畫布）、預設文字不誤報放不下、比例切換後版型都合法、建議清單數量 |
 | `test/03-editor.mjs` | 新增／複製／刪除頁、復原、Markdown 匯入、逐字稿字數、去背與混色的資料往返 |

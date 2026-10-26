@@ -1,26 +1,29 @@
 /* 編輯器行為：新增／複製／刪除頁、復原、Markdown 匯入、逐字稿字數、去背與混色資料往返。 */
 import { test, ok, eq, noErrors, deepEq } from './lib/check.mjs';
 
-test('新增、複製、刪除頁面並用復原救回來', async ({ page }) => {
+test('新增、複製、刪除頁面，刪掉的頁可以用復原救回來', async ({ page }) => {
   const got = await page.run(`(async()=>{
     const wait=ms=>new Promise(r=>setTimeout(r,ms));
     S.pages=[{...cleanPage({tpl:'tList',title:'A'}),sel:[]},{...cleanPage({tpl:'tList',title:'B'}),sel:[]}];
-    S.cur=0;usePage(0);drawAll();await wait(150);
-    /* 復原是一連串快照：每個動作後明確 commit 一次，測試才不會受 debounce 影響 */
-    histCommit();
-    const out={start:S.pages.length};
-    addPage();await wait(120);histCommit();out.afterAdd=S.pages.length;
-    S.cur=0;usePage(0);addPage(true);await wait(120);histCommit();out.afterDup=S.pages.length;
-    delPage(1);await wait(120);histCommit();out.afterDel=S.pages.length;
-    histGo(-1);await wait(300);out.afterUndo=S.pages.length;
-    out.titleStill=S.pages[0].title;
+    S.cur=0;usePage(0);drawAll();await wait(200);
+    histCommit();                                  /* 基準快照 */
+    const out={start:S.pages.length,titles0:S.pages.map(p=>p.title)};
+    addPage();await wait(300);histCommit();out.afterAdd=S.pages.length;
+    S.cur=1;usePage(1);await wait(300);histCommit();
+    addPage(true);await wait(300);histCommit();out.afterDup=S.pages.length;
+    delPage(1);await wait(400);histCommit();out.afterDel=S.pages.length;
+    histGo(-1);await wait(500);
+    out.afterUndo=S.pages.length;
+    out.titlesAfterUndo=S.pages.map(p=>p.title);
     return out;
   })()`);
   eq(got.start, 2, '起始頁數');
   eq(got.afterAdd, 3, '新增一頁');
   eq(got.afterDup, 4, '複製一頁');
   eq(got.afterDel, 3, '刪除一頁');
-  eq(got.afterUndo, 4, '復原要把刪掉的頁救回來');
+  /* 重點是「刪掉的頁回得來」，不是剛好回到幾頁（復原是一連串快照，中間步數不是契約） */
+  eq(got.afterUndo, 4, '復原後頁數');
+  ok(got.titlesAfterUndo.includes('B'), '復原後被刪掉的頁（B）沒有回來：' + JSON.stringify(got.titlesAfterUndo));
   noErrors(page.errors());
 });
 
