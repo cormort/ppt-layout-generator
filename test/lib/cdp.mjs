@@ -25,10 +25,13 @@ export async function launch({ downloadDir } = {}) {
   const exe = findBrowser();
   if (!exe) throw new Error('找不到 Chrome 或 Edge；請安裝，或用環境變數 CHROME_PATH 指定');
   const prof = mkdtempSync(join(tmpdir(), 'ppt-test-'));
-  tr('spawning ' + exe);
+  /* CI 的容器裡常要 --no-sandbox --disable-dev-shm-usage，用環境變數追加，不影響本機預設 */
+  const extra = String(process.env.CHROME_FLAGS || '').split(/\s+/).filter(Boolean);
+  tr('spawning ' + exe + (extra.length ? ' [' + extra.join(' ') + ']' : ''));
   const proc = spawn(exe, ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${prof}`,
     '--no-first-run', '--no-default-browser-check', '--disable-extensions', '--disable-gpu',
-    '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--mute-audio', 'about:blank'], { stdio: 'ignore' });
+    '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--mute-audio',
+    ...extra, 'about:blank'], { stdio: 'ignore' });
   let port = '';
   for (let i = 0; i < 120 && !port; i++) {
     await sleep(120);

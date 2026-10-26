@@ -1,5 +1,7 @@
 # 圖片排版產生器
 
+[![test](https://github.com/cormort/ppt-layout-generator/actions/workflows/test.yml/badge.svg)](https://github.com/cormort/ppt-layout-generator/actions/workflows/test.yml)
+
 用版型把內容排成簡報：照片美編、整份簡報（含逐字稿）產生、HTML 播放，都在瀏覽器裡完成；需要時再交給 PowerPoint 繼續加工。
 
 ## 介面
@@ -181,6 +183,12 @@ node test/run.mjs --grep=00-    # 只跑某一支（npm 會把 --grep 當成自�
 
 `test/lib/pptx.mjs` 用 Node 內建的 `zlib` 自己解析 ZIP，所以不需要 PowerShell 或任何套件。
 注意：這台機器上 `fs.rmSync` 會讓 Node 直接 fast-fail（沒有訊息），`test/lib/fsx.mjs` 與 `cli/pptgen.mjs` 都改成 `unlinkSync`／`rmdirSync` 自己走訪。
+
+### 自動測試（GitHub Actions）
+
+`.github/workflows/test.yml` 在每次 push 到 `main` 與每個 PR 上跑：先 `node build.mjs --check`（幾秒，抓「改了 src/ 忘記 build」），再跑完整測試。跑在 `ubuntu-latest`，用 runner 內建的 Chrome；容器需要 `--no-sandbox`，所以 workflow 設了 `CHROME_FLAGS`（本機預設不加，沙箱照開）。
+
+⚠ Pages 是「push 就部署」，Actions 是平行跑的——**測試紅了不會自動阻止部署**。要真正擋在中間，得把 Pages 來源改成 GitHub Actions，流程變成「測試過 → 上傳 artifact → 部署」；需要改 repo 設定，所以沒有預設做。
 
 範本都放在 `def({id, cat, name, hint, render(c)})` 裡，`render` 回傳 1920×1080 的 SVG 字串：
 

@@ -1,0 +1,50 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # 產物（index.html）是不是跟 src/ 同步：幾秒就有答案，先擋最常見的錯
+      - name: index.html 與 src/ 同步
+        run: node build.mjs --check
+
+      - name: 找瀏覽器
+        run: |
+          for p in /usr/bin/google-chrome /usr/bin/google-chrome-stable /usr/bin/chromium /usr/bin/chromium-browser /usr/bin/microsoft-edge; do
+            if [ -x "$p" ]; then
+              echo "CHROME_PATH=$p" >> "$GITHUB_ENV"
+              "$p" --version
+              exit 0
+            fi
+          done
+          echo "runner 上找不到 Chrome/Chromium" >&2
+          exit 1
+
+      # 全部測試：59 個版型 × 5 種尺寸、編輯器行為、5 種尺寸的 PNG／PPTX 匯出
+      - name: 測試
+        env:
+          CHROME_FLAGS: --no-sandbox --disable-dev-shm-usage
+        run: node test/run.mjs
+
+      - name: 失敗時留下截圖與下載檔
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts
+          path: |
+            test/.downloads/
+          if-no-files-found: ignore
+          retention-days: 7
