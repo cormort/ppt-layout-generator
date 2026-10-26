@@ -937,6 +937,51 @@ def({id:'thanks',cat:'cover',name:'結尾・感謝頁',hint:'不用圖片；標�
   if(sub)s+=T(wrap(sub,W-2*P,30,c.bf,500).slice(0,2),{x:W/2,y:y0+36+72,size:30,lh:1.4,fill:c.col.mute,font:c.bf,anchor:'middle',ls:3});
   return s;
 }});
+/* 去背主體：主體放在色塊上、標題在另一側；沒去背的照片自動裁成圓形 */
+def({id:'cutoutCard',cat:'card',name:'圖卡・去背主體',hint:'1 張照片（去背過最好）；主體放色塊上、標題在另一側',ratios:ALLR,render(c){
+  const P=PAD(),k=FS,wide=W>H,im=c.imgs[0],g=c.id(),mid=Math.min(W,H);
+  const blobX=wide?W*.60:W*.50,blobY=wide?H*.46:H*.38;
+  let s=bg(c.col.paper||c.col.light)
+    +`<circle cx="${f1(blobX)}" cy="${f1(blobY)}" r="${f1(mid*.38)}" fill="${c.col.main}" opacity=".14"/>`
+    +`<circle cx="${f1(blobX)}" cy="${f1(blobY)}" r="${f1(mid*.30)}" fill="${c.col.main}" opacity=".12"/>`;
+  const boxW=wide?W*.40:W*.76,boxH=wide?H*.58:H*.44,bx=wide?W*.42:(W-boxW)/2,by=wide?H*.13:H*.05;
+  if(im){
+    if(im.cutout)s+=IMG(im,bx,by,boxW,boxH);
+    else{
+      const r=Math.min(boxW,boxH)/2,cx=bx+boxW/2,cy=by+boxH/2;
+      s+=`<defs><clipPath id="${g}"><circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r)}"/></clipPath></defs>`
+       +IMG(im,cx-r,cy-r,r*2,r*2,`clip-path="url(#${g})"`);
+    }
+  }
+  const tw0=wide?W*.36:W-2*P;
+  let ts=Math.min(wide?96:76,Math.round(W*.062));
+  while(ts>34&&wrap(c.t.title,tw0,ts,c.tf,800).length>(wide?4:3))ts-=4;
+  const tl=wrap(c.t.title,tw0,ts,c.tf,800).slice(0,wide?4:3),th=(tl.length-1)*ts*k*1.16;
+  const anchor=wide?'start':'end',tx=wide?P:W-P;
+  const bot=H-Math.max(P,footH()?footH()+22:0);
+  const y0=wide?Math.round(H*.46-th/2):Math.round(bot-th-64);
+  s+=T(tl,{x:tx,y:y0,size:ts,lh:1.16,fill:c.col.ink,font:c.tf,weight:800,anchor});
+  if(c.t.subtitle)s+=`<rect x="${f1(wide?tx:W-P-72)}" y="${f1(y0+32)}" width="72" height="5" rx="2.5" fill="${c.col.acc}"/>`
+   +T(wrap(c.t.subtitle,wide?tw0:W-2*P,28,c.bf,500).slice(0,2),{x:wide?tx:W-P,y:y0+90,size:28,lh:1.45,fill:c.col.mute,font:c.bf,anchor});
+  return s;
+}});
+/* 雙色調：照片以主色增值壓暗，標題壓在下方漸層上（雜誌封面感） */
+def({id:'duotone',cat:'cover',name:'封面・雙色調',hint:'1 張照片；照片用主色增值，標題放大字',ratios:ALLR,render(c){
+  const P=PAD(),k=FS,wide=W>H,im=c.imgs[0],g=c.id(),bot=H-Math.max(P,footH()?footH()+26:0);
+  let s=bg(c.col.main);
+  if(im)s+=IMG({...im,blend:'multiply',op:.95},0,0,W,H);
+  s+=`<defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.col.dark}" stop-opacity="0"/><stop offset="1" stop-color="${c.col.dark}" stop-opacity=".85"/></linearGradient></defs>`
+   +`<rect y="${f1(H*.48)}" width="${W}" height="${f1(H*.52)}" fill="url(#${g})"/>`;
+  let ts=Math.min(wide?150:112,Math.round(W*.092));
+  while(ts>38&&tw(c.t.title,W-2*P,ts,c.tf,800)>W-2*P)ts-=6;
+  const tl=wrap(c.t.title,W-2*P,ts,c.tf,800).slice(0,wide?2:3),th=(tl.length-1)*ts*k*1.14;
+  /* 由下往上排：副標 → 細線 → 標題，細線才不會壓到副標 */
+  const ruleY=bot-(c.t.subtitle?30*k+30:36),y0=ruleY-38-th;
+  s+=T(tl,{x:P,y:y0,size:ts,lh:1.14,fill:'#fff',font:c.tf,weight:800})
+   +`<rect x="${f1(P)}" y="${f1(ruleY)}" width="86" height="6" rx="3" fill="${c.col.acc}"/>`;
+  if(c.t.subtitle)s+=T(wrap(c.t.subtitle,W-2*P,30,c.bf,500).slice(0,2),{x:P,y:bot,size:30,lh:1.4,fill:'#fff',op:.88,font:c.bf,ls:2});
+  return s;
+}});
 def({id:'wall',cat:'wall',name:'照片牆・大標疊字',hint:'2–6 張照片拼成一牆；標題疊在底部',ratios:ALLR,render(c){
   const k=FS,P=PAD(),n=Math.max(2,Math.min(6,c.imgs.length)),gap=Math.max(6,Math.round(Math.min(W,H)*.014));
   const LAY={
@@ -2268,7 +2313,8 @@ const TPL_ALIAS={封面:'split',章節:'bignum',條列:'tList',方格:'tGrid',�
   雜誌:'mCover',雜誌封面:'mCover',專題:'mFeature',文章:'mColumns',兩欄:'mColumns',目錄:'mIndex',
   圖卡:'kAnnounce',公告:'kAnnounce',照片公告:'kPhoto',重點卡:'kList',數據卡:'kNumber',金句卡:'kQuote',
   對比:'cmp',前後:'cmp',前後對比:'cmp',比較:'cmpVs',人物引言:'kPortrait',人像:'kPortrait',照片牆:'wall',拼貼:'wall',
-  數據並列:'tStats',數字並列:'tStats',大字目錄:'tocNum',編號目錄:'tocNum',撕紙:'cnTear',宣紙:'cnQuote',中國風金句:'cnQuote',感謝:'thanks',結尾:'thanks'};
+  數據並列:'tStats',數字並列:'tStats',大字目錄:'tocNum',編號目錄:'tocNum',撕紙:'cnTear',宣紙:'cnQuote',中國風金句:'cnQuote',感謝:'thanks',結尾:'thanks',
+  去背:'cutoutCard',去背主體:'cutoutCard',主體:'cutoutCard',雙色調:'duotone',雙色:'duotone'};
 function tplFrom(v){
   v=String(v||'').trim();if(!v)return '';
   if(TPLBY[v])return v;if(TPL_ALIAS[v])return TPL_ALIAS[v];
