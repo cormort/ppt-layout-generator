@@ -776,7 +776,7 @@ def({id:'tocNum',cat:'toc',name:'目錄・大字編號',hint:'不用照片；項
 }});
 
 /* 對比：兩張照片並排，底部色帶放「之前／之後」標籤與說明；直式改成上下堆疊 */
-def({id:'cmp',cat:'cmp',name:'對比・前後色帶',hint:'2 張照片並排；項目填「之前|說明」「之後|說明」',ratios:ALLR,render(c){
+def({id:'cmp',cat:'cmp',name:'對比・前後色帶',hint:'2 張照片並排；項目只取前 2 項：「之前|說明」「之後|說明」',ratios:ALLR,render(c){
   const k=FS,P=PAD(),wide=W>H,gap=Math.max(6,Math.round((wide?W:H)*.01));
   const it=items(c),A=it[0]||{a:'之前',b:''},B=it[1]||{a:'之後',b:''};
   const gL=c.id(),gR=c.id(),im=ii=>c.imgs[Math.min(ii,c.imgs.length-1)];
@@ -806,7 +806,7 @@ def({id:'cmp',cat:'cmp',name:'對比・前後色帶',hint:'2 張照片並排；�
 }});
 
 /* 對比：兩張圓角照片＋中間 VS 圓標，標籤與說明放在照片下面 */
-def({id:'cmpVs',cat:'cmp',name:'對比・VS 圓標',hint:'2 張照片；項目填「A|說明」「B|說明」',ratios:ALLR,render(c){
+def({id:'cmpVs',cat:'cmp',name:'對比・VS 圓標',hint:'2 張照片；項目只取前 2 項：「A|說明」「B|說明」',ratios:ALLR,render(c){
   const h=hdr(c,{tMax:60}),k=FS,P=PAD(),gap=Math.max(30,Math.round(W*.035)),colW=(W-2*P-gap)/2;
   const it=items(c),A=it[0]||{a:'A',b:''},B=it[1]||{a:'B',b:''},top=h.y;
   const photoH=Math.min(H*.5,Math.max(H*.26,H-top-P*2.6)),id1=c.id(),id2=c.id();
@@ -826,7 +826,82 @@ def({id:'cmpVs',cat:'cmp',name:'對比・VS 圓標',hint:'2 張照片；項目�
   return s+lab(A,P)+lab(B,P+colW+gap);
 }});
 
-/* 照片牆：2–6 張拼成一牆，標題疊在底部漸層上 */
+/* 人物引言：一張人像佔一側，另一側放金句與出處 */
+def({id:'kPortrait',cat:'card',name:'圖卡・人物引言',hint:'1 張人像；標題放金句，副標題放出處',ratios:ALLR,render(c){
+  const P=PAD(),k=FS,wide=W>H,iw=wide?Math.round(W*.46):W,ih=wide?H:Math.round(H*.46);
+  const tx=wide?iw+P*.7:P,tw0=W-tx-P,top=wide?P:ih+P*.7,bot=H-Math.max(P,footH()+20);
+  const availH=Math.max(120,bot-top),marks=76;
+  let qs=wide?74:62,ql=wrap(c.t.title,tw0,qs,c.tf,700);
+  while(qs>34&&((ql.length>8)||(ql.length*qs*k*1.42>availH-marks-150))){qs-=4;ql=wrap(c.t.title,tw0,qs,c.tf,700)}
+  ql=ql.slice(0,Math.max(1,Math.floor((availH-marks-150)/(qs*k*1.42))));
+  const qh=(ql.length-1)*qs*k*1.42,total=marks+qh+150,y0=top+Math.max(0,(availH-total)/2)+marks;
+  const markAt=(x,cy)=>`<circle cx="${f1(x+26)}" cy="${f1(cy)}" r="24"/><path d="M${f1(x+56)},${f1(cy)}C${f1(x+56)},${f1(cy+46)} ${f1(x+30)},${f1(cy+70)} ${f1(x)},${f1(cy+80)}L${f1(x-4)},${f1(cy+66)}C${f1(x+20)},${f1(cy+56)} ${f1(x+30)},${f1(cy+40)} ${f1(x+28)},${f1(cy+24)}Z"/>`;
+  const mq=y0-qs*k*.85;
+  let s=bg(c.col.paper||'#fff')+IMG(c.imgs[0],0,0,iw,ih)
+   +`<g fill="${c.col.acc}" opacity=".55">${[0,62].map(dx=>`<g transform="rotate(180 ${f1(tx+26+dx)} ${f1(mq)})">${markAt(tx+dx,mq)}</g>`).join('')}</g>`
+   +T(ql,{x:tx,y:y0,size:qs,lh:1.42,fill:c.col.ink,font:c.tf,weight:700});
+  if(c.t.subtitle)s+=`<rect x="${f1(tx+2)}" y="${f1(y0+qh+40)}" width="72" height="5" rx="2.5" fill="${c.col.acc}"/>`
+   +T(wrap(c.t.subtitle,tw0,28,c.bf,600).slice(0,2),{x:tx+2,y:y0+qh+102,size:28,lh:1.4,fill:c.col.mt,font:c.bf,weight:600,ls:2});
+  return s;
+}});
+
+/* 中國風・撕紙分界：照片在一側，宣紙與直排標題在另一側 */
+def({id:'cnTear',cat:'cn',name:'中國風・撕紙分界',hint:'1 張照片；標題直排在宣紙上',ratios:ALLR,render(c){
+  const P=PAD(),k=FS,wide=W>H,paper=c.col.paper||'#f4efe6',cut=wide?Math.round(W*.58):Math.round(H*.46);
+  const pts=wide?tearPts(cut,0,cut,H,24,28,11):tearPts(0,cut,W,cut,24,28,11);
+  const panel=wide?`M0,0L${TP2(pts)}L0,${H}Z`:`M0,0L${W},0L${TP2(pts.slice().reverse())}L0,0Z`;
+  let s=IMG(c.imgs[0],0,0,W,H)
+   /* 撕紙邊的內側暗線，讓紙的厚度看得出來 */
+   +`<path d="M${TP2(pts)}" fill="none" stroke="${c.col.dark}" stroke-opacity=".18" stroke-width="5"/>`
+   +`<path d="${panel}" fill="${paper}"/>`;
+  /* 宣紙的極淡橫紋 */
+  for(let i=1;i<=3;i++)s+=`<line x1="0" y1="${f1(wide?H*(.22*i):cut*.22*i)}" x2="${wide?cut:W}" y2="${f1(wide?H*(.22*i):cut*.22*i)}" stroke="${c.col.dark}" stroke-opacity=".045" stroke-width="2"/>`;
+  const seal=(x,y,sz)=>`<rect x="${f1(x)}" y="${f1(y)}" width="${f1(sz)}" height="${f1(sz)}" rx="${f1(sz*.12)}" fill="#b03a2e" opacity=".88"/><rect x="${f1(x+sz*.16)}" y="${f1(y+sz*.16)}" width="${f1(sz*.68)}" height="${f1(sz*.68)}" rx="${f1(sz*.06)}" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="3"/>`;
+  if(wide){
+    const ch=[...String(c.t.title||'標題')],ts=Math.min(92,Math.floor((H-P*1.6)/Math.max(1,ch.length*1.1)));
+    s+=VT(c.t.title,{x:cut-96,y:P+ts*.95,size:ts,gap:1.1,fill:c.col.ink,font:SERIF,weight:700})
+     +`<line x1="${cut-176}" y1="${f1(P+60)}" x2="${cut-176}" y2="${f1(P+60+ch.length*ts*1.1)}" stroke="${c.col.dark}" stroke-opacity=".28" stroke-width="2"/>`
+     +VT(c.t.subtitle,{x:cut-206,y:P+90,size:28,gap:1.2,fill:c.col.mute,font:c.bf})
+     +seal(cut-186+8,P+76+ch.length*ts*1.1,64);
+  }else{
+    const ts=Math.min(84,Math.round(W*.085)),tl=wrap(c.t.title,W-2*P,ts,SERIF,700).slice(0,2);
+    let sy=cut*.30;
+    s+=T(tl,{x:P,y:sy+ts,size:ts,lh:1.25,fill:c.col.ink,font:SERIF,weight:700})
+     +`<line x1="${P}" y1="${f1(sy+ts+34)}" x2="${P+96}" y2="${f1(sy+ts+34)}" stroke="${c.col.dark}" stroke-opacity=".3" stroke-width="3"/>`
+     +T(wrap(c.t.subtitle,W-2*P,26,c.bf).slice(0,2),{x:P,y:sy+ts+92,size:26,lh:1.5,fill:c.col.mute,font:c.bf})
+     +seal(W-P-64,sy+ts+40,60);
+  }
+  return s;
+}});
+
+/* 中國風・宣紙金句：直排金句＋落款＋印章，底色是淡墨暈染 */
+def({id:'cnQuote',cat:'cn',name:'中國風・宣紙金句',hint:'不用圖片；標題直排當金句，副標題放出處',ratios:ALLR,render(c){
+  const P=PAD(),k=FS,wide=W>H,paper=c.col.paper||'#f4efe6',g=c.id();
+  const quote=String(c.t.title||'留白，是為了讓重點被看見');
+  const ch=[...quote],colW=Math.max(1,ch.length*1.1);
+  const ts=Math.min(wide?92:74,Math.floor((H-P*1.8)/Math.max(1,ch.length*1.16)));
+  const cx=wide?W*.62:W*.56,cy=P+ts*1.05;
+  let s=bg(paper)+`<defs><radialGradient id="${g}" cx=".74" cy=".26" r=".72"><stop offset="0" stop-color="${c.col.dark}" stop-opacity=".11"/><stop offset="1" stop-color="${c.col.dark}" stop-opacity="0"/></radialGradient></defs><rect width="${W}" height="${H}" fill="url(#${g})"/>`;
+  s+=VT(quote,{x:cx,y:cy,size:ts,gap:1.16,fill:c.col.ink,font:SERIF,weight:700});
+  const endY=cy+(ch.length-1)*ts*1.16;
+  s+=`<line x1="${f1(cx-ts*0.9)}" y1="${f1(P+ts*.4)}" x2="${f1(cx-ts*0.9)}" y2="${f1(Math.min(H-P,endY+ts*.4))}" stroke="${c.col.dark}" stroke-opacity=".26" stroke-width="2"/>`;
+  if(c.t.subtitle)s+=VT(c.t.subtitle,{x:cx-ts*1.45,y:P+90,size:28,gap:1.2,fill:c.col.mute,font:c.bf});
+  s+=`<rect x="${f1(cx-32)}" y="${f1(Math.min(H-P-70,endY+56))}" width="62" height="62" rx="7" fill="#b03a2e" opacity=".88"/>`
+   +`<rect x="${f1(cx-22)}" y="${f1(Math.min(H-P-60,endY+66))}" width="42" height="42" rx="4" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="3"/>`;
+  return s;
+}});
+
+/* 結尾感謝頁：大標＋一句話 */
+def({id:'thanks',cat:'cover',name:'結尾・感謝頁',hint:'不用圖片；標題放感謝詞，副標題放一句話',ratios:ALLR,render(c){
+  const P=PAD(),k=FS,wide=W>H,t=c.t.title||'謝謝聆聽',sub=c.t.subtitle||'';
+  let ts=Math.min(wide?170:132,Math.round(W*.088));
+  while(ts>44&&tw(t,ts*k,c.tf,800)>W-2*P)ts-=6;
+  const tot=ts*k*1.1+(sub?110:0)+40,y0=(H-tot)/2+ts*k*.82;
+  let s=bg(c.col.paper||'#fff')+T([t],{x:W/2,y:y0,size:ts,fill:c.col.ink,font:c.tf,weight:800,anchor:'middle',ls:2})
+   +`<rect x="${f1(W/2-42)}" y="${f1(y0+36)}" width="84" height="6" rx="3" fill="${c.col.acc}"/>`;
+  if(sub)s+=T(wrap(sub,W-2*P,30,c.bf,500).slice(0,2),{x:W/2,y:y0+36+72,size:30,lh:1.4,fill:c.col.mute,font:c.bf,anchor:'middle',ls:3});
+  return s;
+}});
 def({id:'wall',cat:'wall',name:'照片牆・大標疊字',hint:'2–6 張照片拼成一牆；標題疊在底部',ratios:ALLR,render(c){
   const k=FS,P=PAD(),n=Math.max(2,Math.min(6,c.imgs.length)),gap=Math.max(6,Math.round(Math.min(W,H)*.014));
   const LAY={
@@ -1058,10 +1133,40 @@ def({id:'tQuote',cat:'text',name:'文字・引言金句',hint:'不用圖片；�
    +T(bl,{x:tx+2,y:y0+th+(sl.length?112+sl.length*42+30:80),size:24,lh:1.6,fill:c.col.mute,font:c.bf});
 }});
 
+/* 數據並列：紙底上 2–4 個大數字，各自帶標籤與一行說明（不需要照片） */
+def({id:'tStats',cat:'text',name:'文字・數據並列',hint:'不用圖片；項目填「數字|標籤|說明」，3–4 個並列最有力量',ratios:TXR,render(c){
+  const h=hdr(c,{tMax:64}),k=FS,P=PAD(),it=items(c).slice(0,4),n=Math.max(1,it.length),wide=W>H;
+  const nc=wide?n:Math.min(2,n),rows=Math.max(1,Math.ceil(n/nc)),gap=wide?(W>1600?72:46):34;
+  const rowH=(H-h.y-P)/rows,colW=(W-2*P-(nc-1)*gap)/nc;
+  let s=bg(c.col.paper||'#fff')+h.s;
+  it.forEach((o,i)=>{
+    const ci=i%nc,ri=Math.floor(i/nc),x=P+ci*(colW+gap),cellTop=h.y+ri*rowH;
+    const num=o.a||'0',lab=o.b||'',note=o.c||'';
+    let ns=Math.min(wide?160:126,Math.round(colW*.62));
+    while(ns>44&&tw(num,ns*k,c.tf,800)>colW*.96)ns-=4;
+    const labL=wrap(lab,colW,34,c.tf,700).slice(0,2),noteL=wrap(note,colW,22,c.bf).slice(0,2);
+    const cellH=ns*k*1.05+28+6+34*k*1.3*labL.length+(noteL.length?18+noteL.length*22*k*1.5:0);
+    const y0=cellTop+Math.max(0,(rowH-cellH)/2);
+    s+=`<text x="${f1(x)}" y="${f1(y0+ns*k*.82)}" font-size="${f1(ns*k)}" font-family="${esc(c.tf)}" font-weight="800" fill="${c.col.main}" letter-spacing="-2">${esc(num)}</text>`
+      +`<rect x="${f1(x)}" y="${f1(y0+ns*k*1.05+20)}" width="64" height="6" rx="3" fill="${c.col.acc}"/>`
+      +T(labL,{x,y:y0+ns*k*1.05+64,size:34,lh:1.3,fill:c.col.ink,font:c.tf,weight:700});
+    if(noteL.length)s+=T(noteL,{x,y:y0+ns*k*1.05+64+34*k*1.3*labL.length+16,size:22,lh:1.5,fill:c.col.mute,font:c.bf});
+  });
+  return s;
+}});
+
 /* ---------- 版面尺寸：16:9 簡報、1:1／4:5／3:4／9:16 圖卡。圖表、圖卡與文字版型用 W、H 排版 ---------- */
 const PAD=()=>W>H?120:80;
 /* 頁尾（公司｜日期｜頁碼）會蓋在右下角；需要貼底排版的版型先問這個高度，避免文字被壓到 */
 const footH=()=>S.footer&&[S.company,S.date,S.page].some(v=>String(v||'').trim())?100:0;
+/* 撕紙邊：從 (x0,y0) 到 (x1,y1) 的鋸齒折線，固定種子讓每次重畫都一樣 */
+function tearPts(x0,y0,x1,y1,n=26,amp=16,seed=7){
+  const r=rng(seed),len=Math.hypot(x1-x0,y1-y0)||1,nx=-(y1-y0)/len,ny=(x1-x0)/len,pts=[];
+  for(let i=0;i<=n;i++){const t=i/n,off=(i===0||i===n)?0:(r()-.5)*2*amp;
+    pts.push([x0+(x1-x0)*t+nx*off,y0+(y1-y0)*t+ny*off])}
+  return pts;
+}
+const TP2=pts=>pts.map(p=>f1(p[0])+','+f1(p[1])).join('L');
 /* 依尺寸調整的標題列（圖表、圖卡共用） */
 function hdr(c,{tMax=64}={}){
   const k=FS,x=PAD(),w=W-2*x,top=W>H?70:84;let size=tMax;
@@ -1331,7 +1436,7 @@ const TPLBY=Object.fromEntries(TPL.map(t=>[t.id,t]));
 /* 版型是否支援目前的版面尺寸；不支援時換成相近的版型（16:9 ↔ 圖卡） */
 const tplOK=t=>(t.ratios||['16:9']).includes(S.ratio);
 /* 會用到照片的版型（沒選照片時以示意圖代替） */
-const usesPhoto=t=>!(t.cat==='text'||t.cat==='chart'||['kAnnounce','kList','kNumber','kQuote','mColumns','mIndex','tocNum'].includes(t.id));
+const usesPhoto=t=>!(t.cat==='text'||t.cat==='chart'||['kAnnounce','kList','kNumber','kQuote','cnQuote','thanks','mColumns','mIndex','tocNum'].includes(t.id));
 const TO_CARD={text:'tList',cover:'kPhoto',shape:'kPhoto',sec:'kNumber',toc:'kList',grid:'kPhoto',biz:'kAnnounce',cn:'kPhoto',mag:'kPhoto'};
 const TO_WIDE={kList:'tList',kPhoto:'split',kNumber:'bignum',kQuote:'tQuote',kAnnounce:'tText'};
 function tplFor(id){
@@ -2048,7 +2153,9 @@ $('htmlOut').onclick=async()=>{
 const TPL_ALIAS={封面:'split',章節:'bignum',條列:'tList',方格:'tGrid',表格:'tTable',段落:'tText',內文:'tText',引言:'tQuote',金句:'tQuote',大標題:'ocean',
   圖表:'cBar',長條:'cBar',直條:'cBar',長條圖:'cBar',直條圖:'cBar',橫條:'cHbar',橫條圖:'cHbar',折線:'cLine',折線圖:'cLine',圓餅:'cPie',圓餅圖:'cPie',環圈:'cPie',環圈圖:'cPie',
   雜誌:'mCover',雜誌封面:'mCover',專題:'mFeature',文章:'mColumns',兩欄:'mColumns',目錄:'mIndex',
-  圖卡:'kAnnounce',公告:'kAnnounce',照片公告:'kPhoto',重點卡:'kList',數據卡:'kNumber',金句卡:'kQuote'};
+  圖卡:'kAnnounce',公告:'kAnnounce',照片公告:'kPhoto',重點卡:'kList',數據卡:'kNumber',金句卡:'kQuote',
+  對比:'cmp',前後:'cmp',前後對比:'cmp',比較:'cmpVs',人物引言:'kPortrait',人像:'kPortrait',照片牆:'wall',拼貼:'wall',
+  數據並列:'tStats',數字並列:'tStats',大字目錄:'tocNum',編號目錄:'tocNum',撕紙:'cnTear',宣紙:'cnQuote',中國風金句:'cnQuote',感謝:'thanks',結尾:'thanks'};
 function tplFrom(v){
   v=String(v||'').trim();if(!v)return '';
   if(TPLBY[v])return v;if(TPL_ALIAS[v])return TPL_ALIAS[v];
