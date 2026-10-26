@@ -13,7 +13,8 @@ async function clearDownloads(dir) {
     try { removeTree(join(dir, f)); } catch { }
   }
 }
-async function waitForFile(dir, re, timeout = 30000) {
+/* CI 的 runner 比本機慢很多（2 核、無 GPU），匯出等待給寬一點 */
+async function waitForFile(dir, re, timeout = 90000) {
   const t0 = Date.now();
   while (Date.now() - t0 < timeout) {
     const hit = readdirSync(dir).find(f => re.test(f) && !/\.crdownload$/.test(f));

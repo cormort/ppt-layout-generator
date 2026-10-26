@@ -37,14 +37,29 @@ jobs:
       - name: 測試
         env:
           CHROME_FLAGS: --no-sandbox --disable-dev-shm-usage
-        run: node test/run.mjs
+        run: |
+          set -o pipefail
+          node test/run.mjs 2>&1 | tee test.log
 
-      - name: 失敗時留下截圖與下載檔
+      # 失敗時把測試輸出放進 annotation，公開 API 也讀得到（不需要登入抓 log）
+      - name: 失敗摘要
+        if: failure()
+        run: |
+          if [ -s test.log ]; then
+            echo "::error::$(grep -E '^(FAIL|[0-9]+ passed)|^     ' test.log | head -40 | tr '\n' '|')"
+          else
+            echo "::error::test.log 是空的，測試可能在啟動階段就掛了"
+          fi
+          echo "--- 瀏覽器與字型 ---"
+          node -e "console.log('chrome:', require('child_process').execSync('ls -1 /usr/bin/*chrom* /usr/bin/google-chrome* 2>/dev/null || true').toString())" || true
+
+      - name: 失敗時留下測試輸出
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: test-artifacts
+          name: test-log
           path: |
+            test.log
             test/.downloads/
           if-no-files-found: ignore
           retention-days: 7
