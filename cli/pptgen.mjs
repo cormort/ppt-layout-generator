@@ -3,7 +3,7 @@
    用 Markdown 大綱產生含逐字稿的 PPTX，並回報哪幾頁文字放不下。
    跟網頁版共用同一份程式，排版結果完全相同。需要 Node 22 以上（內建 WebSocket）。 */
 import { spawn } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, mkdtempSync, readdirSync, rmdirSync } from 'node:fs';
 import { tmpdir, homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -165,7 +165,18 @@ async function openApp() {
   const close = () => {
     try { ws.close(); } catch { }
     proc.kill();
-    setTimeout(() => { try { rmSync(prof, { recursive: true, force: true }); } catch { } }, 300);
+    /* 不用 fs.rmSync：在某些 Windows／Node 版本上，rmSync 會讓行程直接 fast-fail（沒有錯誤訊息）。
+       這裡用 unlinkSync／rmdirSync 自己走訪，並留著暫存資料夾也不影響功能。 */
+    setTimeout(() => {
+      const drop = p => {
+        try {
+          if (!existsSync(p)) return;
+          for (const n of readdirSync(p)) drop(join(p, n));
+        } catch { }
+        try { rmdirSync(p); } catch { }
+      };
+      drop(prof);
+    }, 300);
   };
   await send('Page.navigate', { url: appUrl });
   for (let i = 0; i < 100; i++) {

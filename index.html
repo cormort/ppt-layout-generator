@@ -811,7 +811,7 @@ def({id:'tocNum',cat:'toc',name:'目錄・大字編號',hint:'不用照片；項
 }});
 
 /* 對比：兩張照片並排，底部色帶放「之前／之後」標籤與說明；直式改成上下堆疊 */
-def({id:'cmp',cat:'cmp',name:'對比・前後色帶',hint:'2 張照片並排；項目只取前 2 項：「之前|說明」「之後|說明」',ratios:ALLR,render(c){
+def({id:'cmp',cat:'cmp',name:'對比・前後色帶',hint:'2 張照片並排；項目只取前 2 項：「之前|說明」「之後|說明」',maxItems:2,ratios:ALLR,render(c){
   const k=FS,P=PAD(),wide=W>H,gap=Math.max(6,Math.round((wide?W:H)*.01));
   const it=items(c),A=it[0]||{a:'之前',b:''},B=it[1]||{a:'之後',b:''};
   const gL=c.id(),gR=c.id(),im=ii=>c.imgs[Math.min(ii,c.imgs.length-1)];
@@ -841,7 +841,7 @@ def({id:'cmp',cat:'cmp',name:'對比・前後色帶',hint:'2 張照片並排；�
 }});
 
 /* 對比：兩張圓角照片＋中間 VS 圓標，標籤與說明放在照片下面 */
-def({id:'cmpVs',cat:'cmp',name:'對比・VS 圓標',hint:'2 張照片；項目只取前 2 項：「A|說明」「B|說明」',ratios:ALLR,render(c){
+def({id:'cmpVs',cat:'cmp',name:'對比・VS 圓標',hint:'2 張照片；項目只取前 2 項：「A|說明」「B|說明」',maxItems:2,ratios:ALLR,render(c){
   const h=hdr(c,{tMax:60}),k=FS,P=PAD(),gap=Math.max(30,Math.round(W*.035)),colW=(W-2*P-gap)/2;
   const it=items(c),A=it[0]||{a:'A',b:''},B=it[1]||{a:'B',b:''},top=h.y;
   const photoH=Math.min(H*.5,Math.max(H*.26,H-top-P*2.6)),id1=c.id(),id2=c.id();
@@ -1414,7 +1414,7 @@ def({id:'kList',cat:'card',name:'圖卡・重點清單',hint:'3–6 個重點；
   return s;
 }});
 
-def({id:'kNumber',cat:'card',name:'圖卡・數據亮點',hint:'大數字填「大數字」欄（例如 85%），標題是說明',ratios:CARDR,render(c){
+def({id:'kNumber',cat:'card',name:'圖卡・數據亮點',hint:'大數字填「大數字」欄（例如 85%），標題是說明',maxItems:1,ratios:CARDR,render(c){
   const P=PAD(),k=FS,num=c.t.number||items(c)[0].a||'85%',w=W-2*P;
   let ns=Math.min(H*.3,360);while(ns>80&&tw(num,ns*k,c.tf,800)>w)ns-=10;
   const tl=wrap(c.t.title,w,64,c.tf,700).slice(0,3),bl=wrap(c.t.body,w,30,c.bf).slice(0,4);
@@ -1805,7 +1805,10 @@ function overflowNote(svg){
     const head=l.split(/[|｜]/)[0].replace(/\s+/g,'').toLowerCase();
     if(flat.includes(head))shown++;
   }
-  if(lines.length&&shown>0&&shown<lines.length)miss.push('項目清單');
+  /* 有些版型本來就只吃前幾個項目（對比頁只取 2 個、數據亮點只取 1 個），用 maxItems 宣告，不要誤報 */
+  const cap=(TPLBY[S.tpl]||{}).maxItems;
+  const expect=cap?Math.min(lines.length,cap):lines.length;
+  if(lines.length&&shown>0&&shown<expect)miss.push('項目清單');
   if(!miss.length)return '';
   return `⚠ ${miss.join('、')} 超出這個範本的容量，多出來的部分不會出現在圖上。可以換範本，或把文字縮短。`;
 }

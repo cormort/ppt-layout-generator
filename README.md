@@ -147,6 +147,25 @@ node cli/pptgen.mjs install-skill                     # 安裝 Claude Skill 到 
 
 沒有建置流程，`index.html` 就是完整應用（HTML + CSS + JS，零依賴）；`manifest.webmanifest`、`sw.js`、`icons/` 提供 PWA 安裝與離線快取。修改後如要讓已安裝的使用者立即更新，請調高 `sw.js` 裡的 `VERSION`。直接用瀏覽器開啟即可修改測試。
 
+### 自動測試
+
+```sh
+npm test                        # 全部跑一輪，約 90 秒
+node test/run.mjs --grep=02-    # 只跑某一支（npm 會把 --grep 當成自己的設定，所以用 node 直接跑）
+```
+
+會起一個本機靜態伺服器，用 headless Chrome 開真的 `index.html`（App 本身仍然是零依賴、不用建置；約 90 秒是因為要跑 5 種尺寸的 PNG／PPTX 匯出）。需要 Chrome 或 Edge，找不到時用環境變數 `CHROME_PATH` 指定。
+
+| 檔案 | 檢查什麼 |
+|---|---|
+| `test/01-shell.mjs` | 載入無錯誤、程式碼用到的 id 都存在、比例按鈕、手機 44px 觸控目標、分類完整性 |
+| `test/02-templates.mjs` | 每個版型在每個支援尺寸都畫得出來（viewBox、NaN、文字不出畫布）、預設文字不誤報放不下、比例切換後版型都合法、建議清單數量 |
+| `test/03-editor.mjs` | 新增／複製／刪除頁、復原、Markdown 匯入、逐字稿字數、去背與混色的資料往返 |
+| `test/04-export.mjs` | 5 種尺寸的 PNG 像素尺寸、PPTX 結構（自己讀 ZIP：XML 完整、content types、關聯目標、頁數、投影片尺寸、可編輯文字）、HTML 播放器 |
+
+`test/lib/pptx.mjs` 用 Node 內建的 `zlib` 自己解析 ZIP，所以不需要 PowerShell 或任何套件。
+注意：這台機器上 `fs.rmSync` 會讓 Node 直接 fast-fail（沒有訊息），`test/lib/fsx.mjs` 與 `cli/pptgen.mjs` 都改成 `unlinkSync`／`rmdirSync` 自己走訪。
+
 範本都放在 `def({id, cat, name, hint, render(c)})` 裡，`render` 回傳 1920×1080 的 SVG 字串：
 
 - `c.imgs` 已選圖片、`c.t` 文字欄位、`c.col` 由主色衍生的配色、`c.tf`／`c.bf` 字體、`c.id()` 產生唯一 id
