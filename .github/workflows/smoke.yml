@@ -4,7 +4,7 @@ name: smoke
 # 這支抓的是本機與 CI 都驗不到的事：傳播、快取、MIME、manifest、圖示、service worker 版本。
 on:
   workflow_run:
-    workflows: ['pages build and deployment']
+    workflows: ['pages-build-deployment']   # GitHub Pages 內建 workflow 的真實名稱（顯示時會變成空白分隔）
     types: [completed]
   schedule:
     - cron: '0 1 * * *'        # 每天 09:00（台北）保底跑一次

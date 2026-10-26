@@ -93,7 +93,7 @@ export async function openPage(session, url, { width = 1720, height = 1200 } = {
   const { send, logs } = session;
   await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: width < 700 });
   logs.length = 0;
-  const mark = logs.length;
+  let mark = 0;
   const nav = await send('Page.navigate', { url });
   if (nav.errorText) throw new Error('導覽失敗：' + nav.errorText);
 
@@ -110,6 +110,8 @@ export async function openPage(session, url, { width = 1720, height = 1200 } = {
   await run('new Promise(r=>{const t0=Date.now();const f=()=>{if(document.fonts&&document.fonts.ready){document.fonts.ready.then(()=>setTimeout(r,60))}else setTimeout(r,60)};f()})');
   return {
     run,
+    /* 每個測試前清掉，錯誤才不會被算到後面的測試上 */
+    clearErrors: () => { mark = logs.length; },
     errors: () => logs.slice(mark),
     async viewport(w, h, mobile = w < 700) {
       await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 1, mobile });

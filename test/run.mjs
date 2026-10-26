@@ -52,6 +52,7 @@ for (const t of tests) {
     /* 每個測試都從乾淨狀態開始：清掉 localStorage 與 IndexedDB 再重載 */
     await page.clearStorage();
     await page.reload();
+    page.clearErrors();          /* 錯誤只算這個測試造成的 */
     await t.fn(ctx);
     pass++;
     console.log(`ok   ${t.file} › ${t.name}  (${Date.now() - started}ms)`);

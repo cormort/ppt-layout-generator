@@ -9,17 +9,12 @@ test('載入後沒有 console 錯誤或例外', async ({ page }) => {
 });
 
 test('程式碼裡用到的每個元素 id 都存在（播放器／簡報者檢視的是產生出來的）', async ({ page }) => {
-  /* 先產生「匯出檔／簡報者視窗」用的 HTML，收集它自己的 id；這段會動到 DOM，所以要重載後再檢查 */
-  const gen = await page.run(`(async()=>{
-    let g='';
-    try{g+=playerHtml(await deckSlides(),{title:'t'})}catch(e){}
-    try{g+=PRESENTER()}catch(e){}
-    return g;
-  })()`);
-  /* 匯出檔裡的 id 可能是字串內的字面值（簡報者檢視的 HTML 是嵌在 JS 字串裡），所以連 \" 也要吃 */
+  /* 播放器與簡報者檢視的 HTML 只存在於匯出檔，所以掃那幾個函式的原始碼（不要真的呼叫 PRESENTER()：
+     它在 App 頁面裡會把 document.body 換掉，後面的計時器就會踩到空元素）。 */
+  const gen = await page.run(`[String(PLAYER),String(playerHtml),String(PRESENTER)].join('\\n')`);
+  /* 字串裡的字面值可能被跳脫（id=\\"x\\"），所以連反斜線也要吃 */
   const genIds = new Set();
   for (const m of String(gen).matchAll(/id=(?:\\?"|\\?')([A-Za-z0-9_-]+)/g)) genIds.add(m[1]);
-  await page.reload();
   const got = await page.run(`(()=>{
     const code=[...document.querySelectorAll('script')].map(s=>s.textContent||'').join('\\n');
     const ids=new Set();
