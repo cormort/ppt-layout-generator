@@ -165,6 +165,9 @@ details.more summary{cursor:pointer;font-size:13px;padding:6px 0}
 .lib .it{position:relative;aspect-ratio:3/4;border-radius:6px;overflow:hidden;cursor:pointer;outline:2px solid transparent;background:var(--chip)}
 .lib .it img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
 .lib .it.on{outline-color:var(--acc)}
+/* 去背過的照片在圖庫右下角標一個「透」，一眼分得出原圖與去背版 */
+.lib .it.cut img{background:repeating-conic-gradient(#0000 0 25%,var(--line) 0 50%) 0 0/14px 14px}
+.lib .it.cut::before{content:'透';position:absolute;right:3px;bottom:3px;z-index:2;background:var(--panel);color:var(--ink);font-size:10px;line-height:1;padding:2px 3px;border-radius:4px;opacity:.92}
 .lib .it.on::after{content:attr(data-n);position:absolute;top:4px;left:4px;background:var(--acc);color:var(--panel);font-weight:700;font-size:12px;min-width:20px;height:20px;border-radius:10px;display:grid;place-items:center;padding:0 5px}
 .order{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;min-height:20px}
 .order .o{flex:0 0 74px;position:relative;cursor:grab}
@@ -180,6 +183,9 @@ details.more summary{cursor:pointer;font-size:13px;padding:6px 0}
 .cropwrap{position:relative;margin-top:8px;cursor:crosshair;touch-action:none;user-select:none;line-height:0}
 .cropwrap img{width:100%;max-height:260px;object-fit:contain;display:block;border-radius:6px;pointer-events:none}
 .cropwrap i{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px var(--acc),0 2px 6px rgba(0,0,0,.5);pointer-events:none}
+.cutbox{margin-top:10px;padding:8px;border:1px dashed var(--line);border-radius:8px;background:var(--panel)}
+.cutbox input[type="range"]{margin:2px 0 0}
+.cutbox .row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:2px}
 .focal{display:grid;grid-template-columns:repeat(3,30px);gap:4px}
 .focal button{border:1px solid var(--line);background:var(--panel);border-radius:6px;height:30px;cursor:pointer;padding:0;display:grid;place-items:center}
 .focal button::after{content:'';width:7px;height:7px;border-radius:50%;background:var(--line)}
@@ -380,6 +386,12 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.35)}
         <div class="cropwrap" id="cropWrap"><img id="cropImg" alt="" draggable="false"><i id="cropDot"></i></div>
         <label for="cropZ">放大 — <b id="cropZv" style="font-weight:400;color:var(--ink)"></b></label><input type="range" id="cropZ" min="100" max="400" step="5">
         <div class="row" style="margin-top:6px"><span class="hintline" style="margin:0">點或拖曳圖片，選要留在畫面中央的主體</span><button class="btn mini fix" id="cropReset">還原</button></div>
+        <div class="cutbox" id="cutBox">
+          <div class="row"><span class="hintline" style="margin:0">去背（把背景變透明，適合商品、人像、剪影）</span></div>
+          <div class="row"><label for="cutTol" style="margin:0">容許度 — <b id="cutTolv" style="font-weight:400;color:var(--ink)"></b></label><button class="btn mini fix" id="cutGo">去背</button></div>
+          <input type="range" id="cutTol" min="8" max="80" step="2" value="32">
+          <p class="hintline" id="cutTip" style="margin:4px 0 0">背景單一色（白底、去背攝影棚）效果最好；會另存一張「（去背）」照片，原圖保留。</p>
+        </div>
       </div>
       <span class="lab" id="focalLabel">所有照片的預設焦點</span>
       <div class="focal" id="focal" role="group" aria-labelledby="focalLabel"></div>
@@ -512,6 +524,11 @@ const focalCrop=()=>({z:1,fx:FOCAL_XY[S.focal.slice(1,4)],fy:FOCAL_XY[S.focal.sl
 function IMG(im,x,y,w,h,a=''){
   const iw=im.w,ih=im.h;
   if(!iw||!ih||w<=0||h<=0)return `<image href="${im.src}" x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" preserveAspectRatio="${S.focal} slice" ${a}/>`;
+  /* 去背後的圖：完整放進框內（不裁切、維持比例），主體才不會被切掉 */
+  if(im.cutout){
+    const sc=Math.min(w/iw,h/ih),dw=iw*sc,dh=ih*sc;
+    return `<image href="${im.src}" x="${f1(x+(w-dw)/2)}" y="${f1(y+(h-dh)/2)}" width="${f1(dw)}" height="${f1(dh)}" preserveAspectRatio="xMidYMid meet" ${a}/>`;
+  }
   /* 用巢狀 svg 的 viewBox 選出要顯示的那塊：先取符合框比例的最大範圍，再依倍率縮小、以主體點為中心 */
   const cr=im.crop||focalCrop(),A=w/h;let cw,ch;
   if(iw/ih>A){ch=ih;cw=ih*A}else{cw=iw;ch=iw/A}
@@ -1508,7 +1525,7 @@ async function libFlush(){
   try{
     const tx=IDB.db.transaction('imgs','readwrite'),st=tx.objectStore('imgs'),have=new Set(lib.map(x=>x.id));
     for(const k of await idbReq(st.getAllKeys()))if(!have.has(k))st.delete(k);
-    for(const it of lib)if(it.dirty){st.put({id:it.id,name:it.name,blob:it.blob,tblob:it.tblob,w:it.w,h:it.h,crop:it.crop||null});it.dirty=false}
+    for(const it of lib)if(it.dirty){st.put({id:it.id,name:it.name,blob:it.blob,tblob:it.tblob,w:it.w,h:it.h,crop:it.crop||null,cutout:!!it.cutout});it.dirty=false}
     await new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=tx.onabort=()=>rej(tx.error)});
   }catch(e){console.warn('idb',e);if(!IDB.warned){IDB.warned=true;toast('瀏覽器空間不足，照片無法自動保留；請用「專案存檔」保存')}}
 }
@@ -1518,7 +1535,7 @@ async function libRestore(){
     const rows=await idbReq(IDB.db.transaction('imgs').objectStore('imgs').getAll());
     for(const r of rows.sort((a,b)=>a.id-b.id)){
       if(!(r.blob instanceof Blob)||lib.some(x=>x.id===r.id))continue;const tb=r.tblob instanceof Blob?r.tblob:r.blob;
-      lib.push({id:r.id,name:String(r.name||'image'),blob:r.blob,tblob:tb,full:URL.createObjectURL(r.blob),thumb:URL.createObjectURL(tb),w:r.w,h:r.h,crop:cleanCrop(r.crop)});
+      lib.push({id:r.id,name:String(r.name||'image'),blob:r.blob,tblob:tb,full:URL.createObjectURL(r.blob),thumb:URL.createObjectURL(tb),w:r.w,h:r.h,crop:cleanCrop(r.crop),cutout:!!r.cutout});
       nid=Math.max(nid,r.id);
     }
   }catch(e){console.warn('idb',e)}
@@ -1567,12 +1584,78 @@ function encode(bmp,w,h,q,alpha){
   const detect=alpha===undefined?hasAlpha(x,w,h):alpha;
   return new Promise(r=>cv.toBlob(b=>r({blob:b,alpha:detect}),detect?'image/png':'image/jpeg',detect?undefined:q));
 }
-async function makeItem(name,bmp,crop=null){
+async function makeItem(name,bmp,crop=null,opts={}){
   const f=Math.min(1,2400/Math.max(bmp.width,bmp.height)),t=Math.min(1,520/Math.max(bmp.width,bmp.height));
-  const thumb=await encode(bmp,Math.max(1,Math.round(bmp.width*t)),Math.max(1,Math.round(bmp.height*t)),.85);
-  const full=await encode(bmp,Math.max(1,Math.round(bmp.width*f)),Math.max(1,Math.round(bmp.height*f)),.92,thumb.alpha);
-  const it={id:++nid,name,full:URL.createObjectURL(full.blob),thumb:URL.createObjectURL(thumb.blob),blob:full.blob,tblob:thumb.blob,w:bmp.width,h:bmp.height,crop:cleanCrop(crop)};
+  const force=!!opts.cutout;
+  const thumb=await encode(bmp,Math.max(1,Math.round(bmp.width*t)),Math.max(1,Math.round(bmp.height*t)),.85,force||undefined);
+  const full=await encode(bmp,Math.max(1,Math.round(bmp.width*f)),Math.max(1,Math.round(bmp.height*f)),.92,force||thumb.alpha);
+  const it={id:++nid,name,full:URL.createObjectURL(full.blob),thumb:URL.createObjectURL(thumb.blob),blob:full.blob,tblob:thumb.blob,w:bmp.width,h:bmp.height,crop:cleanCrop(crop),cutout:force};
   lib.push(it);libSave(it);return it;
+}
+/* ---------- 去背：四邊取樣參考色 → 連通洪水填充 → alpha 羽化。純 canvas，沒有外部程式庫 ---------- */
+async function cutoutBitmap(blob,tol){
+  const bmp=await createImageBitmap(blob);
+  const cv=document.createElement('canvas');cv.width=bmp.width;cv.height=bmp.height;
+  const x=cv.getContext('2d',{willReadFrequently:true});x.drawImage(bmp,0,0);
+  const w=cv.width,h=cv.height,img=x.getImageData(0,0,w,h),px=img.data;
+  /* 1. 四邊多點取樣，聚成最多 6 個參考色（漸層背景不會只認一個顏色） */
+  const refs=[];
+  const addRef=(px_,py)=>{const i=(py*w+px_)*4,r=px[i],g=px[i+1],b=px[i+2];
+    if(!refs.some(q=>Math.abs(q[0]-r)+Math.abs(q[1]-g)+Math.abs(q[2]-b)<26)&&refs.length<6)refs.push([r,g,b])};
+  for(let k=0;k<14;k++){
+    const t1=Math.round((k+.5)/14*(w-1)),t2=Math.round((k+.5)/14*(h-1));
+    addRef(t1,0);addRef(t1,h-1);addRef(0,t2);addRef(w-1,t2);
+  }
+  const thr=Math.max(12,tol*3);
+  const isBg=i=>{const r=px[i],g=px[i+1],b=px[i+2];
+    for(const q of refs)if(Math.abs(q[0]-r)+Math.abs(q[1]-g)+Math.abs(q[2]-b)<=thr)return true;return false};
+  /* 2. 從框邊往內做洪水填充：只吃「和邊界連通」的背景，主體裡的同色不會被挖掉 */
+  const seen=new Uint8Array(w*h),stk=new Int32Array(w*h);let sp=0;
+  const seed=(px_,py)=>{const p=py*w+px_;if(!seen[p]&&isBg(p*4)){seen[p]=1;stk[sp++]=p}};
+  for(let i=0;i<w;i++){seed(i,0);seed(i,h-1)}
+  for(let j=0;j<h;j++){seed(0,j);seed(w-1,j)}
+  while(sp>0){
+    const p=stk[--sp];px[p*4+3]=0;
+    const cx=p%w,cy=(p-cx)/w;
+    if(cx>0){const q=p-1;if(!seen[q]&&isBg(q*4)){seen[q]=1;stk[sp++]=q}}
+    if(cx<w-1){const q=p+1;if(!seen[q]&&isBg(q*4)){seen[q]=1;stk[sp++]=q}}
+    if(cy>0){const q=p-w;if(!seen[q]&&isBg(q*4)){seen[q]=1;stk[sp++]=q}}
+    if(cy<h-1){const q=p+w;if(!seen[q]&&isBg(q*4)){seen[q]=1;stk[sp++]=q}}
+  }
+  /* 3. alpha 做一次 3×3 平均：邊緣變柔順（大面積同值的地方不會改變） */
+  const al=new Uint8ClampedArray(w*h);
+  for(let i=0,p=3;i<w*h;i++,p+=4)al[i]=px[p];
+  const sm=new Uint8ClampedArray(w*h);
+  for(let j=0;j<h;j++){
+    const y0=j>0?j-1:0,y1=j<h-1?j+1:h-1;
+    for(let i=0;i<w;i++){
+      const x0=i>0?i-1:0,x1=i<w-1?i+1:w-1;let sum=0,n=0;
+      for(let yy=y0;yy<=y1;yy++){const row=yy*w;for(let xx=x0;xx<=x1;xx++){sum+=al[row+xx];n++}}
+      sm[j*w+i]=sum/n;
+    }
+  }
+  let clear=0;
+  for(let i=0,p=3;i<w*h;i++,p+=4){if(al[i]===0)continue;px[p]=sm[i];if(sm[i]===0)clear++}
+  x.putImageData(img,0,0);
+  const out=await new Promise(r=>cv.toBlob(r,'image/png'));
+  if(bmp.close)bmp.close();
+  return {bmp:await createImageBitmap(out),empty:clear>0};
+}
+async function doCutout(){
+  const it=cropItem();if(!it)return;
+  const tol=+$('cutTol').value,btn=$('cutGo');
+  btn.disabled=true;toast('去背處理中…（大圖要幾秒）');
+  try{
+    const r=await cutoutBitmap(it.blob,tol);
+    const nu=await makeItem(it.name.replace(/\.[^.]+$/,'')+'（去背）',r.bmp,null,{cutout:true});
+    if(r.bmp.close)r.bmp.close();
+    /* 直接換成去背版：每一頁用到這張圖的位置都換過去，原圖留在圖庫 */
+    if(sel.includes(it.id))sel=sel.map(i=>i===it.id?nu.id:i);
+    S.pages.forEach(p=>{p.sel=p.sel.map(i=>i===it.id?nu.id:i)});
+    closeCrop();drawLib();refresh();
+    toast('已去背：背景變透明，原圖還留在圖庫。去背版會完整顯示、不裁切');
+  }catch(e){console.warn(e);toast('這張圖去背失敗，換一張試試')}
+  btn.disabled=false;
 }
 async function addFiles(files){
   const fs=[...files].filter(f=>f&&f.type&&f.type.startsWith('image/'));
@@ -1596,7 +1679,7 @@ function dropItem(it){
 }
 
 function cleanCrop(c){if(!c||typeof c!=='object')return null;return{z:clampNum(c.z,1,4,1),fx:clampNum(c.fx,0,1,.5),fy:clampNum(c.fy,0,1,.5)}}
-const imgOf=(it,src)=>({src,w:it.w,h:it.h,crop:it.crop||null});
+const imgOf=(it,src)=>({src,w:it.w,h:it.h,crop:it.crop||null,cutout:!!it.cutout});
 function imgsOf(ids,kind){const L=ids.map(id=>lib.find(x=>x.id===id)).filter(Boolean);
   if(!L.length)return samples.map(s=>imgOf(s,s.src));return L.map(x=>imgOf(x,x[kind]))}
 const chosen=kind=>imgsOf(sel,kind);
@@ -1668,7 +1751,7 @@ function overflowNote(svg){
 /* 只有滑鼠才用拖曳排序；觸控螢幕上拖曳屬性會吃掉捲動手勢，改用 ◀ ▶ 按鈕 */
 const FINE=matchMedia('(pointer:fine)');
 function drawLib(){
-  $('lib').innerHTML=lib.map(it=>{const n=sel.indexOf(it.id);return`<div class="it ${n>=0?'on':''}" data-id="${it.id}" data-n="${n+1}" title="${esc(it.name)}" role="button" tabindex="0" aria-pressed="${n>=0}" aria-label="${esc(it.name)}"><img src="${it.thumb}" alt="" draggable="false"></div>`}).join('');
+  $('lib').innerHTML=lib.map(it=>{const n=sel.indexOf(it.id);return`<div class="it ${n>=0?'on':''}${it.cutout?' cut':''}" data-id="${it.id}" data-n="${n+1}" title="${esc(it.name)}" role="button" tabindex="0" aria-pressed="${n>=0}" aria-label="${esc(it.name)}"><img src="${it.thumb}" alt="" draggable="false"></div>`}).join('');
   $('libInfo').textContent=lib.length?`共 ${lib.length} 張，這一頁用了 ${sel.length} 張`:'';
   $('order').innerHTML=sel.length?sel.map((id,i)=>{const it=lib.find(x=>x.id===id);return`<div class="o${it.crop?' cut':''}${id===cropId?' edit':''}" draggable="${FINE.matches}" data-i="${i}"><img src="${it.thumb}" alt="" draggable="false"><span class="b">${i+1}</span><div class="ctl"><button data-a="l" aria-label="往前移">◀</button><button data-a="c" aria-label="裁切" title="放大／裁切">✂</button><button data-a="x" aria-label="移除">✕</button><button data-a="r" aria-label="往後移">▶</button></div></div>`}).join(''):'<span class="empty">尚未選擇（預覽暫用示意圖）</span>';
   if(cropId&&!sel.includes(cropId))closeCrop();
@@ -1702,6 +1785,9 @@ function setCrop(p){const it=cropItem();if(!it)return;it.crop=cleanCrop({...(it.
 $('cropDone').onclick=()=>{closeCrop();drawLib()};
 $('cropReset').onclick=()=>{const it=cropItem();if(!it)return;it.crop=null;libSave(it);showCrop();markCut();refresh()};
 $('cropZ').oninput=()=>setCrop({z:+$('cropZ').value/100});
+$('cutGo').onclick=()=>doCutout();
+$('cutTol').oninput=()=>{$('cutTolv').textContent=$('cutTol').value};
+$('cutTolv').textContent=$('cutTol').value;
 {const wr=$('cropWrap');let down=false;
   const at=e=>{const g=showCrop();if(!g||!g.dw)return;setCrop({fx:(e.clientX-g.o.left-g.ox)/g.dw,fy:(e.clientY-g.o.top-g.oy)/g.dh})};
   wr.addEventListener('pointerdown',e=>{down=true;wr.setPointerCapture(e.pointerId);at(e)});
