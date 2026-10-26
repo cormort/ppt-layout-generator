@@ -17,9 +17,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
 
@@ -46,15 +46,19 @@ jobs:
       - name: 失敗摘要
         if: failure()
         run: |
-          if [ -s smoke.log ]; then
-            echo "::error::$(grep -E '^(FAIL|[0-9]+ passed)' smoke.log | head -20 | tr '\n' '|')"
+          # annotation 訊息要跳脫 % \r \n，不然 % 會吃掉後面的字、換行會截斷
+          esc() { sed -e 's/%/%25/g' -e 's/\r/%0D/g' | awk 'BEGIN{ORS="%0A"} {print}'; }
+          if [ ! -e smoke.log ]; then
+            echo "::error::煙霧測試沒有跑：找瀏覽器那一步就失敗了，請看那一步的輸出"
+          elif [ -s smoke.log ]; then
+            echo "::error::$(grep -E '^(FAIL|[0-9]+ passed)' smoke.log | head -20 | esc)"
           else
             echo "::error::smoke.log 是空的，煙霧測試可能在啟動階段就掛了"
           fi
 
       - name: 失敗時留下日誌
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: smoke-log
           path: smoke.log

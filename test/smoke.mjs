@@ -35,8 +35,12 @@ const get = async (path, tries = 1) => {
   for (let i = 0; i < tries; i++) {
     try {
       const res = await fetch(base + path + (path.includes('?') ? '&' : '?') + 'smoke=' + Date.now(), { cache: 'no-store', redirect: 'follow' });
-      return { res, body: await res.text() };
-    } catch (e) { last = e; await sleep(3000); }
+      const out = { res, body: await res.text() };
+      /* 5xx 多半是 Pages 一時不穩，跟網路錯誤一樣重試；最後一次就照實回傳 */
+      if (res.status < 500 || i === tries - 1) return out;
+      last = new Error(`HTTP ${res.status}`);
+    } catch (e) { last = e; }
+    await sleep(3000);
   }
   throw last;
 };
@@ -85,10 +89,8 @@ try {
   const page = await openPage(session, base);
   const info = await page.run(`(()=>({
     tpl: TPL.length,
-    ready: document.readyState,
     hasLib: !!document.getElementById('lib'),
-    hasStage: !!document.getElementById('stage'),
-    version: (window.S && S.ratio) || null
+    hasStage: !!document.getElementById('stage')
   }))()`);
   ok(info.tpl === expectTpl, '線上的版型數量與 repo 一致', `${info.tpl} vs ${expectTpl}`);
   ok(info.hasLib && info.hasStage, '主要介面元素都在', 'lib/stage');

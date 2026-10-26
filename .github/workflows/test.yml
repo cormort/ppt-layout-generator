@@ -11,9 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
 
@@ -45,17 +45,19 @@ jobs:
       - name: 失敗摘要
         if: failure()
         run: |
-          if [ -s test.log ]; then
-            echo "::error::$(grep -E '^(FAIL|[0-9]+ passed)|^     ' test.log | head -40 | tr '\n' '|')"
+          # annotation 訊息要跳脫 % \r \n，不然 % 會吃掉後面的字、換行會截斷
+          esc() { sed -e 's/%/%25/g' -e 's/\r/%0D/g' | awk 'BEGIN{ORS="%0A"} {print}'; }
+          if [ ! -e test.log ]; then
+            echo "::error::測試沒有跑：前面的步驟（index.html 同步檢查或找瀏覽器）就失敗了，請看那一步的輸出"
+          elif [ -s test.log ]; then
+            echo "::error::$(grep -E '^(FAIL|[0-9]+ passed)|^     ' test.log | head -40 | esc)"
           else
             echo "::error::test.log 是空的，測試可能在啟動階段就掛了"
           fi
-          echo "--- 瀏覽器與字型 ---"
-          node -e "console.log('chrome:', require('child_process').execSync('ls -1 /usr/bin/*chrom* /usr/bin/google-chrome* 2>/dev/null || true').toString())" || true
 
       - name: 失敗時留下測試輸出
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-log
           path: |
