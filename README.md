@@ -205,3 +205,25 @@ node test/smoke.mjs https://cormort.github.io/ppt-layout-generator/    # 也可�
 
 - `c.imgs` 已選圖片、`c.t` 文字欄位、`c.col` 由主色衍生的配色、`c.tf`／`c.bf` 字體、`c.id()` 產生唯一 id
 - 常用工具：`T()` 文字、`wrap()` 斷行、`mosaic()` 把形狀陣列裁成圖片、`stack()` 標題區塊、`items()` 項目清單、`strip()`／`band()`／`annular()` 幾何
+
+### 去背：為什麼沒有接 ML 模型（2026-10 評估）
+
+`src/js/66-cutout.js` 是純 canvas 演算法（四邊取樣背景色 → 連通洪水填充 → alpha 羽化），0 KB、瞬間完成，但只對白底／純色／攝影棚背景可靠；生活照、雜亂背景、頭髮、主體與背景同色時抓不準。評估過接 [`@imgly/background-removal`](https://github.com/imgly/background-removal-js)（IS-Net，瀏覽器內 WASM／WebGPU 推論），**決定先不接**，維持現狀。
+
+| | 現在的演算法 | ML 模型 |
+|---|---|---|
+| 簡單背景（商品、白牆、棚拍） | 夠用 | 也行，大材小用 |
+| 複雜背景、髮絲、同色主體 | 基本上不行 | 強項 |
+| 成本 | 0 KB、瞬間 | 首次下載模型＋onnxruntime 約 40–80MB；手機一張數秒到十幾秒、吃記憶體 |
+| 架構 | 單檔零依賴 | 破壞「單一 HTML、零依賴」 |
+
+**資料外流**：照片本身不會外流——推論在瀏覽器裡跑、圖片不上傳。但套件**預設從 IMG.LY 的 CDN 抓模型與 WASM**，對方看得到使用的 IP、時間與 Referer（照片不會送出）。要做到「完全不連第三方」，得把模型檔自己放在 Pages 上、用 `publicPath` 指回自己的網址。
+
+**授權**：`@imgly/background-removal` 是 **AGPL-3.0**（模型 IS-Net 本身是 Apache-2.0）。本 repo 公開、原始碼本來就公開，實務影響不大；但目前 repo 沒有 LICENSE，接進來等於整個專案要照 AGPL 釋出，日後要閉源或商用就得買 IMG.LY 商業授權。
+
+**如果哪天要接**（例如使用者常拿生活照去背），照這幾條做：
+
+- 保留現有演算法當「快速去背」，另加「精準去背（AI）」按鈕，**按了才下載**，先提示大小、建議用 Wi-Fi
+- 模型檔**不要**放進 `sw.js` 的預先快取（否則每次調 `VERSION` 所有已安裝的人都重抓 40MB）；首次使用時存進獨立的 cache，改版時不清
+- 自己架：Pages 單檔上限 100MB、整站 1GB 放得下，但模型進 git 會讓 repo 膨脹，可改放 Release 附檔或另開 repo
+- 若不想被 AGPL 綁：自己用 onnxruntime-web 跑寬鬆授權的小模型（例如 U²-Net 小版，約 5MB），品質略差、要多寫一些膠水程式
