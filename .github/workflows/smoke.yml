@@ -1,0 +1,62 @@
+name: smoke
+
+# 上線煙霧測試：Pages 部署完成後，用真實網址確認「送出去的東西」是對的。
+# 這支抓的是本機與 CI 都驗不到的事：傳播、快取、MIME、manifest、圖示、service worker 版本。
+on:
+  workflow_run:
+    workflows: ['pages build and deployment']
+    types: [completed]
+  schedule:
+    - cron: '0 1 * * *'        # 每天 09:00（台北）保底跑一次
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    # 排程與手動一定跑；由 Pages 部署觸發時，只在部署成功後跑
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 找瀏覽器
+        run: |
+          for p in /usr/bin/google-chrome /usr/bin/google-chrome-stable /usr/bin/chromium /usr/bin/chromium-browser /usr/bin/microsoft-edge; do
+            if [ -x "$p" ]; then
+              echo "CHROME_PATH=$p" >> "$GITHUB_ENV"
+              "$p" --version
+              exit 0
+            fi
+          done
+          echo "runner 上找不到 Chrome/Chromium" >&2
+          exit 1
+
+      - name: 煙霧測試
+        env:
+          CHROME_FLAGS: --no-sandbox --disable-dev-shm-usage
+          SITE_URL: https://cormort.github.io/ppt-layout-generator/
+        run: |
+          set -o pipefail
+          node test/smoke.mjs "$SITE_URL" 2>&1 | tee smoke.log
+
+      - name: 失敗摘要
+        if: failure()
+        run: |
+          if [ -s smoke.log ]; then
+            echo "::error::$(grep -E '^(FAIL|[0-9]+ passed)' smoke.log | head -20 | tr '\n' '|')"
+          else
+            echo "::error::smoke.log 是空的，煙霧測試可能在啟動階段就掛了"
+          fi
+
+      - name: 失敗時留下日誌
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-log
+          path: smoke.log
+          if-no-files-found: ignore
+          retention-days: 7
