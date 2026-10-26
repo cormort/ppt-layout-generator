@@ -438,7 +438,9 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.35)}
 <script>
 const LSKEY='layoutGen2',OLDLKEY='layoutGen';
 /* 畫布尺寸跟著整份簡報的「版面尺寸」走；renderSVG 每次都會依 S.ratio 設定 */
-const RATIOS={'16:9':[1920,1080],'1:1':[1080,1080],'4:5':[1080,1350],'9:16':[1080,1920]};
+const RATIOS={'16:9':[1920,1080],'1:1':[1080,1080],'4:5':[1080,1350],'3:4':[1080,1440],'9:16':[1080,1920]};
+/* 版型支援的尺寸：ALLR＝任何尺寸（圖表、對比、照片牆），CARDR＝圖卡尺寸 */
+const ALLR=['16:9','1:1','4:5','3:4','9:16'],CARDR=['1:1','4:5','3:4','9:16'];
 let W=1920,H=1080;
 const FONTS=[
  ["微軟正黑體","'Microsoft JhengHei','PingFang TC','Noto Sans TC',sans-serif"],
@@ -455,7 +457,7 @@ const DEF={title:'敦煌鳴沙山月牙泉',subtitle:'Dunhuang · Crescent Lake'
   focal:'xMidYMid',theme:'auto',cat:'fit',fmt:'png',scale:2,fname:'',fs:100,notes:'',pages:[],cur:0,pptText:'edit',pptQ:'std',ratio:'16:9',secSync:true};
 const BIZ=[['藏青金','#1f3a5f','#c9a24a'],['商務藍','#1d5fa8','#38b2e8'],['深灰橘','#3b3f46','#f08a24'],['墨綠米','#2f5a46','#d8b98a'],['酒紅灰','#7a2635','#a8a8a8'],['科技紫','#3b2f8f','#22c3c3']];
 const FOCAL=['xMinYMin','xMidYMin','xMaxYMin','xMinYMid','xMidYMid','xMaxYMid','xMinYMax','xMidYMax','xMaxYMax'];
-const CATS=[['fit','建議'],['all','全部'],['text','文字頁'],['chart','圖表'],['card','圖卡'],['mag','雜誌風'],['cover','封面／標題'],['shape','形狀拼貼'],['sec','章節頁'],['toc','目錄'],['grid','圖文分格'],['biz','商務'],['cn','中國風']];
+const CATS=[['fit','建議'],['all','全部'],['text','文字頁'],['chart','圖表'],['card','圖卡'],['cmp','對比'],['wall','照片牆'],['mag','雜誌風'],['cover','封面／標題'],['shape','形狀拼貼'],['sec','章節頁'],['toc','目錄'],['grid','圖文分格'],['biz','商務'],['cn','中國風']];
 
 /* ---------- helpers ---------- */
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -752,6 +754,100 @@ def({id:'ring',cat:'toc',name:'目錄・圓環',hint:'1 張',render(c){
    +T([c.t.subtitle],{x:230,y:140,size:24,fill:c.col.mt,font:c.bf,weight:700,ls:6})+list;
 }});
 
+/* 大字編號目錄：1 2 3 4 當視覺主角，章名接在數字下面；16:9 排一列，直式排 2×N */
+def({id:'tocNum',cat:'toc',name:'目錄・大字編號',hint:'不用照片；項目每行一章，數字自動 1 2 3 4',ratios:ALLR,render(c){
+  const h=hdr(c,{tMax:64}),k=FS,P=PAD(),it=items(c).slice(0,4),n=Math.max(1,it.length),wide=W>H;
+  /* 直式：1–2 章排一欄（數字才夠大），3 章以上排 2 欄 */
+  const nc=wide?n:(n<=2?1:2),rows=Math.max(1,Math.ceil(n/nc));
+  const gapC=wide?44:32,rowH=(H-h.y-P)/rows,colW=(W-2*P-(nc-1)*gapC)/nc;
+  const num=Math.min(wide?196:150,Math.round(colW*.56));
+  const cellH=num*k+44+40*k*1.25+2*24*k*1.5;
+  let s=bg(c.col.paper||'#fff')+h.s;
+  it.forEach((o,i)=>{
+    const ci=i%nc,ri=Math.floor(i/nc),x=P+ci*(colW+gapC);
+    const y0=h.y+ri*rowH+Math.max(0,(rowH-cellH)/2);
+    const bl=wrap(o.b||'',colW,24,c.bf).slice(0,2),al=wrap(o.a||'',colW,40,c.tf,700).slice(0,1);
+    s+=`<text x="${f1(x)}" y="${f1(y0+num*k*.82)}" font-size="${f1(num*k)}" font-family="${esc(c.tf)}" font-weight="800" fill="${c.col.acc}" opacity=".92" letter-spacing="-2">${pad2(i)}</text>`
+      +`<rect x="${f1(x)}" y="${f1(y0+num*k+18)}" width="${f1(Math.min(colW,84))}" height="5" rx="2.5" fill="${c.col.main}"/>`
+      +T(al,{x,y:y0+num*k+18+44+40*k*.8,size:40,fill:c.col.ink,font:c.tf,weight:700});
+    if(bl.length)s+=T(bl,{x,y:y0+num*k+18+44+40*k*.8+42,size:24,lh:1.5,fill:c.col.mute,font:c.bf});
+  });
+  return s;
+}});
+
+/* 對比：兩張照片並排，底部色帶放「之前／之後」標籤與說明；直式改成上下堆疊 */
+def({id:'cmp',cat:'cmp',name:'對比・前後色帶',hint:'2 張照片並排；項目填「之前|說明」「之後|說明」',ratios:ALLR,render(c){
+  const k=FS,P=PAD(),wide=W>H,gap=Math.max(6,Math.round((wide?W:H)*.01));
+  const it=items(c),A=it[0]||{a:'之前',b:''},B=it[1]||{a:'之後',b:''};
+  const gL=c.id(),gR=c.id(),im=ii=>c.imgs[Math.min(ii,c.imgs.length-1)];
+  const grad=id=>`<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.col.dark}" stop-opacity="0"/><stop offset="1" stop-color="${c.col.dark}" stop-opacity=".93"/></linearGradient>`;
+  /* bottom＝這一格的底邊，標籤與說明都貼著它往上排（要讓開頁尾） */
+  const block=(o,x,w,bottom)=>{
+    const bl=wrap(o.b||'',w-P*.8,26,c.bf).slice(0,2),lh=26*k*1.55;
+    const first=bottom-Math.max(P*.55,footH()+18)-(bl.length?bl.length*lh:0),by=first-56*k-18;
+    const bw=Math.min(w-P*.8,tw(o.a,32*k,c.bf,800)+64);
+    return `<rect x="${f1(x+(w-bw)/2)}" y="${f1(by)}" width="${f1(bw)}" height="${f1(56*k)}" rx="${f1(28*k)}" fill="${c.col.acc}"/>`
+      +T([o.a],{x:x+w/2,y:by+37*k,size:32,fill:c.col.dark,font:c.bf,weight:800,anchor:'middle'})
+      +(bl.length?T(bl,{x:x+w/2,y:first,size:26,lh:1.55,fill:'#fff',op:.92,font:c.bf,anchor:'middle'}):'');
+  };
+  let s,ax,ay,aw,ah,bx,by2,bw2,bh;
+  if(wide){const half=(W-gap)/2;ax=0;ay=0;aw=half;ah=H;bx=half+gap;by2=0;bw2=half;bh=H}
+  else{const half=(H-gap)/2;ax=0;ay=0;aw=W;ah=half;bx=0;by2=half+gap;bw2=W;bh=half}
+  s=IMG(im(0),ax,ay,aw,ah)+IMG(im(1),bx,by2,bw2,bh)+`<defs>${grad(gL)}${grad(gR)}</defs>`
+   +`<rect x="${f1(ax)}" y="${f1(ay+ah*.45)}" width="${f1(aw)}" height="${f1(ah*.55)}" fill="url(#${gL})"/>`
+   +`<rect x="${f1(bx)}" y="${f1(by2+bh*.45)}" width="${f1(bw2)}" height="${f1(bh*.55)}" fill="url(#${gR})"/>`
+   +block(A,ax,aw,ay+ah)+block(B,bx,bw2,by2+bh)
+   +(wide?`<rect x="${f1(ax+aw)}" y="0" width="${gap}" height="${H}" fill="${c.col.paper||'#fff'}"/>`
+         :`<rect x="0" y="${f1(ay+ah)}" width="${W}" height="${gap}" fill="${c.col.paper||'#fff'}"/>`);
+  if(c.t.title){const tl=wrap(c.t.title,W-2*P,44,c.tf,700).slice(0,1);
+    s=`<rect x="0" y="0" width="${W}" height="${f1(92*k)}" fill="${c.col.dark}" opacity=".62"/>`+s
+      +T(tl,{x:W/2,y:58*k,size:44,fill:'#fff',font:c.tf,weight:700,anchor:'middle'})}
+  return s;
+}});
+
+/* 對比：兩張圓角照片＋中間 VS 圓標，標籤與說明放在照片下面 */
+def({id:'cmpVs',cat:'cmp',name:'對比・VS 圓標',hint:'2 張照片；項目填「A|說明」「B|說明」',ratios:ALLR,render(c){
+  const h=hdr(c,{tMax:60}),k=FS,P=PAD(),gap=Math.max(30,Math.round(W*.035)),colW=(W-2*P-gap)/2;
+  const it=items(c),A=it[0]||{a:'A',b:''},B=it[1]||{a:'B',b:''},top=h.y;
+  const photoH=Math.min(H*.5,Math.max(H*.26,H-top-P*2.6)),id1=c.id(),id2=c.id();
+  const im=ii=>c.imgs[Math.min(ii,c.imgs.length-1)];
+  let s=bg(c.col.paper||'#fff')+h.s
+   +`<defs><clipPath id="${id1}"><rect x="${f1(P)}" y="${f1(top)}" width="${f1(colW)}" height="${f1(photoH)}" rx="18"/></clipPath>`
+   +`<clipPath id="${id2}"><rect x="${f1(P+colW+gap)}" y="${f1(top)}" width="${f1(colW)}" height="${f1(photoH)}" rx="18"/></clipPath></defs>`
+   +`<g filter="url(#${c.sh})">${IMG(im(0),P,top,colW,photoH,`clip-path="url(#${id1})"`)}${IMG(im(1),P+colW+gap,top,colW,photoH,`clip-path="url(#${id2})"`)}</g>`;
+  const cr=Math.min(66,colW*.17);
+  s+=`<circle cx="${W/2}" cy="${f1(top+photoH/2)}" r="${f1(cr)}" fill="${c.col.acc}" stroke="${c.col.paper||'#fff'}" stroke-width="9"/>`
+   +T(['VS'],{x:W/2,y:top+photoH/2+cr*.33,size:f1(cr*.92),fill:c.col.dark,font:c.bf,weight:900,anchor:'middle'});
+  const lab=(o,x)=>{
+    const al=wrap(o.a||'',colW,40,c.tf,700).slice(0,1),bl=wrap(o.b||'',colW,24,c.bf).slice(0,3),ly=top+photoH+58*k;
+    return T(al,{x,y:ly,size:40,fill:c.col.ink,font:c.tf,weight:700})
+      +(bl.length?T(bl,{x,y:ly+44,size:24,lh:1.55,fill:c.col.mute,font:c.bf}):'');
+  };
+  return s+lab(A,P)+lab(B,P+colW+gap);
+}});
+
+/* 照片牆：2–6 張拼成一牆，標題疊在底部漸層上 */
+def({id:'wall',cat:'wall',name:'照片牆・大標疊字',hint:'2–6 張照片拼成一牆；標題疊在底部',ratios:ALLR,render(c){
+  const k=FS,P=PAD(),n=Math.max(2,Math.min(6,c.imgs.length)),gap=Math.max(6,Math.round(Math.min(W,H)*.014));
+  const LAY={
+    2:[[0,0,1,.5],[0,.5,1,.5]],
+    3:[[0,0,.6,1],[.6,0,.4,.5],[.6,.5,.4,.5]],
+    4:[[0,0,.5,.5],[.5,0,.5,.5],[0,.5,.5,.5],[.5,.5,.5,.5]],
+    5:[[0,0,1/3,.56],[1/3,0,1/3,.56],[2/3,0,1/3,.56],[0,.56,.5,.44],[.5,.56,.5,.44]],
+    6:[[0,0,1/3,.5],[1/3,0,1/3,.5],[2/3,0,1/3,.5],[0,.5,1/3,.5],[1/3,.5,1/3,.5],[2/3,.5,1/3,.5]]
+  }[n];
+  const g=c.id(),band=H*.44,tSize=Math.min(96,Math.round(W*.078)),botPad=Math.max(P,footH()+26);
+  let s=bg(c.col.paper||'#fff');
+  for(let i=0;i<LAY.length;i++){const[x,y,w,hh]=LAY[i];
+    s+=IMG(c.imgs[i%c.imgs.length],x*W+gap/2,y*H+gap/2,Math.max(1,w*W-gap),Math.max(1,hh*H-gap))}
+  s+=`<defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.col.dark}" stop-opacity="0"/><stop offset="1" stop-color="${c.col.dark}" stop-opacity=".9"/></linearGradient></defs>`
+   +`<rect y="${f1(H-band)}" width="${W}" height="${f1(band)}" fill="url(#${g})"/>`;
+  const tl=wrap(c.t.title,W-2*P,tSize,c.tf,800).slice(0,2),last=H-botPad-(c.t.subtitle?46*k:0);
+  s+=T(tl,{x:P,y:last-(tl.length-1)*tSize*k*1.15,size:tSize,lh:1.15,fill:'#fff',font:c.tf,weight:800});
+  if(c.t.subtitle)s+=T([c.t.subtitle],{x:P,y:H-botPad,size:28,fill:'#fff',op:.85,font:c.bf});
+  return s;
+}});
+
 def({id:'vertical',cat:'cn',name:'中國風・直排',hint:'1 張',render(c){
   const g=c.id(),title=[...String(c.t.title||'')],ts=Math.min(118,820/Math.max(1,title.length*1.1)),body=String(c.t.body||'').replace(/\s+/g,''),per=17;let cols='';
   for(let k=0;k*per<body.length&&k<9;k++)cols+=VT(body.slice(k*per,(k+1)*per),{x:1430-k*50,y:300,size:28,gap:1.3,fill:'#fff',op:.88,font:c.bf});
@@ -770,12 +866,14 @@ def({id:'circles',cat:'shape',name:'圓形拼貼',hint:'多張循環（約 20 �
    +stack(c,{x:150,cy:540,w:600,tSize:104,tColor:c.col.ink,sColor:c.col.mt});
 }});
 
-def({id:'ocean',cat:'cover',name:'大標題・漸層淡出',hint:'1 張',render(c){
-  const g=c.id(),t=c.t.title||' ',size=Math.min(190,100*1500/Math.max(1,tw(t,100,c.tf,700)));
+def({id:'ocean',cat:'cover',name:'大標題・漸層淡出',hint:'1 張；副標題放地點／日期，內文放一行說明',render(c){
+  const g=c.id(),t=c.t.title||' ',size=Math.min(190,100*1500/Math.max(1,tw(t,100,c.tf,700))),dy=footH()?-58:0;
   return IMG(c.imgs[0],0,0,W,H)+`<defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.col.paper||'#fff'}" stop-opacity="0"/><stop offset=".7" stop-color="${c.col.paper||'#fff'}" stop-opacity=".95"/><stop offset="1" stop-color="${c.col.paper||'#fff'}"/></linearGradient></defs><rect y="420" width="${W}" height="660" fill="url(#${g})"/>`
-   +`<text x="960" y="880" font-size="${f1(size)}" font-family="${esc(c.tf)}" font-weight="700" fill="${c.col.dk?c.col.ink:c.col.main}" stroke="${c.col.paper||'#fff'}" stroke-width="10" paint-order="stroke" text-anchor="middle" letter-spacing="6">${esc(t)}</text>`
-   +T([c.t.subtitle],{x:960,y:960,size:28,fill:c.col.ink,op:.75,font:c.bf,anchor:'middle',ls:6})
-   +`<line x1="560" y1="950" x2="680" y2="950" stroke="${c.col.dark}" stroke-opacity=".4"/><line x1="1240" y1="950" x2="1360" y2="950" stroke="${c.col.dark}" stroke-opacity=".4"/>`;
+   +`<text x="960" y="${880+dy}" font-size="${f1(size)}" font-family="${esc(c.tf)}" font-weight="700" fill="${c.col.dk?c.col.ink:c.col.main}" stroke="${c.col.paper||'#fff'}" stroke-width="10" paint-order="stroke" text-anchor="middle" letter-spacing="6">${esc(t)}</text>`
+   +T([c.t.subtitle],{x:960,y:960+dy,size:28,fill:c.col.ink,op:.75,font:c.bf,anchor:'middle',ls:6})
+   +`<line x1="560" y1="${950+dy}" x2="680" y2="${950+dy}" stroke="${c.col.dark}" stroke-opacity=".4"/><line x1="1240" y1="${950+dy}" x2="1360" y2="${950+dy}" stroke="${c.col.dark}" stroke-opacity=".4"/>`
+   /* 內文＝副標下面的一行說明（地點、日期、一句話補充） */
+   +(c.t.body?T(wrap(c.t.body,1240,26,c.bf).slice(0,2),{x:960,y:1018+dy,size:26,lh:1.55,fill:c.col.ink,op:.6,font:c.bf,anchor:'middle'}):'');
 }});
 
 def({id:'pixel',cat:'shape',name:'方塊溶解',hint:'1 張（人像很適合）',render(c){
@@ -875,7 +973,7 @@ function head(c){
 const tPaper=c=>bg(c.col.paper||'#ffffff');
 const tSoft=c=>c.col.dk?'rgba(255,255,255,.07)':c.col.light;
 /* 文字頁支援所有尺寸：左右留白與內容區底線依目前的 W、H 計算 */
-const TXR=['16:9','1:1','4:5','9:16'],TP=()=>W>H?120:80,TBOTTOM=()=>H-(W>H?80:90);
+const TXR=['16:9','1:1','4:5','3:4','9:16'],TP=()=>W>H?120:80,TBOTTOM=()=>H-(W>H?80:90);
 
 def({id:'tList',cat:'text',name:'文字・條列重點',hint:'不用圖片；項目填「重點|說明」，多項自動分兩欄並縮字',ratios:TXR,render(c){
   const h=head(c),it=items(c).slice(0,24),k=FS,nc=it.length>6&&W>H?2:1;let top=h.y;const cols=strip(TP(),W-TP(),nc,90),per=Math.ceil(it.length/nc);
@@ -960,9 +1058,10 @@ def({id:'tQuote',cat:'text',name:'文字・引言金句',hint:'不用圖片；�
    +T(bl,{x:tx+2,y:y0+th+(sl.length?112+sl.length*42+30:80),size:24,lh:1.6,fill:c.col.mute,font:c.bf});
 }});
 
-/* ---------- 版面尺寸：16:9 簡報、1:1／4:5／9:16 圖卡。圖表與圖卡版型用 W、H 排版，其他版型只支援 16:9 ---------- */
-const ALLR=['16:9','1:1','4:5','9:16'],CARDR=['1:1','4:5','9:16'];
+/* ---------- 版面尺寸：16:9 簡報、1:1／4:5／3:4／9:16 圖卡。圖表、圖卡與文字版型用 W、H 排版 ---------- */
 const PAD=()=>W>H?120:80;
+/* 頁尾（公司｜日期｜頁碼）會蓋在右下角；需要貼底排版的版型先問這個高度，避免文字被壓到 */
+const footH=()=>S.footer&&[S.company,S.date,S.page].some(v=>String(v||'').trim())?100:0;
 /* 依尺寸調整的標題列（圖表、圖卡共用） */
 function hdr(c,{tMax=64}={}){
   const k=FS,x=PAD(),w=W-2*x,top=W>H?70:84;let size=tMax;
@@ -1232,7 +1331,7 @@ const TPLBY=Object.fromEntries(TPL.map(t=>[t.id,t]));
 /* 版型是否支援目前的版面尺寸；不支援時換成相近的版型（16:9 ↔ 圖卡） */
 const tplOK=t=>(t.ratios||['16:9']).includes(S.ratio);
 /* 會用到照片的版型（沒選照片時以示意圖代替） */
-const usesPhoto=t=>!(t.cat==='text'||t.cat==='chart'||['kAnnounce','kList','kNumber','kQuote','mColumns','mIndex'].includes(t.id));
+const usesPhoto=t=>!(t.cat==='text'||t.cat==='chart'||['kAnnounce','kList','kNumber','kQuote','mColumns','mIndex','tocNum'].includes(t.id));
 const TO_CARD={text:'tList',cover:'kPhoto',shape:'kPhoto',sec:'kNumber',toc:'kList',grid:'kPhoto',biz:'kAnnounce',cn:'kPhoto',mag:'kPhoto'};
 const TO_WIDE={kList:'tList',kPhoto:'split',kNumber:'bignum',kQuote:'tQuote',kAnnounce:'tText'};
 function tplFor(id){
@@ -2603,7 +2702,7 @@ function pasteTable(e){
 }
 $('itemsEd').addEventListener('paste',pasteTable);$('items').addEventListener('paste',pasteTable);
 /* 版面尺寸（整份）：切換時，不支援的版型換成這個尺寸能用的相近版型 */
-const RATIO_NAMES=[['16:9','16:9 簡報'],['1:1','1:1'],['4:5','4:5'],['9:16','9:16']];
+const RATIO_NAMES=[['16:9','16:9 簡報'],['1:1','1:1'],['4:5','4:5'],['3:4','3:4'],['9:16','9:16']];
 $('ratioSeg').innerHTML=RATIO_NAMES.map(([v,n])=>`<button type="button" data-v="${v}">${n}</button>`).join('');
 function applyRatioUI(){[...$('ratioSeg').children].forEach(b=>{const on=b.dataset.v===S.ratio;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on))})}
 $('ratioSeg').onclick=e=>{const b=e.target.closest('button');if(!b||b.dataset.v===S.ratio)return;

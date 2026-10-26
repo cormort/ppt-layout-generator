@@ -30,7 +30,7 @@ const HELP = `排版產生器 CLI — Markdown 大綱 → 含逐字稿的 PPTX
   --color <#hex>         主色；--accent <#hex> 輔色；--bg <#hex> 底色
   --font <名稱>          標題字體（例如 標楷體）；--body-font <名稱> 內文字體
   --scale <70-140>       全域字級（%）
-  --ratio <尺寸>         16:9（預設，簡報）、1:1、4:5、9:16（社群圖卡）；不支援的版型會換成相近的圖卡版型
+  --ratio <尺寸>         16:9（預設，簡報）、1:1、4:5、3:4、9:16（社群圖卡）；不支援的版型會換成相近的圖卡版型
   --text <模式>          PPTX 文字：edit＝可修改・逐行（預設，外觀最接近）、flow＝可修改・整段（改字會自動重排）、
                          image＝轉成圖片（外觀完全一致，但不能改字）
   --quality small        PPTX 底圖用 1 倍（檔案約小一半）；預設 std＝2 倍
@@ -204,7 +204,7 @@ try {
     if (flags.scale) style.fs = +flags.scale;
     if (flags.text && !['edit', 'flow', 'image'].includes(flags.text)) fail('--text 只能是 edit、flow 或 image');
     if (flags.quality && !['std', 'small'].includes(flags.quality)) fail('--quality 只能是 std 或 small');
-    if (flags.ratio && !['16:9', '1:1', '4:5', '9:16'].includes(flags.ratio)) fail('--ratio 只能是 16:9、1:1、4:5 或 9:16');
+    if (flags.ratio && !['16:9', '1:1', '4:5', '3:4', '9:16'].includes(flags.ratio)) fail('--ratio 只能是 16:9、1:1、4:5、3:4 或 9:16');
     if (flags.ratio) style.ratio = flags.ratio;
     if (flags.text) style.pptText = flags.text;
     if (flags.quality) style.pptQ = flags.quality;
