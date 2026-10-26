@@ -1,5 +1,5 @@
 /* 圖片排版產生器 service worker：離線可用＋接收 Android「分享」進來的圖片 */
-const VERSION = 'lg-v15';
+const VERSION = 'lg-v16';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
