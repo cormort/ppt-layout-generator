@@ -392,6 +392,19 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.35)}
           <input type="range" id="cutTol" min="8" max="80" step="2" value="32">
           <p class="hintline" id="cutTip" style="margin:4px 0 0">背景單一色（白底、去背攝影棚）效果最好；會另存一張「（去背）」照片，原圖保留。</p>
         </div>
+        <div class="cutbox" id="fxBox">
+          <div class="row"><span class="hintline" style="margin:0">混色與透明度（讓照片和底色融在一起）</span></div>
+          <div class="row"><label for="fxBlend" style="margin:0">混色</label><select id="fxBlend" style="flex:1;max-width:150px">
+            <option value="">正常</option>
+            <option value="multiply">色彩增值</option>
+            <option value="screen">濾色</option>
+            <option value="overlay">重疊</option>
+            <option value="darken">變暗</option>
+            <option value="lighten">變亮</option>
+          </select></div>
+          <label for="fxOp">不透明度 — <b id="fxOpv" style="font-weight:400;color:var(--ink)"></b></label>
+          <input type="range" id="fxOp" min="10" max="100" step="5" value="100">
+        </div>
       </div>
       <span class="lab" id="focalLabel">所有照片的預設焦點</span>
       <div class="focal" id="focal" role="group" aria-labelledby="focalLabel"></div>
@@ -523,18 +536,23 @@ const FOCAL_XY={Min:0,Mid:.5,Max:1};
 const focalCrop=()=>({z:1,fx:FOCAL_XY[S.focal.slice(1,4)],fy:FOCAL_XY[S.focal.slice(5,8)]});
 function IMG(im,x,y,w,h,a=''){
   const iw=im.w,ih=im.h;
-  if(!iw||!ih||w<=0||h<=0)return `<image href="${im.src}" x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" preserveAspectRatio="${S.focal} slice" ${a}/>`;
+  /* 混色與不透明度：掛在同一個元素上，轉點陣（PNG／PPTX／PDF）時一樣生效 */
+  const fx=[];
+  if(im.blend)fx.push('mix-blend-mode:'+im.blend);
+  if(typeof im.op==='number'&&im.op<1)fx.push('opacity:'+f1(Math.max(.05,im.op)));
+  const fxa=fx.length?`style="${fx.join(';')}"`:'';
+  if(!iw||!ih||w<=0||h<=0)return `<image href="${im.src}" x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" preserveAspectRatio="${S.focal} slice" ${a} ${fxa}/>`;
   /* 去背後的圖：完整放進框內（不裁切、維持比例），主體才不會被切掉 */
   if(im.cutout){
     const sc=Math.min(w/iw,h/ih),dw=iw*sc,dh=ih*sc;
-    return `<image href="${im.src}" x="${f1(x+(w-dw)/2)}" y="${f1(y+(h-dh)/2)}" width="${f1(dw)}" height="${f1(dh)}" preserveAspectRatio="xMidYMid meet" ${a}/>`;
+    return `<image href="${im.src}" x="${f1(x+(w-dw)/2)}" y="${f1(y+(h-dh)/2)}" width="${f1(dw)}" height="${f1(dh)}" preserveAspectRatio="xMidYMid meet" ${a} ${fxa}/>`;
   }
   /* 用巢狀 svg 的 viewBox 選出要顯示的那塊：先取符合框比例的最大範圍，再依倍率縮小、以主體點為中心 */
   const cr=im.crop||focalCrop(),A=w/h;let cw,ch;
   if(iw/ih>A){ch=ih;cw=ih*A}else{cw=iw;ch=iw/A}
   cw/=cr.z;ch/=cr.z;
   const cx=Math.min(iw-cw,Math.max(0,cr.fx*iw-cw/2)),cy=Math.min(ih-ch,Math.max(0,cr.fy*ih-ch/2));
-  return `<g ${a}><svg x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" viewBox="${f1(cx)} ${f1(cy)} ${f1(cw)} ${f1(ch)}" preserveAspectRatio="none"><image href="${im.src}" width="${iw}" height="${ih}"/></svg></g>`;
+  return `<g ${a} ${fxa}><svg x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" viewBox="${f1(cx)} ${f1(cy)} ${f1(cw)} ${f1(ch)}" preserveAspectRatio="none"><image href="${im.src}" width="${iw}" height="${ih}"/></svg></g>`;
 }
 const bg=col=>`<rect width="${W}" height="${H}" fill="${col}"/>`;
 const P=pts=>'M'+pts.map(p=>f1(p[0])+','+f1(p[1])).join('L')+'Z';
@@ -1525,7 +1543,7 @@ async function libFlush(){
   try{
     const tx=IDB.db.transaction('imgs','readwrite'),st=tx.objectStore('imgs'),have=new Set(lib.map(x=>x.id));
     for(const k of await idbReq(st.getAllKeys()))if(!have.has(k))st.delete(k);
-    for(const it of lib)if(it.dirty){st.put({id:it.id,name:it.name,blob:it.blob,tblob:it.tblob,w:it.w,h:it.h,crop:it.crop||null,cutout:!!it.cutout});it.dirty=false}
+    for(const it of lib)if(it.dirty){st.put({id:it.id,name:it.name,blob:it.blob,tblob:it.tblob,w:it.w,h:it.h,crop:it.crop||null,cutout:!!it.cutout,blend:it.blend||'',op:it.op??1});it.dirty=false}
     await new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=tx.onabort=()=>rej(tx.error)});
   }catch(e){console.warn('idb',e);if(!IDB.warned){IDB.warned=true;toast('瀏覽器空間不足，照片無法自動保留；請用「專案存檔」保存')}}
 }
@@ -1535,7 +1553,7 @@ async function libRestore(){
     const rows=await idbReq(IDB.db.transaction('imgs').objectStore('imgs').getAll());
     for(const r of rows.sort((a,b)=>a.id-b.id)){
       if(!(r.blob instanceof Blob)||lib.some(x=>x.id===r.id))continue;const tb=r.tblob instanceof Blob?r.tblob:r.blob;
-      lib.push({id:r.id,name:String(r.name||'image'),blob:r.blob,tblob:tb,full:URL.createObjectURL(r.blob),thumb:URL.createObjectURL(tb),w:r.w,h:r.h,crop:cleanCrop(r.crop),cutout:!!r.cutout});
+      lib.push({id:r.id,name:String(r.name||'image'),blob:r.blob,tblob:tb,full:URL.createObjectURL(r.blob),thumb:URL.createObjectURL(tb),w:r.w,h:r.h,crop:cleanCrop(r.crop),cutout:!!r.cutout,blend:String(r.blend||''),op:typeof r.op==='number'?r.op:1});
       nid=Math.max(nid,r.id);
     }
   }catch(e){console.warn('idb',e)}
@@ -1679,7 +1697,7 @@ function dropItem(it){
 }
 
 function cleanCrop(c){if(!c||typeof c!=='object')return null;return{z:clampNum(c.z,1,4,1),fx:clampNum(c.fx,0,1,.5),fy:clampNum(c.fy,0,1,.5)}}
-const imgOf=(it,src)=>({src,w:it.w,h:it.h,crop:it.crop||null,cutout:!!it.cutout});
+const imgOf=(it,src)=>({src,w:it.w,h:it.h,crop:it.crop||null,cutout:!!it.cutout,blend:it.blend||'',op:it.op??1});
 function imgsOf(ids,kind){const L=ids.map(id=>lib.find(x=>x.id===id)).filter(Boolean);
   if(!L.length)return samples.map(s=>imgOf(s,s.src));return L.map(x=>imgOf(x,x[kind]))}
 const chosen=kind=>imgsOf(sel,kind);
@@ -1771,6 +1789,8 @@ function showCrop(){
   const it=cropItem();if(!it)return;const c=it.crop||focalCrop();
   $('cropName').textContent=`第 ${sel.indexOf(it.id)+1} 張・${it.name}`;
   $('cropZ').value=Math.round(c.z*100);$('cropZv').textContent=Math.round(c.z*100)+'%';
+  /* 混色與不透明度 */
+  $('fxBlend').value=it.blend||'';$('fxOp').value=Math.round((it.op??1)*100);$('fxOpv').textContent=Math.round((it.op??1)*100)+'%';
   const img=$('cropImg'),wr=$('cropWrap'),r=img.getBoundingClientRect(),o=wr.getBoundingClientRect();
   /* 圖片用 object-fit:contain，實際畫面範圍要扣掉留白 */
   const s=Math.min(r.width/it.w,r.height/it.h)||0,dw=it.w*s,dh=it.h*s,ox=r.left-o.left+(r.width-dw)/2,oy=r.top-o.top+(r.height-dh)/2;
@@ -1788,6 +1808,13 @@ $('cropZ').oninput=()=>setCrop({z:+$('cropZ').value/100});
 $('cutGo').onclick=()=>doCutout();
 $('cutTol').oninput=()=>{$('cutTolv').textContent=$('cutTol').value};
 $('cutTolv').textContent=$('cutTol').value;
+/* 混色與不透明度：改了就重畫這一頁（也用得到全域焦點，所以走 refresh） */
+function setFx(p){const it=cropItem();if(!it)return;
+  if('blend' in p)it.blend=p.blend;
+  if('op' in p)it.op=p.op;
+  libSave(it);refresh();}
+$('fxBlend').onchange=()=>setFx({blend:$('fxBlend').value});
+$('fxOp').oninput=()=>{const v=+$('fxOp').value/100;$('fxOpv').textContent=Math.round(v*100)+'%';setFx({op:v})};
 {const wr=$('cropWrap');let down=false;
   const at=e=>{const g=showCrop();if(!g||!g.dw)return;setCrop({fx:(e.clientX-g.o.left-g.ox)/g.dw,fy:(e.clientY-g.o.top-g.oy)/g.dh})};
   wr.addEventListener('pointerdown',e=>{down=true;wr.setPointerCapture(e.pointerId);at(e)});
