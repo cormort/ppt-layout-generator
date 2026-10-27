@@ -82,6 +82,8 @@ for(const k of['footer','logoBg','bgOn','single']){$(k).checked=S[k];$(k).onchan
 $('secSync').checked=S.secSync;
 $('secSync').onchange=()=>{S.secSync=$('secSync').checked;storePage();const n=syncSections({tpl:true,photo:true});save();drawAll();histLater();
   toast(S.secSync?(n?`已同步 ${n} 個章節頁`:'章節頁同步已開啟'):'章節頁同步已關閉，各章節頁可分開設定')};
+$('bullet').innerHTML=BULLETS.map(([v,n])=>`<option value="${v}">${n}</option>`).join('');
+$('bullet').value=S.bullet;$('bullet').onchange=()=>{S.bullet=$('bullet').value;save();refresh()};
 $('logoPos').value=S.logoPos;$('logoPos').onchange=()=>{S.logoPos=$('logoPos').value;save();refresh()};
 $('logoSize').value=S.logoSize;$('logoSize').oninput=()=>{S.logoSize=+$('logoSize').value;showLogoSize();save();refresh()};
 const showLogoSize=()=>{$('logoSizeVal').textContent=S.logoSize+'px'};showLogoSize();

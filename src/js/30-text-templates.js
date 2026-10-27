@@ -10,6 +10,25 @@ function head(c){
   y+=34;s+=`<rect x="${x}" y="${f1(y)}" width="${w}" height="2" fill="${c.col.dk?'rgba(255,255,255,.18)':c.col.light}"/>`;
   return{s,y:y+44};
 }
+/* 項目符號（樣式分頁整份共用；''＝各版型原本的樣子）：全用圖形畫、不靠字型，PPTX 與播放器外觀一致。
+   (x,y) 是 s×s 方框左上角，n 是第幾項（0 起算） */
+const BULLETS=[['','依版型預設'],['num','編號方塊'],['ring','編號圓圈'],['dot','圓點'],['check','打勾'],['arrow','箭頭'],['diamond','菱形'],['bar','短豎條'],['star','星形']];
+function bullet(c,x,y,s,n,def){
+  const st=S.bullet||def,m=c.col.main,cx=x+s/2,cy=y+s/2,r=s/2;
+  const no=fill=>T([String(n+1).padStart(st==='num'?2:1,'0')],{x:cx,y:cy+s*.17,size:f1(s*(st==='num'?.48:.5)),fill,font:c.bf,weight:800,anchor:'middle',fixed:true});
+  switch(st){
+    case 'num':return `<rect x="${f1(x)}" y="${f1(y)}" width="${f1(s)}" height="${f1(s)}" rx="${f1(s*.25)}" fill="${m}"/>`+no('#fff');
+    case 'circle':return `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r)}" fill="${m}"/>`+no('#fff');
+    case 'ring':return `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r-s*.05)}" fill="none" stroke="${m}" stroke-width="${f1(s*.08)}"/>`+no(m);
+    case 'dot':return `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(s*.2)}" fill="${m}"/>`;
+    case 'check':return `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r)}" fill="${m}"/><path d="M${f1(x+s*.28)},${f1(y+s*.52)}L${f1(x+s*.44)},${f1(y+s*.68)}L${f1(x+s*.73)},${f1(y+s*.36)}" fill="none" stroke="#fff" stroke-width="${f1(s*.11)}" stroke-linecap="round" stroke-linejoin="round"/>`;
+    case 'arrow':return `<path d="M${f1(x+s*.32)},${f1(y+s*.2)}L${f1(x+s*.66)},${f1(cy)}L${f1(x+s*.32)},${f1(y+s*.8)}" fill="none" stroke="${m}" stroke-width="${f1(s*.15)}" stroke-linecap="round" stroke-linejoin="round"/>`;
+    case 'diamond':return `<rect x="${f1(cx-s*.2)}" y="${f1(cy-s*.2)}" width="${f1(s*.4)}" height="${f1(s*.4)}" rx="${f1(s*.05)}" transform="rotate(45 ${f1(cx)} ${f1(cy)})" fill="${m}"/>`;
+    case 'bar':return `<rect x="${f1(cx-s*.09)}" y="${f1(y+s*.08)}" width="${f1(s*.18)}" height="${f1(s*.84)}" rx="${f1(s*.09)}" fill="${c.col.acc}"/>`;
+    case 'star':{const p=[...Array(10)].map((_,i)=>{const a=-Math.PI/2+i*Math.PI/5,q=i&1?s*.19:s*.46;return[cx+q*Math.cos(a),cy+q*Math.sin(a)]});return `<path d="${P(p)}" fill="${c.col.acc}"/>`}
+  }
+  return '';
+}
 const tPaper=c=>bg(c.col.paper||'#ffffff');
 const tSoft=c=>c.col.dk?'rgba(255,255,255,.07)':c.col.light;
 /* 文字頁支援所有尺寸：左右留白與內容區底線依目前的 W、H 計算 */
@@ -25,7 +44,7 @@ def({id:'tList',cat:'text',name:'文字・條列重點',hint:'不用圖片；項
   const bs=Math.max(30,sz*1.05)*k;let s='';
   for(const col of L)for(const r of col.rows){const y0=top+r.y;if(y0+sz*k>TBOTTOM())break;
     const by=y0+sz*k*.95-bs*.72;
-    s+=`<rect x="${col.a}" y="${f1(by)}" width="${f1(bs)}" height="${f1(bs)}" rx="${f1(bs*.25)}" fill="${c.col.main}"/>`+T([pad2(r.n)],{x:col.a+bs/2,y:by+bs*.68,size:f1(bs*.48),fill:'#fff',font:c.bf,weight:700,anchor:'middle',fixed:true})
+    s+=bullet(c,col.a,by,bs,r.n,'num')
      +T(r.al,{x:col.a+76,y:y0+sz*k*.95,size:sz,lh:1.32,fill:c.col.ink,font:c.tf,weight:700})
      +T(r.bl,{x:col.a+78,y:y0+r.al.length*sz*k*1.32+sz*.72*k*1.05,size:f1(sz*.72),lh:1.5,fill:c.col.mute,font:c.bf})}
   return tPaper(c)+h.s+s;
@@ -77,8 +96,9 @@ def({id:'tText',cat:'text',name:'文字・標題＋段落',hint:'不用圖片；
   let sz=34,L=lay(sz);const hh=()=>L.reduce((a,l)=>a+l.length*sz*k*1.6+sz*k*.7,0);
   while(sz>18&&hh()>TBOTTOM()-top){sz-=1;L=lay(sz)}
   let s='',y=top+sz*k*.9;
+  let bn=0;const bs=Math.min(40,sz*k*.95);
   paras.forEach((p,i)=>{if(y>TBOTTOM())return;const ls=L[i].filter((_,j)=>y+j*sz*k*1.6<=TBOTTOM()+sz*k*.2);
-    if(p.b)s+=`<circle cx="${P+14}" cy="${f1(y-sz*k*.33)}" r="${f1(sz*k*.17)}" fill="${c.col.main}"/>`;
+    if(p.b)s+=bullet(c,P+14-bs/2,y-sz*k*.33-bs/2,bs,bn++,'dot');
     s+=T(ls,{x:p.b?P+50:P,y,size:sz,lh:1.6,fill:c.col.ink,font:c.bf});y+=L[i].length*sz*k*1.6+sz*k*.7});
   return tPaper(c)+h.s+s;
 }});

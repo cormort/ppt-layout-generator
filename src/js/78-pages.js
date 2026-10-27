@@ -32,7 +32,7 @@ const pgCache=new Map();
 function pageSVG(p,i){
   const ids=p.sel.filter(id=>lib.some(x=>x.id===id));
   const sig=[S.ratio,JSON.stringify(ovOf(p)),ids.join(),ids.map(id=>JSON.stringify(lib.find(x=>x.id===id).crop||0)).join(),
-    S.color,S.accent,S.bgOn,S.bg,S.single,S.focal,S.tf,S.bf,S.logo,S.logoSize,S.logoPos,S.logoBg,S.footer,S.company,S.date,S.page,S.fs].join('\u0001');
+    S.color,S.accent,S.bgOn,S.bg,S.single,S.focal,S.tf,S.bf,S.logo,S.logoSize,S.logoPos,S.logoBg,S.footer,S.company,S.date,S.page,S.fs,S.bullet].join('\u0001');
   const c=pgCache.get(i);if(c&&c.sig===sig)return c.svg;
   const svg=withState({...ovOf(p),pageNo:i},()=>renderSVG(TPLBY[tplFor(p.tpl)],imgsOf(ids,'thumb'),'pg'+i+'_'));
   pgCache.set(i,{sig,svg});return svg;

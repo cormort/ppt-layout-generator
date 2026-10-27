@@ -428,6 +428,7 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.35)}
       <div class="row" style="margin-top:6px"><input type="color" id="bg" aria-label="底色"><div class="sw" id="bgSw" style="margin:0"></div></div>
       <label for="tf">標題字體</label><select id="tf"></select>
       <label for="bf">內文字體</label><select id="bf"></select>
+      <label for="bullet">項目符號（條列、段落、重點清單卡）</label><select id="bullet"></select>
       <label for="fs">全域字級 — <b id="fsVal" style="font-weight:400;color:var(--ink)"></b></label><input type="range" id="fs" min="70" max="140" step="5">
       <div class="sec" style="margin-top:20px"><span>Logo 與頁尾</span></div>
       <div class="row"><button class="btn" id="logoBtn">上傳 Logo</button><button class="btn fix" id="logoDel">移除</button></div>
@@ -480,7 +481,7 @@ const SWATCH=['#2f5d8a','#3f6b3a','#7a8f4e','#c2456b','#d9822b','#8a5a2b','#5b4b
 const BGS=[['白','#ffffff'],['米白','#f7f3ea'],['淺灰','#f1f2f4'],['暖灰','#e9e4dc'],['淡藍','#eef3f9'],['深藍','#14233a'],['炭黑','#1e1f22']];
 const DEF={title:'敦煌鳴沙山月牙泉',subtitle:'Dunhuang · Crescent Lake',body:'沙漠中的一彎清泉，千百年來不曾乾涸。駝鈴聲聲、沙丘連綿，日落時分整座山脊被染成金色，是絲路上最溫柔的風景。',items:'工作概述|Job Overview\n靈感來源|Source of Inspiration\n成果展示|Achievement\n目標規劃|Goals and Ideas',number:'01',color:'#2f5d8a',accent:'#c9a24a',tf:0,bf:0,single:false,tpl:'diamond',
   bgOn:false,bg:'#f7f3ea',company:'',date:'',page:'',footer:false,logo:'',logoAR:1,logoPos:'tr',logoBg:true,logoSize:70,
-  focal:'xMidYMid',theme:'auto',cat:'fit',fmt:'png',scale:2,fname:'',fs:100,notes:'',pages:[],cur:0,pptText:'edit',pptQ:'std',ratio:'16:9',secSync:true};
+  focal:'xMidYMid',theme:'auto',cat:'fit',fmt:'png',scale:2,fname:'',fs:100,notes:'',pages:[],cur:0,pptText:'edit',pptQ:'std',ratio:'16:9',secSync:true,bullet:''};
 const BIZ=[['藏青金','#1f3a5f','#c9a24a'],['商務藍','#1d5fa8','#38b2e8'],['深灰橘','#3b3f46','#f08a24'],['墨綠米','#2f5a46','#d8b98a'],['酒紅灰','#7a2635','#a8a8a8'],['科技紫','#3b2f8f','#22c3c3']];
 const FOCAL=['xMinYMin','xMidYMin','xMaxYMin','xMinYMid','xMidYMid','xMaxYMid','xMinYMax','xMidYMax','xMaxYMax'];
 const CATS=[['fit','建議'],['all','全部'],['text','文字頁'],['chart','圖表'],['card','圖卡'],['cmp','對比'],['wall','照片牆'],['mag','雜誌風'],['cover','封面／標題'],['shape','形狀拼貼'],['sec','章節頁'],['toc','目錄'],['grid','圖文分格'],['biz','商務'],['cn','中國風']];
@@ -1126,6 +1127,25 @@ function head(c){
   y+=34;s+=`<rect x="${x}" y="${f1(y)}" width="${w}" height="2" fill="${c.col.dk?'rgba(255,255,255,.18)':c.col.light}"/>`;
   return{s,y:y+44};
 }
+/* 項目符號（樣式分頁整份共用；''＝各版型原本的樣子）：全用圖形畫、不靠字型，PPTX 與播放器外觀一致。
+   (x,y) 是 s×s 方框左上角，n 是第幾項（0 起算） */
+const BULLETS=[['','依版型預設'],['num','編號方塊'],['ring','編號圓圈'],['dot','圓點'],['check','打勾'],['arrow','箭頭'],['diamond','菱形'],['bar','短豎條'],['star','星形']];
+function bullet(c,x,y,s,n,def){
+  const st=S.bullet||def,m=c.col.main,cx=x+s/2,cy=y+s/2,r=s/2;
+  const no=fill=>T([String(n+1).padStart(st==='num'?2:1,'0')],{x:cx,y:cy+s*.17,size:f1(s*(st==='num'?.48:.5)),fill,font:c.bf,weight:800,anchor:'middle',fixed:true});
+  switch(st){
+    case 'num':return `<rect x="${f1(x)}" y="${f1(y)}" width="${f1(s)}" height="${f1(s)}" rx="${f1(s*.25)}" fill="${m}"/>`+no('#fff');
+    case 'circle':return `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r)}" fill="${m}"/>`+no('#fff');
+    case 'ring':return `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r-s*.05)}" fill="none" stroke="${m}" stroke-width="${f1(s*.08)}"/>`+no(m);
+    case 'dot':return `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(s*.2)}" fill="${m}"/>`;
+    case 'check':return `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r)}" fill="${m}"/><path d="M${f1(x+s*.28)},${f1(y+s*.52)}L${f1(x+s*.44)},${f1(y+s*.68)}L${f1(x+s*.73)},${f1(y+s*.36)}" fill="none" stroke="#fff" stroke-width="${f1(s*.11)}" stroke-linecap="round" stroke-linejoin="round"/>`;
+    case 'arrow':return `<path d="M${f1(x+s*.32)},${f1(y+s*.2)}L${f1(x+s*.66)},${f1(cy)}L${f1(x+s*.32)},${f1(y+s*.8)}" fill="none" stroke="${m}" stroke-width="${f1(s*.15)}" stroke-linecap="round" stroke-linejoin="round"/>`;
+    case 'diamond':return `<rect x="${f1(cx-s*.2)}" y="${f1(cy-s*.2)}" width="${f1(s*.4)}" height="${f1(s*.4)}" rx="${f1(s*.05)}" transform="rotate(45 ${f1(cx)} ${f1(cy)})" fill="${m}"/>`;
+    case 'bar':return `<rect x="${f1(cx-s*.09)}" y="${f1(y+s*.08)}" width="${f1(s*.18)}" height="${f1(s*.84)}" rx="${f1(s*.09)}" fill="${c.col.acc}"/>`;
+    case 'star':{const p=[...Array(10)].map((_,i)=>{const a=-Math.PI/2+i*Math.PI/5,q=i&1?s*.19:s*.46;return[cx+q*Math.cos(a),cy+q*Math.sin(a)]});return `<path d="${P(p)}" fill="${c.col.acc}"/>`}
+  }
+  return '';
+}
 const tPaper=c=>bg(c.col.paper||'#ffffff');
 const tSoft=c=>c.col.dk?'rgba(255,255,255,.07)':c.col.light;
 /* 文字頁支援所有尺寸：左右留白與內容區底線依目前的 W、H 計算 */
@@ -1141,7 +1161,7 @@ def({id:'tList',cat:'text',name:'文字・條列重點',hint:'不用圖片；項
   const bs=Math.max(30,sz*1.05)*k;let s='';
   for(const col of L)for(const r of col.rows){const y0=top+r.y;if(y0+sz*k>TBOTTOM())break;
     const by=y0+sz*k*.95-bs*.72;
-    s+=`<rect x="${col.a}" y="${f1(by)}" width="${f1(bs)}" height="${f1(bs)}" rx="${f1(bs*.25)}" fill="${c.col.main}"/>`+T([pad2(r.n)],{x:col.a+bs/2,y:by+bs*.68,size:f1(bs*.48),fill:'#fff',font:c.bf,weight:700,anchor:'middle',fixed:true})
+    s+=bullet(c,col.a,by,bs,r.n,'num')
      +T(r.al,{x:col.a+76,y:y0+sz*k*.95,size:sz,lh:1.32,fill:c.col.ink,font:c.tf,weight:700})
      +T(r.bl,{x:col.a+78,y:y0+r.al.length*sz*k*1.32+sz*.72*k*1.05,size:f1(sz*.72),lh:1.5,fill:c.col.mute,font:c.bf})}
   return tPaper(c)+h.s+s;
@@ -1193,8 +1213,9 @@ def({id:'tText',cat:'text',name:'文字・標題＋段落',hint:'不用圖片；
   let sz=34,L=lay(sz);const hh=()=>L.reduce((a,l)=>a+l.length*sz*k*1.6+sz*k*.7,0);
   while(sz>18&&hh()>TBOTTOM()-top){sz-=1;L=lay(sz)}
   let s='',y=top+sz*k*.9;
+  let bn=0;const bs=Math.min(40,sz*k*.95);
   paras.forEach((p,i)=>{if(y>TBOTTOM())return;const ls=L[i].filter((_,j)=>y+j*sz*k*1.6<=TBOTTOM()+sz*k*.2);
-    if(p.b)s+=`<circle cx="${P+14}" cy="${f1(y-sz*k*.33)}" r="${f1(sz*k*.17)}" fill="${c.col.main}"/>`;
+    if(p.b)s+=bullet(c,P+14-bs/2,y-sz*k*.33-bs/2,bs,bn++,'dot');
     s+=T(ls,{x:p.b?P+50:P,y,size:sz,lh:1.6,fill:c.col.ink,font:c.bf});y+=L[i].length*sz*k*1.6+sz*k*.7});
   return tPaper(c)+h.s+s;
 }});
@@ -1479,7 +1500,7 @@ def({id:'kList',cat:'card',name:'圖卡・重點清單',hint:'3–6 個重點；
   let sz=52,L=lay(sz);while(sz>24&&L.length&&L[L.length-1].end>bot-top){sz-=2;L=lay(sz)}
   const off=Math.max(0,(bot-top-(L.length?L[L.length-1].end:0))*.35);let s=bg(c.col.paper||c.col.light)+h.s;
   for(const r of L){const y0=top+off+r.y;if(y0+sz*k>bot)break;
-    s+=`<circle cx="${P+28}" cy="${f1(y0+sz*k*.6)}" r="28" fill="${c.col.main}"/>`+T([String(r.i+1)],{x:P+28,y:y0+sz*k*.6+11,size:30,fill:'#fff',font:c.bf,weight:800,anchor:'middle',fixed:true})
+    s+=bullet(c,P,y0+sz*k*.6-28,56,r.i,'circle')
      +T(r.al,{x:P+90,y:y0+sz*k*.95,size:sz,lh:1.3,fill:c.col.ink,font:c.tf,weight:700})
      +T(r.bl,{x:P+92,y:y0+r.al.length*sz*k*1.3+sz*.72*k*1.05,size:f1(sz*.72),lh:1.5,fill:c.col.mute,font:c.bf})}
   return s;
@@ -1985,6 +2006,8 @@ for(const k of['footer','logoBg','bgOn','single']){$(k).checked=S[k];$(k).onchan
 $('secSync').checked=S.secSync;
 $('secSync').onchange=()=>{S.secSync=$('secSync').checked;storePage();const n=syncSections({tpl:true,photo:true});save();drawAll();histLater();
   toast(S.secSync?(n?`已同步 ${n} 個章節頁`:'章節頁同步已開啟'):'章節頁同步已關閉，各章節頁可分開設定')};
+$('bullet').innerHTML=BULLETS.map(([v,n])=>`<option value="${v}">${n}</option>`).join('');
+$('bullet').value=S.bullet;$('bullet').onchange=()=>{S.bullet=$('bullet').value;save();refresh()};
 $('logoPos').value=S.logoPos;$('logoPos').onchange=()=>{S.logoPos=$('logoPos').value;save();refresh()};
 $('logoSize').value=S.logoSize;$('logoSize').oninput=()=>{S.logoSize=+$('logoSize').value;showLogoSize();save();refresh()};
 const showLogoSize=()=>{$('logoSizeVal').textContent=S.logoSize+'px'};showLogoSize();
@@ -2130,7 +2153,7 @@ let galSig='';
 /* 內容＋樣式的簽章（不含分類）：建議清單用；縮圖牆再加上分類 */
 function contentSig(){return galSignature(true)}
 function galSignature(noCat){
-  return [sel.join(','),noCat?'':S.cat,S.ratio,S.title,S.subtitle,S.body,S.items,S.number,S.color,S.accent,S.bgOn,S.bg,S.single,S.focal,S.tf,S.bf,S.logo,S.logoSize,S.logoPos,S.logoBg,S.footer,S.company,S.date,S.page,S.fs,
+  return [sel.join(','),noCat?'':S.cat,S.ratio,S.title,S.subtitle,S.body,S.items,S.number,S.color,S.accent,S.bgOn,S.bg,S.single,S.focal,S.tf,S.bf,S.logo,S.logoSize,S.logoPos,S.logoBg,S.footer,S.company,S.date,S.page,S.fs,S.bullet,
     sel.map(id=>JSON.stringify(lib.find(x=>x.id===id)?.crop||0)).join()].join('\u0001');
 }
 function drawGallery(force){
@@ -2191,7 +2214,7 @@ const pgCache=new Map();
 function pageSVG(p,i){
   const ids=p.sel.filter(id=>lib.some(x=>x.id===id));
   const sig=[S.ratio,JSON.stringify(ovOf(p)),ids.join(),ids.map(id=>JSON.stringify(lib.find(x=>x.id===id).crop||0)).join(),
-    S.color,S.accent,S.bgOn,S.bg,S.single,S.focal,S.tf,S.bf,S.logo,S.logoSize,S.logoPos,S.logoBg,S.footer,S.company,S.date,S.page,S.fs].join('\u0001');
+    S.color,S.accent,S.bgOn,S.bg,S.single,S.focal,S.tf,S.bf,S.logo,S.logoSize,S.logoPos,S.logoBg,S.footer,S.company,S.date,S.page,S.fs,S.bullet].join('\u0001');
   const c=pgCache.get(i);if(c&&c.sig===sig)return c.svg;
   const svg=withState({...ovOf(p),pageNo:i},()=>renderSVG(TPLBY[tplFor(p.tpl)],imgsOf(ids,'thumb'),'pg'+i+'_'));
   pgCache.set(i,{sig,svg});return svg;
@@ -2993,7 +3016,7 @@ $('reset').onclick=()=>{
 function syncUI(){
   for(const k of['title','subtitle','body','items','number','notes','company','date','page','fname'])$(k).value=S[k];
   $('tf').value=S.tf;$('bf').value=S.bf;$('color').value=S.color;$('accent').value=S.accent;$('bg').value=S.bg;
-  $('logoPos').value=S.logoPos;$('logoSize').value=S.logoSize;$('fmt').value=S.fmt;$('pptText').value=S.pptText;$('pptQ').value=S.pptQ;$('scale').value=S.scale;$('fs').value=S.fs;showFs();fmtUI();
+  $('logoPos').value=S.logoPos;$('bullet').value=S.bullet;$('logoSize').value=S.logoSize;$('fmt').value=S.fmt;$('pptText').value=S.pptText;$('pptQ').value=S.pptQ;$('scale').value=S.scale;$('fs').value=S.fs;showFs();fmtUI();
   for(const k of['footer','logoBg','bgOn','single','secSync'])$(k).checked=S[k];
   showLogo();showLogoSize();applyTheme();applyFocal();drawFilters();
   renderItemsEd();notesCount();applyRatioUI();

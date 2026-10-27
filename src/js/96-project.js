@@ -44,7 +44,7 @@ $('reset').onclick=()=>{
 function syncUI(){
   for(const k of['title','subtitle','body','items','number','notes','company','date','page','fname'])$(k).value=S[k];
   $('tf').value=S.tf;$('bf').value=S.bf;$('color').value=S.color;$('accent').value=S.accent;$('bg').value=S.bg;
-  $('logoPos').value=S.logoPos;$('logoSize').value=S.logoSize;$('fmt').value=S.fmt;$('pptText').value=S.pptText;$('pptQ').value=S.pptQ;$('scale').value=S.scale;$('fs').value=S.fs;showFs();fmtUI();
+  $('logoPos').value=S.logoPos;$('bullet').value=S.bullet;$('logoSize').value=S.logoSize;$('fmt').value=S.fmt;$('pptText').value=S.pptText;$('pptQ').value=S.pptQ;$('scale').value=S.scale;$('fs').value=S.fs;showFs();fmtUI();
   for(const k of['footer','logoBg','bgOn','single','secSync'])$(k).checked=S[k];
   showLogo();showLogoSize();applyTheme();applyFocal();drawFilters();
   renderItemsEd();notesCount();applyRatioUI();

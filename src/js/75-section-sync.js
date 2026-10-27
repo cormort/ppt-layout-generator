@@ -63,7 +63,7 @@ let galSig='';
 /* 內容＋樣式的簽章（不含分類）：建議清單用；縮圖牆再加上分類 */
 function contentSig(){return galSignature(true)}
 function galSignature(noCat){
-  return [sel.join(','),noCat?'':S.cat,S.ratio,S.title,S.subtitle,S.body,S.items,S.number,S.color,S.accent,S.bgOn,S.bg,S.single,S.focal,S.tf,S.bf,S.logo,S.logoSize,S.logoPos,S.logoBg,S.footer,S.company,S.date,S.page,S.fs,
+  return [sel.join(','),noCat?'':S.cat,S.ratio,S.title,S.subtitle,S.body,S.items,S.number,S.color,S.accent,S.bgOn,S.bg,S.single,S.focal,S.tf,S.bf,S.logo,S.logoSize,S.logoPos,S.logoBg,S.footer,S.company,S.date,S.page,S.fs,S.bullet,
     sel.map(id=>JSON.stringify(lib.find(x=>x.id===id)?.crop||0)).join()].join('\u0001');
 }
 function drawGallery(force){

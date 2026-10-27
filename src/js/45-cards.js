@@ -33,7 +33,7 @@ def({id:'kList',cat:'card',name:'圖卡・重點清單',hint:'3–6 個重點；
   let sz=52,L=lay(sz);while(sz>24&&L.length&&L[L.length-1].end>bot-top){sz-=2;L=lay(sz)}
   const off=Math.max(0,(bot-top-(L.length?L[L.length-1].end:0))*.35);let s=bg(c.col.paper||c.col.light)+h.s;
   for(const r of L){const y0=top+off+r.y;if(y0+sz*k>bot)break;
-    s+=`<circle cx="${P+28}" cy="${f1(y0+sz*k*.6)}" r="28" fill="${c.col.main}"/>`+T([String(r.i+1)],{x:P+28,y:y0+sz*k*.6+11,size:30,fill:'#fff',font:c.bf,weight:800,anchor:'middle',fixed:true})
+    s+=bullet(c,P,y0+sz*k*.6-28,56,r.i,'circle')
      +T(r.al,{x:P+90,y:y0+sz*k*.95,size:sz,lh:1.3,fill:c.col.ink,font:c.tf,weight:700})
      +T(r.bl,{x:P+92,y:y0+r.al.length*sz*k*1.3+sz*.72*k*1.05,size:f1(sz*.72),lh:1.5,fill:c.col.mute,font:c.bf})}
   return s;
