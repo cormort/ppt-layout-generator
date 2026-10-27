@@ -20,5 +20,5 @@ const DEF={title:'敦煌鳴沙山月牙泉',subtitle:'Dunhuang · Crescent Lake'
   focal:'xMidYMid',theme:'auto',cat:'fit',fmt:'png',scale:2,fname:'',fs:100,notes:'',pages:[],cur:0,pptText:'edit',pptQ:'std',ratio:'16:9',secSync:true,bullet:''};
 const BIZ=[['藏青金','#1f3a5f','#c9a24a'],['商務藍','#1d5fa8','#38b2e8'],['深灰橘','#3b3f46','#f08a24'],['墨綠米','#2f5a46','#d8b98a'],['酒紅灰','#7a2635','#a8a8a8'],['科技紫','#3b2f8f','#22c3c3']];
 const FOCAL=['xMinYMin','xMidYMin','xMaxYMin','xMinYMid','xMidYMid','xMaxYMid','xMinYMax','xMidYMax','xMaxYMax'];
-const CATS=[['fit','建議'],['all','全部'],['text','文字頁'],['chart','圖表'],['card','圖卡'],['cmp','對比'],['wall','照片牆'],['mag','雜誌風'],['cover','封面／標題'],['shape','形狀拼貼'],['sec','章節頁'],['toc','目錄'],['grid','圖文分格'],['biz','商務'],['cn','中國風']];
+const CATS=[['fit','建議'],['all','全部'],['cover','封面／標題'],['text','文字頁'],['chart','圖表'],['card','圖卡'],['cmp','對比'],['wall','照片牆'],['mag','雜誌風'],['shape','形狀拼貼'],['sec','章節頁'],['toc','目錄'],['grid','圖文分格'],['biz','商務'],['cn','中國風']];
 
