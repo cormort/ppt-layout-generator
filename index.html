@@ -2070,7 +2070,8 @@ function fitList(){
   fitCache={sig,list:(ok.length?ok:pool).slice().sort((a,b)=>rank(a)-rank(b))};
   return fitCache.list;
 }
-const ofCat=v=>v==='fit'?fitList():TPL.filter(t=>tplOK(t)&&(v==='all'||t.cat===v));
+/* 「全部」把封面／標題排在最前面，其餘照原本順序 */
+const ofCat=v=>{if(v==='fit')return fitList();const l=TPL.filter(t=>tplOK(t)&&(v==='all'||t.cat===v));return v==='all'?[...l.filter(t=>t.cat==='cover'),...l.filter(t=>t.cat!=='cover')]:l};
 function tplList(){return ofCat(S.cat)}
 function drawFilters(){
   if(S.cat!=='fit'&&!ofCat(S.cat).length)S.cat='fit';
