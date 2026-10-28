@@ -245,3 +245,51 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.35)}
 @media (max-width:900px) and (orientation:landscape) and (max-height:500px){
   .center,.top{position:static}
 }
+
+/* ---------- 動態效果 ----------
+   來源：kittenjam Motion Library 的 #243 分段控制器、#232 立體按壓、#234 按鈕漣漪、
+   #146 按鈕載入成功、#104 卡片依序浮現。原則：只做「有回饋感」的微動態，
+   不搶版面、不延遲操作；prefers-reduced-motion 時全部停用（上面那條 * 規則已蓋掉）。 */
+
+/* #232 立體按壓：按下時整顆微微下沉，放開彈回 */
+.btn{position:relative;overflow:hidden;transition:transform .12s ease,background-color .12s ease,border-color .12s ease}
+.btn:active:not(:disabled){transform:translateY(1px) scale(.985)}
+@media (prefers-reduced-motion:reduce){.btn:active:not(:disabled){transform:none}}
+
+/* #234 按鈕漣漪：從按下的那一點擴散一圈再淡出 */
+.btn>.ripple{position:absolute;border-radius:50%;background:currentColor;opacity:.18;transform:scale(0);pointer-events:none;animation:btn-ripple .7s ease-out forwards}
+@keyframes btn-ripple{to{transform:scale(1);opacity:0}}
+
+/* #243 分段控制器：選項底下一塊滑塊，帶一點回彈滑到新位置並貼合文字寬度。
+   用 ::after 畫，不插入任何 DOM 節點（版面元件的子元素數量要保持乾淨，測試也在數） */
+.seg,.itabs{position:relative}
+.seg::after,.itabs::after{content:'';position:absolute;pointer-events:none;z-index:0;
+  width:var(--tw,0px);transform:translateX(var(--tx,0px))}
+.seg::after{top:1px;bottom:1px;left:0;background:var(--soft);border-radius:6px}
+.itabs::after{bottom:0;left:0;height:2px;background:var(--acc)}
+.seg.thumb-anim::after,.itabs.thumb-anim::after{transition:transform .32s cubic-bezier(.5,1.5,.5,1),width .32s cubic-bezier(.5,1.5,.5,1)}
+.seg>button{position:relative;z-index:1;background:transparent}
+.seg>button.on{background:transparent}
+.itabs>button{position:relative;z-index:1}
+.itabs>button.on{border-bottom-color:transparent}
+
+/* #146 按鈕載入成功：按下後原地轉圈，完成打勾再復原（不改變工具列版面） */
+.btn.busy,.btn.done{pointer-events:none; -webkit-text-fill-color:transparent}
+.btn.busy>svg,.btn.done>svg{opacity:0;transition:opacity .12s ease}
+.btn .spin{position:absolute;inset:0;display:none;align-items:center;justify-content:center}
+.btn.busy .spin{display:flex}
+.btn .spin i{width:15px;height:15px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:btn-spin .6s linear infinite;opacity:.8}
+@keyframes btn-spin{to{transform:rotate(360deg)}}
+.btn.done .spin{display:flex}
+.btn.done .spin i{width:14px;height:8px;border:0;border-left:2.5px solid currentColor;border-bottom:2.5px solid currentColor;
+  border-radius:1px;transform:rotate(-45deg) translate(1px,-2px);opacity:1;animation:none}
+.btn.done{animation:btn-pop .28s ease}
+
+/* #104 卡片依序浮現：新出現的版型卡、照片縮圖由下往上淡入，依序錯開（最多錯 9 張，免得等太久） */
+.rise{animation:rise .45s ease-out both;animation-delay:calc(min(var(--i,0),9) * 34ms)}
+/* 只淡入與去模糊，不做位移與縮放：位移會改變元素的可點區域，
+   使用者在動畫途中點按容易點到隔壁（自動化測試用座標點擊時也一樣），
+   為了這 0.5 秒的手感換來誤點不值得 */
+@keyframes rise{from{opacity:0}to{opacity:1}}
+/* 分頁切換時，面板內容柔和上浮一次（#125 的精神，幅度更小） */
+.pn.on.play-in>.tplcard,.pn.on.play-in>label,.pn.on.play-in>.row,.pn.on.play-in>.sec,.pn.on.play-in>.lib{animation:rise .34s cubic-bezier(.22,.7,.3,1) both}
