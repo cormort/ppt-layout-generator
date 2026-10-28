@@ -3282,21 +3282,19 @@ function syncThumbs() {
 /* 第一次定位不要有動畫（否則會從左邊滑過來） */
 function primeThumbs() {
   syncThumbs();
-  requestAnimationFrame(() => {
+  /* 用 setTimeout 而不是 requestAnimationFrame：分頁在背景時 rAF 不會跑，
+     滑塊就永遠停在第一次的位置（實測 GitHub Pages 上就是這樣） */
+  setTimeout(() => {
     document.querySelectorAll('.seg, .itabs').forEach((box) => box.classList.add('thumb-anim'));
-  });
+  }, 32);
 }
 
 /** 版面常常整塊重畫（innerHTML 換掉），量一次不夠：0／120／400ms 各補一次 */
-let syncQueued = false;
+let syncTimer = 0;
 function scheduleSync() {
-  if (syncQueued) return;
-  syncQueued = true;
-  /* 一次點擊可能引發好幾輪重畫，等兩拍再量就好 */
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    syncQueued = false;
-    syncThumbs();
-  }));
+  /* 去抖用 setTimeout，不用 rAF：分頁在背景時 rAF 會停，整個同步就卡死 */
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(syncThumbs, 24);
 }
 
 document.addEventListener('click', (e) => {
@@ -3418,12 +3416,12 @@ function playPane() {
   if (!pane || pane === lastPane) return;
   lastPane = pane;
   /* 剛顯示的面板裡如果有分段控制器／卡片，這時候尺寸才量得到，補一次同步與進場 */
-  requestAnimationFrame(() => {
-    scheduleSync();
+  setTimeout(() => {
+    syncThumbs();
     if (!motionOK()) return;
     if (pane.querySelector('#gal .card')) stagger(pane.querySelector('#gal'), '.card');
     if (pane.querySelector('#lib .it')) stagger(pane.querySelector('#lib'), '.it');
-  });
+  }, 24);
   if (!motionOK()) return;
   pane.classList.remove('play-in');
   void pane.offsetWidth;
