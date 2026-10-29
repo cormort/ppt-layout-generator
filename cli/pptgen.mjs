@@ -143,7 +143,9 @@ function findBrowser() {
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function openApp() {
   const prof = mkdtempSync(join(tmpdir(), 'pptgen-'));
-  const proc = spawn(findBrowser(), ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${prof}`, '--no-first-run', '--no-default-browser-check', '--disable-extensions', 'about:blank'], { stdio: 'ignore' });
+  /* 容器／沙箱裡 Chrome 常需要 --no-sandbox；用環境變數追加，不影響一般使用 */
+  const extra = String(process.env.CHROME_FLAGS || '').split(/\s+/).filter(Boolean);
+  const proc = spawn(findBrowser(), ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${prof}`, '--no-first-run', '--no-default-browser-check', '--disable-extensions', ...extra, 'about:blank'], { stdio: 'ignore' });
   let port;
   for (let i = 0; i < 80 && !port; i++) {
     await sleep(150);

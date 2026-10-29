@@ -3,8 +3,8 @@ const TPLBY=Object.fromEntries(TPL.map(t=>[t.id,t]));
 /* 版型是否支援目前的版面尺寸；不支援時換成相近的版型（16:9 ↔ 圖卡） */
 const tplOK=t=>(t.ratios||['16:9']).includes(S.ratio);
 /* 會用到照片的版型（沒選照片時以示意圖代替） */
-const usesPhoto=t=>!(t.cat==='text'||t.cat==='chart'||['kAnnounce','kList','kNumber','kQuote','cnQuote','thanks','mColumns','mIndex','tocNum'].includes(t.id));
-const TO_CARD={text:'tList',cover:'kPhoto',shape:'kPhoto',sec:'kNumber',toc:'kList',grid:'kPhoto',biz:'kAnnounce',cn:'kPhoto',mag:'kPhoto'};
+const usesPhoto=t=>!(t.cat==='text'||t.cat==='chart'||t.cat==='map'||['kAnnounce','kList','kNumber','kQuote','cnQuote','thanks','mColumns','mIndex','tocNum'].includes(t.id));
+const TO_CARD={text:'tList',cover:'kPhoto',shape:'kPhoto',sec:'kNumber',toc:'kList',grid:'kPhoto',biz:'kAnnounce',cn:'kPhoto',mag:'kPhoto',chart:'tList',map:'tList'};
 const TO_WIDE={kList:'tList',kPhoto:'split',kNumber:'bignum',kQuote:'tQuote',kAnnounce:'tText'};
 function tplFor(id){
   const t=TPLBY[id];if(t&&tplOK(t))return id;

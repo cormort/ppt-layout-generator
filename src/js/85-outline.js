@@ -5,6 +5,7 @@ const TPL_ALIAS={封面:'split',章節:'bignum',條列:'tList',方格:'tGrid',�
   圖卡:'kAnnounce',公告:'kAnnounce',照片公告:'kPhoto',重點卡:'kList',數據卡:'kNumber',金句卡:'kQuote',
   對比:'cmp',前後:'cmp',前後對比:'cmp',比較:'cmpVs',人物引言:'kPortrait',人像:'kPortrait',照片牆:'wall',拼貼:'wall',
   數據並列:'tStats',數字並列:'tStats',大字目錄:'tocNum',編號目錄:'tocNum',撕紙:'cnTear',宣紙:'cnQuote',中國風金句:'cnQuote',感謝:'thanks',結尾:'thanks',
+  地圖:'twMap',縣市地圖:'twMap',統計地圖:'twMap',台灣地圖:'twMap',標註地圖:'twMap',
   去背:'cutoutCard',去背主體:'cutoutCard',主體:'cutoutCard',雙色調:'duotone',雙色:'duotone'};
 function tplFrom(v){
   v=String(v||'').trim();if(!v)return '';

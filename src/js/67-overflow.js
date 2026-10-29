@@ -1,14 +1,16 @@
 /* ---------- 文字溢出偵測：輸出的圖裡看不到的字就提醒 ---------- */
-function plainOf(svg){return unesc(String(svg).replace(/<[^>]*>/g,' ')).replace(/\s+/g,'').toLowerCase()}
+/* 「臺」與「台」是同一個字：使用者打哪一種都算有出現 */
+const flatOf=s=>String(s).replace(/臺/g,'台');
+function plainOf(svg){return flatOf(unesc(String(svg).replace(/<[^>]*>/g,' ')).replace(/\s+/g,'').toLowerCase())}
 /* 只在「開頭有出現、結尾沒出現」時判定被截斷，
    所以範本根本沒用到某個欄位時不會誤報 */
 function overflowNote(svg){
   /* 頁尾（單位｜日期｜頁碼）不算版面內容：先拿掉，免得「2026 年度計畫」的開頭剛好撞到日期 2026.10 而誤報 */
   let flat=plainOf(svg);const miss=[];
-  if(S.footer)for(const f of[S.company,S.date,pageLabel()]){const v=String(f||'').replace(/\s+/g,'').toLowerCase();if(v)flat=flat.split(v).join(' ')}
+  if(S.footer)for(const f of[S.company,S.date,pageLabel()]){const v=flatOf(String(f||'').replace(/\s+/g,'').toLowerCase());if(v)flat=flat.split(v).join(' ')}
   /* 完整字串有出現 → 沒被截斷；只有開頭出現 → 被截斷；完全沒出現 → 這個範本沒用到這欄，不提醒 */
   const check=(label,val)=>{
-    const v=String(val||'').replace(/\s+/g,'').toLowerCase();
+    const v=flatOf(String(val||'').replace(/\s+/g,'').toLowerCase());
     if(v.length<5||flat.includes(v))return;
     const head=v.slice(0,Math.min(8,Math.max(4,Math.floor(v.length/2))));
     if(flat.includes(head))miss.push(label);
@@ -18,7 +20,7 @@ function overflowNote(svg){
   const lines=String(S.items||'').split('\n').map(s=>s.trim()).filter(l=>l.split(/[|｜]/)[0].replace(/\s+/g,'').length>=1);
   let shown=0;
   for(const l of lines){
-    const head=l.split(/[|｜]/)[0].replace(/\s+/g,'').toLowerCase();
+    const head=flatOf(l.split(/[|｜]/)[0].replace(/\s+/g,'').toLowerCase());
     if(flat.includes(head))shown++;
   }
   /* 有些版型本來就只吃前幾個項目（對比頁只取 2 個、數據亮點只取 1 個），用 maxItems 宣告，不要誤報 */
