@@ -7,7 +7,8 @@ const TPL_ALIAS={封面:'split',章節:'bignum',條列:'tList',方格:'tGrid',�
   數據並列:'tStats',數字並列:'tStats',大字目錄:'tocNum',編號目錄:'tocNum',撕紙:'cnTear',宣紙:'cnQuote',中國風金句:'cnQuote',感謝:'thanks',結尾:'thanks',
   地圖:'twMap',縣市地圖:'twMap',統計地圖:'twMap',台灣地圖:'twMap',標註地圖:'twMap',
   去背:'cutoutCard',去背主體:'cutoutCard',主體:'cutoutCard',雙色調:'duotone',雙色:'duotone',
-  花瓣:'petalFan',花瓣扇:'petalFan',花瓣圖文:'petalFan',扇頁:'petalFan',花開:'petalFan',花:'petalFan'};
+  花瓣:'petalFan',花瓣扇:'petalFan',花瓣圖文:'petalFan',扇頁:'petalFan',花開:'petalFan',花:'petalFan',
+  斜切時間軸:'diagTime',時間軸斜切:'diagTime',滿版時間軸:'diagTime',斜線時間軸:'diagTime',里程碑:'diagTime',時間軸:'diagTime'};
 function tplFrom(v){
   v=String(v||'').trim();if(!v)return '';
   if(TPLBY[v])return v;if(TPL_ALIAS[v])return TPL_ALIAS[v];
