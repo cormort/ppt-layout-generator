@@ -50,5 +50,7 @@ function applySuite(id,{colors=true}={}){
     if(next!==p.tpl)n++;
     p.tpl=next;
   }
+  /* 目前這一頁的版型也要同步，否則接下來 storePage() 會把舊版型寫回去 */
+  if(S.pages[S.cur])S.tpl=S.pages[S.cur].tpl;
   return n;
 }

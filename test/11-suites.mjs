@@ -46,7 +46,8 @@ test('套用套裝：版型照角色換、樣式跟著換、內容一個字都�
     const n=applySuite('annual');
     const after=S.pages.map(p=>({tpl:p.tpl,title:p.title,items:p.items}));
     const again=applySuite('annual');
-    return {n,again,before,after,color:S.color,accent:S.accent,fonts:[S.tf,S.bf]};
+    return {n,again,before,after,color:S.color,accent:S.accent,fonts:[S.tf,S.bf],
+      curTpl:S.tpl,curPage:S.pages[S.cur].tpl};
   })()`);
   /* 引言、表格、照片牆、結尾頁本來就是 annual 套裝要的版型，所以只有 2 頁真的被換掉 */
   eq(got.n, 2, '應該換掉 2 頁（cFrame→split、bignum→secStrip），實際 ' + got.n + ' 頁');
@@ -54,6 +55,7 @@ test('套用套裝：版型照角色換、樣式跟著換、內容一個字都�
   deepEq(got.after.map(p => p.title), got.before.map(p => p.title), '標題被動到了');
   eq(got.after[3].items, got.before[3].items, '表格的項目被動到了');
   eq(got.again, 0, '套用第二次不該再變（可重複套用）');
+  eq(got.curTpl, got.curPage, '目前這一頁的 S.tpl 沒同步（會被 storePage 寫回舊版型）');
   eq(got.color, '#1f3a5f', '主色沒換');
   eq(got.accent, '#c9a24a', '輔色沒換');
 });
