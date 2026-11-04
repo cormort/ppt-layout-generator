@@ -80,10 +80,15 @@ def({id:'tTable',cat:'text',name:'文字・表格',hint:'不用圖片；項目�
   const lay=sz=>R.map((r,i)=>cw.map((w,j)=>wrap(r[j]||'',w-36,sz,fo(i,j),wt(i,j))));
   const rh=(L,sz)=>L.map(cells=>Math.max(1,...cells.map(l=>l.length))*sz*k*1.4+sz*k*.95);
   let sz=28,L=lay(sz);while(sz>15&&rh(L,sz).reduce((a,b)=>a+b,0)>TBOTTOM()-top){sz-=1;L=lay(sz)}
-  const hs=rh(L,sz);let s='',y=top;
+  /* 列數少時把列高撐開（最多 2.2 倍），表格才不會擠在標題下面、下面留一大片白 */
+  const baseH=rh(L,sz),availT=TBOTTOM()-top,nat=baseH.reduce((a,b)=>a+b,0);
+  const hs=nat<availT*.92?baseH.map(h=>h*Math.min(2.2,availT*.92/nat)):baseH;
+  let s='',y=top;
   for(let i=0;i<R.length;i++){if(y+hs[i]>TBOTTOM()+4)break;
+    const textH=Math.max(1,...L[i].map(l=>l.length))*sz*k*1.4;
+    const ty=y+Math.max(0,(hs[i]-textH-sz*k*.5)/2);
     s+=`<rect x="${x0}" y="${f1(y)}" width="${W0}" height="${f1(hs[i])}" fill="${i===0?c.col.main:i%2===0?tSoft(c):'none'}"/>`;
-    let x=x0;cw.forEach((w,j)=>{s+=T(L[i][j],{x:x+18,y:y+sz*k*.45+sz*k,size:sz,lh:1.4,fill:i===0?'#fff':c.col.ink,font:fo(i,j),weight:wt(i,j)});x+=w});
+    let x=x0;cw.forEach((w,j)=>{s+=T(L[i][j],{x:x+18,y:ty+sz*k*.45+sz*k,size:sz,lh:1.4,fill:i===0?'#fff':c.col.ink,font:fo(i,j),weight:wt(i,j)});x+=w});
     y+=hs[i]}
   return tPaper(c)+h.s+s+`<rect x="${x0}" y="${f1(y)}" width="${W0}" height="3" fill="${c.col.main}"/>`;
 }});
@@ -94,8 +99,11 @@ def({id:'tText',cat:'text',name:'文字・標題＋段落',hint:'不用圖片；
     ...String(c.t.items||'').split('\n').map(s=>s.trim()).filter(Boolean).map(t=>({t:t.replace(/[|｜]/,'：').replace(/[|｜]/g,'　'),b:true}))];
   const lay=sz=>paras.map(p=>wrap(p.t,p.b?w-50:w,sz,c.bf));
   let sz=34,L=lay(sz);const hh=()=>L.reduce((a,l)=>a+l.length*sz*k*1.6+sz*k*.7,0);
-  while(sz>18&&hh()>TBOTTOM()-top){sz-=1;L=lay(sz)}
-  let s='',y=top+sz*k*.9;
+  const availT=TBOTTOM()-top;
+  while(sz>18&&hh()>availT){sz-=1;L=lay(sz)}
+  /* 字少時把字放大填滿（最多 56）：下半頁一大片白，比字大一點更難看 */
+  while(sz<60&&hh()<availT*.86){sz+=2;L=lay(sz)}
+  let s='',y=top+Math.max(0,(availT-hh())*.4)+sz*k*.9;
   let bn=0;const bs=Math.min(40,sz*k*.95);
   paras.forEach((p,i)=>{if(y>TBOTTOM())return;const ls=L[i].filter((_,j)=>y+j*sz*k*1.6<=TBOTTOM()+sz*k*.2);
     if(p.b)s+=bullet(c,P+14-bs/2,y-sz*k*.33-bs/2,bs,bn++,'dot');
@@ -123,12 +131,15 @@ def({id:'tStats',cat:'text',name:'文字・數據並列',hint:'不用圖片；�
   const h=hdr(c,{tMax:64}),k=FS,P=PAD(),it=items(c).slice(0,4),n=Math.max(1,it.length),wide=W>H;
   const nc=wide?n:Math.min(2,n),rows=Math.max(1,Math.ceil(n/nc)),gap=wide?(W>1600?72:46):34;
   const rowH=(H-h.y-P)/rows,colW=(W-2*P-(nc-1)*gap)/nc;
+  /* 四個數字要同一個字級（不然「98.7%」比「0 件」小一號，整列輕重不一） */
+  const fit=num=>{let s0=Math.min(wide?250:170,Math.round(colW*1.02));
+    while(s0>44&&tw(num,s0*k,c.tf,800)>colW*.96)s0-=4;return s0};
+  const nsAll=Math.min(...it.map(o=>fit(o.a||'0')));
   let s=bg(c.col.paper||'#fff')+h.s;
   it.forEach((o,i)=>{
     const ci=i%nc,ri=Math.floor(i/nc),x=P+ci*(colW+gap),cellTop=h.y+ri*rowH;
     const num=o.a||'0',lab=o.b||'',note=o.c||'';
-    let ns=Math.min(wide?160:126,Math.round(colW*.62));
-    while(ns>44&&tw(num,ns*k,c.tf,800)>colW*.96)ns-=4;
+    const ns=nsAll;
     const labL=wrap(lab,colW,34,c.tf,700).slice(0,2),noteL=wrap(note,colW,22,c.bf).slice(0,2);
     const cellH=ns*k*1.05+28+6+34*k*1.3*labL.length+(noteL.length?18+noteL.length*22*k*1.5:0);
     const y0=cellTop+Math.max(0,(rowH-cellH)/2);

@@ -74,6 +74,8 @@ def({id:'knockout',cat:'cover',name:'大字鏤空＋豎條',hint:'1 張',render(
   return IMG(c.imgs[0],0,0,W,H)+`<rect width="${W}" height="${H}" fill="${c.col.paper||'#fff'}" opacity=".8"/>`+mosaic(c,sh,{box:[0,0,W,H]})
    +`<defs><clipPath id="${id}">${tt}</clipPath><filter id="${bl}"><feGaussianBlur stdDeviation="5"/></filter></defs>`
    +`<g opacity=".22" fill="${c.col.dark}" filter="url(#${bl})" transform="translate(5 8)">${tt}</g>`+IMG(c.imgs[0],0,0,W,H,`clip-path="url(#${id})"`)
+   /* 鏤空字再描一圈紙色外框：照片偏亮時大字才不會糊掉（跟漸層淡出同一招） */
+   +`<g fill="none" stroke="${c.col.paper||'#fff'}" stroke-width="10" paint-order="stroke">${tt}</g>`
    +`<g fill="none" stroke="${c.col.dark}" stroke-opacity=".35" stroke-width="2">${tt}</g>`
    +T([c.t.subtitle],{x:136,y:560+64,size:48,fill:c.col.ink,font:c.bf,weight:700})
    +T(wrap(c.t.body,900,24,c.bf).slice(0,3),{x:136,y:700,size:24,lh:1.7,fill:c.col.mute,font:c.bf});
@@ -83,8 +85,11 @@ def({id:'fanToc',cat:'toc',name:'目錄・半環扇形',hint:'每個項目 1 張
   const it=items(c),n=Math.max(2,Math.min(8,it.length)),R=720,r=250,cx=960,cy=1080,g=.012,sh=[];let lab='';
   for(let i=0;i<n;i++){const a0=Math.PI+i*Math.PI/n+g/2,a1=Math.PI+(i+1)*Math.PI/n-g/2,am=(a0+a1)/2;sh.push(annular(cx,cy,R,r,a0,a1));
     const lx=cx+(R+r)/2*Math.cos(am)*1.04,ly=cy+(R+r)/2*Math.sin(am)*1.04;
-    lab+=T([it[i]?.a||''],{x:lx,y:ly,size:36,fill:'#fff',font:c.tf,weight:700,anchor:'middle',extra:`filter="url(#${c.ts})"`})
-       +T([it[i]?.b||''],{x:lx,y:ly+34,size:18,fill:'#fff',font:c.bf,anchor:'middle',ls:1,extra:`filter="url(#${c.ts})"`});}
+    /* 標籤底下墊一塊圓角暗片：扇面是照片，白字直接壓上去常常讀不到 */
+    const la=it[i]?.a||'',lb=it[i]?.b||'',lw=Math.max(tw(la,36,c.tf,700),tw(lb,18,c.bf))+44,lh2=lb?74:44;
+    lab+=`<rect x="${f1(lx-lw/2)}" y="${f1(ly-36)}" width="${f1(lw)}" height="${f1(lh2)}" rx="${f1(lh2/2)}" fill="${c.col.dark}" opacity=".46"/>`
+       +T([la],{x:lx,y:ly,size:36,fill:'#fff',font:c.tf,weight:700,anchor:'middle'})
+       +T([lb],{x:lx,y:ly+34,size:18,fill:'#fff',font:c.bf,anchor:'middle',ls:1});}
   return IMG(c.imgs[0],0,0,W,H)+`<rect width="${W}" height="${H}" fill="${c.col.paper||'#fff'}" opacity=".86"/>`+mosaic(c,sh)+lab
    +T([c.t.title],{x:960,y:180,size:84,fill:c.col.ink,font:c.tf,weight:700,anchor:'middle',ls:8})
    +T([c.t.subtitle],{x:960,y:236,size:24,fill:c.col.mt,font:c.bf,weight:600,anchor:'middle',ls:6});
@@ -197,7 +202,7 @@ def({id:'tocNum',cat:'toc',name:'目錄・大字編號',hint:'不用照片；項
   /* 直式：1–2 章排一欄（數字才夠大），3 章以上排 2 欄 */
   const nc=wide?n:(n<=2?1:2),rows=Math.max(1,Math.ceil(n/nc));
   const gapC=wide?44:32,rowH=(H-h.y-P)/rows,colW=(W-2*P-(nc-1)*gapC)/nc;
-  const num=Math.min(wide?196:150,Math.round(colW*.56));
+  const num=Math.min(wide?250:190,Math.round(colW*.86));
   const cellH=num*k+44+40*k*1.25+2*24*k*1.5;
   let s=bg(c.col.paper||'#fff')+h.s;
   it.forEach((o,i)=>{

@@ -47,12 +47,12 @@ def({id:'timeline',cat:'biz',name:'商務・時間軸',hint:'每節點 1 張；�
 }});
 
 def({id:'steps',cat:'biz',name:'商務・流程步驟',hint:'每步 1 張（或 1 張連續）；項目填「步驟|說明」',render(c){
-  const it=items(c).slice(0,6),n=it.length,y=320,h=290,d=60,gap=14,w=(1680-(n-1)*gap-d)/n,sh=[];let ov='',lab='';
+  const it=items(c).slice(0,6),n=it.length,y=300,h=340,d=64,gap=14,w=(1680-(n-1)*gap-d)/n,sh=[],labY=y+h+96;let ov='',lab='';
   it.forEach((o,i)=>{const x=120+i*(w+gap),pts=[[x,y],[x+w,y],[x+w+d,y+h/2],[x+w,y+h],[x,y+h]];if(i)pts.push([x+d,y+h/2]);
     sh.push(polyShape(pts));const xc=x+w/2+d/2;
     ov+=`<path d="${P(pts)}" fill="${i%2?c.col.dark:c.col.main}" opacity=".38"/>`+T([pad2(i)],{x:xc,y:y+h/2+30,size:86,fill:'#fff',font:c.tf,weight:800,anchor:'middle',extra:`filter="url(#${c.ts})"`});
-    lab+=T(wrap(o.a,w,34,c.tf,700).slice(0,1),{x:xc,y:710,size:34,fill:c.col.ink,font:c.tf,weight:700,anchor:'middle'})+`<rect x="${f1(xc-22)}" y="735" width="44" height="4" rx="2" fill="${c.col.acc}"/>`
-      +T(wrap(o.b,w-10,21,c.bf).slice(0,5),{x:xc,y:785,size:21,lh:1.55,fill:c.col.mute,font:c.bf,anchor:'middle'})});
+    lab+=T(wrap(o.a,w,36,c.tf,700).slice(0,1),{x:xc,y:labY,size:36,fill:c.col.ink,font:c.tf,weight:700,anchor:'middle'})+`<rect x="${f1(xc-22)}" y="${f1(labY+26)}" width="44" height="4" rx="2" fill="${c.col.acc}"/>`
+      +T(wrap(o.b,w-10,21,c.bf).slice(0,5),{x:xc,y:labY+76,size:21,lh:1.55,fill:c.col.mute,font:c.bf,anchor:'middle'})});
   return bg(c.col.paper||'#fff')+mosaic(c,sh)+ov+lab+T([c.t.title],{x:960,y:170,size:64,fill:c.col.ink,font:c.tf,weight:700,anchor:'middle'})
    +T([c.t.subtitle],{x:960,y:225,size:24,fill:c.col.mt,font:c.bf,weight:600,anchor:'middle',ls:5});
 }});
