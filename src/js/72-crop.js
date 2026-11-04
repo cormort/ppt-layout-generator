@@ -72,6 +72,12 @@ $('color').value=S.color;$('color').oninput=()=>{S.color=$('color').value;save()
 $('sw').innerHTML=SWATCH.map(c=>`<button style="background:${c}" data-c="${c}" title="${c}" aria-label="套用 ${c}"></button>`).join('');
 $('sw').onclick=e=>{const c=e.target.dataset.c;if(!c)return;S.color=c;$('color').value=c;save();refresh()};
 $('accent').value=S.accent;$('accent').oninput=()=>{S.accent=$('accent').value;save();refresh()};
+$('suites').innerHTML=SUITES.map(su=>`<button data-suite="${su.id}" title="${esc(su.hint)}"><i style="background:${su.color}"></i><i style="background:${su.accent}"></i>${su.name}</button>`).join('');
+$('suites').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  const su=SUITEBY[b.dataset.suite];if(!su)return;
+  const n=applySuite(su.id);
+  $('color').value=S.color;$('accent').value=S.accent;$('tf').value=S.tf;$('bf').value=S.bf;
+  pageChanged(n?`${su.name}套裝：換了 ${n} 頁`:`${su.name}套裝：每一頁都已經是這個版型`);};
 $('biz').innerHTML=BIZ.map(([n,m,a],i)=>`<button data-i="${i}" title="套用 ${n}"><i style="background:${m}"></i><i style="background:${a}"></i>${n}</button>`).join('');
 $('biz').onclick=e=>{const b=e.target.closest('button');if(!b)return;const[,m,a]=BIZ[+b.dataset.i];S.color=m;S.accent=a;$('color').value=m;$('accent').value=a;save();refresh()};
 $('bg').value=S.bg;$('bg').oninput=()=>{S.bg=$('bg').value;S.bgOn=true;$('bgOn').checked=true;save();refresh()};

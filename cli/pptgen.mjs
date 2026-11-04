@@ -27,6 +27,8 @@ const HELP = `排版產生器 CLI — Markdown 大綱 → 含逐字稿的 PPTX
   --project <檔案>       另存成網頁版可載入的專案檔（.pptgen.json），可在網頁上微調
   --html <檔案>          另存成單一 HTML 簡報（瀏覽器開啟即可播放；P 鍵開簡報者檢視含逐字稿與計時）
   --palette <名稱>       商務配色：藏青金、商務藍、深灰橘、墨綠米、酒紅灰、科技紫
+  --suite <名稱>         整套版型：年度報告、課程講義、品牌提案、專案回顧（一次套好配色＋字型＋每頁版型，
+                         大綱裡自己指定的版型會被覆蓋；想保留就別加這個參數）
   --color <#hex>         主色；--accent <#hex> 輔色；--bg <#hex> 底色
   --font <名稱>          標題字體（例如 標楷體）；--body-font <名稱> 內文字體
   --scale <70-140>       全域字級（%）
@@ -195,7 +197,7 @@ const B64 = 'u=>{let s="";for(let i=0;i<u.length;i+=32768)s+=String.fromCharCode
 const app = await openApp();
 try {
   if (cmd === 'templates') {
-    const r = JSON.parse(await app.run(`JSON.stringify({cats:CATS,tpls:TPL.map(t=>({id:t.id,cat:t.cat,name:t.name,hint:t.hint})),alias:TPL_ALIAS,palettes:BIZ.map(b=>b[0]),fonts:FONTS.map(f=>f[0])})`));
+    const r = JSON.parse(await app.run(`JSON.stringify({cats:CATS,tpls:TPL.map(t=>({id:t.id,cat:t.cat,name:t.name,hint:t.hint})),alias:TPL_ALIAS,palettes:BIZ.map(b=>b[0]),fonts:FONTS.map(f=>f[0]),suites:SUITES.map(s=>[s.id,s.name])})`));
     if (flags.json) out(JSON.stringify(r, null, 1));
     else {
       for (const [c, cn] of r.cats) {
@@ -205,12 +207,14 @@ try {
       }
       out(`\n版型別名：${Object.entries(r.alias).map(([k, v]) => `${k}=${v}`).join('、')}`);
       out(`商務配色：${r.palettes.join('、')}`);
+      out(`套裝：${r.suites.map(s=>s[0]).join('、')}`);
       out(`字體：${r.fonts.join('、')}`);
     }
   } else {
     /* 樣式設定：先洗過 sanitise，不合法的值會被擋掉 */
     const style = {};
     if (flags.palette) style.palette = flags.palette;
+    if (flags.suite) style.suite = flags.suite;
     for (const k of ['color', 'accent', 'bg']) if (flags[k]) style[k] = flags[k];
     if (flags.font) style.font = flags.font;
     if (flags['body-font']) style.bodyFont = flags['body-font'];
@@ -231,12 +235,17 @@ try {
       if(st.font){const i=fi(st.font);if(i>=0)ov.tf=i;else bad.push('字體「'+st.font+'」不存在')}
       if(st.bodyFont){const i=fi(st.bodyFont);if(i>=0)ov.bf=i;else bad.push('字體「'+st.bodyFont+'」不存在')}
       if(st.fs)ov.fs=st.fs;
+      let suiteId='';
+      if(st.suite){const su=suiteFrom(st.suite);
+        if(!su)bad.push('套裝「'+st.suite+'」不存在');
+        else{suiteId=su.id;if(!st.color)ov.color=su.color;if(!st.accent)ov.accent=su.accent;if(!st.font)ov.tf=su.tf;if(!st.bodyFont)ov.bf=su.bf}}
       if(st.pptText)ov.pptText=st.pptText;if(st.pptQ)ov.pptQ=st.pptQ;if(st.ratio)ov.ratio=st.ratio;
       Object.assign(S,sanitise({...S,...ov}));
       /* 記下大綱裡不認得的版型名稱 */
       const orig=tplFrom,unknown=[];
       window.tplFrom=v=>{const r=orig(v);if(String(v||'').trim()&&!r)unknown.push(String(v).trim());return r};
       try{if(${!isPptx})importOutline(${JSON.stringify(md)},'replace')}finally{window.tplFrom=orig}
+      if(suiteId)applySuite(suiteId,{colors:false});
       return JSON.stringify({bad,unknown:[...new Set(unknown)]});
     })()`);
     const { bad, unknown } = JSON.parse(setup);
