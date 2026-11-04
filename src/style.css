@@ -204,22 +204,22 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.35)}
 .rtabs button{min-height:34px;padding:0 14px;border:0;border-bottom:2px solid transparent;background:none;color:var(--muted);font:inherit;font-size:13px;cursor:pointer}
 .rtabs button:hover{color:var(--ink)}
 .rtabs button.on{color:var(--acc);border-bottom-color:var(--acc);font-weight:700}
-.rbody{padding:6px 8px 4px;overflow-x:auto;scrollbar-width:thin}
-.rp{display:none;align-items:stretch;min-height:88px}
+/* 單列功能區（像 PowerPoint 的簡化功能區）：所有按鈕排成一列、圖示＋文字並排，用分隔線分組，不佔高度；太窄時橫向捲動 */
+.rbody{padding:4px 8px;overflow-x:auto;scrollbar-width:thin}
+.rp{display:none;align-items:center}
 .rp.on{display:flex}
-.rg{display:flex;flex-direction:column;padding:0 8px;border-right:1px solid var(--line2)}
+.rg{display:flex;align-items:center;padding:0 6px;border-right:1px solid var(--line)}
+.rg:first-child{padding-left:0}
 .rg:last-child{border-right:0}
-.rg>.gi{flex:1;display:flex;align-items:flex-start;gap:2px}
-.rg>.gl{font-size:11px;color:var(--muted);text-align:center;padding-top:2px;white-space:nowrap}
-.rcol{display:flex;flex-direction:column;gap:1px}
-.rb{display:flex;align-items:center;gap:6px;min-height:24px;padding:2px 8px;border:1px solid transparent;border-radius:6px;background:none;color:var(--ink);font:inherit;font-size:12px;line-height:1.2;white-space:nowrap;cursor:pointer}
+.rg>.gi,.rcol{display:contents}
+.rg>.gl,.rb br{display:none}
+.rb{display:flex;align-items:center;gap:6px;min-height:30px;padding:2px 8px;border:1px solid transparent;border-radius:6px;background:none;color:var(--ink);font:inherit;font-size:13px;line-height:1.2;white-space:nowrap;cursor:pointer;flex:none}
 .rb:hover{background:var(--chip);border-color:var(--line)}
 .rb[aria-pressed="true"]{background:var(--soft);border-color:var(--soft);color:var(--acc)}
 .rb svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .rb svg .a{stroke:var(--acc)}
 .rb svg .f{fill:var(--acc)}
-.rb.lg{flex-direction:column;justify-content:flex-start;gap:4px;min-width:56px;height:68px;padding:6px 6px 4px;text-align:center;white-space:normal}
-.rb.lg svg{width:28px;height:28px;stroke-width:1.5}
+.rb.lg svg{width:18px;height:18px}
 .ihd{display:flex;align-items:center;justify-content:space-between;padding:8px 8px 0 16px}
 .ihd b{font-size:14px}
 .status{display:flex;align-items:center;gap:16px;height:28px;padding:0 10px 0 14px;background:var(--panel);border-top:1px solid var(--line);font-size:12px;color:var(--muted);flex:none}
@@ -234,8 +234,8 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.35)}
   .side{width:208px;background:var(--panel)}
   .insp{width:360px}
   .no-side .side,.no-insp .insp,.no-notes .notesbox{display:none}
-  .center{--chrome:440px;background:var(--desk);padding:0;gap:0}
-  .no-notes .center{--chrome:300px}
+  .center{--chrome:385px;background:var(--desk);padding:0;gap:0}
+  .no-notes .center{--chrome:245px}
   .cbar{max-width:none;width:100%;padding:10px 24px 0}
   .stage{flex:none;margin:14px auto;width:calc(100% - 48px);max-width:min(1200px,calc((100vh - var(--chrome)) * var(--ar,1.7778)));border-radius:2px}
   .notesbox{margin:auto 0 0;max-width:none;border:0;border-top:1px solid var(--line);border-radius:0;padding:8px 24px 12px}
