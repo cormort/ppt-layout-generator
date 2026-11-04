@@ -40,7 +40,7 @@ def({id:'tList',cat:'text',name:'文字・條列重點',hint:'不用圖片；項
     y+=al.length*sz*k*1.32+(bl.length?bl.length*sz*.72*k*1.5+6:0)+sz*k*.75;return r});return{a,rows,h:y}});
   /* 項目少時字放大一點；放滿時從頂端排，有空時整組往中間移（略偏上，視覺比正中央穩） */
   let sz=it.length<=3?44:it.length<=5?40:36,L=lay(sz);while(sz>18&&Math.max(...L.map(l=>l.h))>TBOTTOM()-top){sz-=2;L=lay(sz)}
-  top+=Math.max(0,(TBOTTOM()-top-Math.max(...L.map(l=>l.h)))*.3);
+  top+=Math.max(0,(TBOTTOM()-top-Math.max(...L.map(l=>l.h)))*.42);
   const bs=Math.max(30,sz*1.05)*k;let s='';
   for(const col of L)for(const r of col.rows){const y0=top+r.y;if(y0+sz*k>TBOTTOM())break;
     const by=y0+sz*k*.95-bs*.72;
@@ -97,17 +97,22 @@ def({id:'tText',cat:'text',name:'文字・標題＋段落',hint:'不用圖片；
   const h=head(c),k=FS,top=h.y,P=TP(),w=W-2*P;
   const paras=[...String(c.t.body||'').split('\n').filter(s=>s.trim()).map(t=>({t,b:false})),
     ...String(c.t.items||'').split('\n').map(s=>s.trim()).filter(Boolean).map(t=>({t:t.replace(/[|｜]/,'：').replace(/[|｜]/g,'　'),b:true}))];
-  const lay=sz=>paras.map(p=>wrap(p.t,p.b?w-50:w,sz,c.bf));
-  let sz=34,L=lay(sz);const hh=()=>L.reduce((a,l)=>a+l.length*sz*k*1.6+sz*k*.7,0);
+  /* 第一段當引言（字大一點、顏色最重），其餘才是本文 —— 整段同一種字級就是「她做的」那種樣子 */
+  const lead=paras.length>1&&!paras[0].b?paras[0]:null;
+  const rest=lead?paras.slice(1):paras;
+  const lay=(sz,lz)=>[lead?wrap(lead.t,w,lz,c.bf):null,...rest.map(p=>wrap(p.t,p.b?w-50:w,sz,c.bf))];
+  let sz=34,lz=Math.min(64,Math.round(sz*1.26)),L=lay(sz,lz);
+  const hh=()=>(L[0]?L[0].length*lz*k*1.5+32:0)+L.slice(1).reduce((a,l)=>a+l.length*sz*k*1.6+sz*k*.7,0);
   const availT=TBOTTOM()-top;
-  while(sz>18&&hh()>availT){sz-=1;L=lay(sz)}
-  /* 字少時把字放大填滿（最多 56）：下半頁一大片白，比字大一點更難看 */
-  while(sz<60&&hh()<availT*.86){sz+=2;L=lay(sz)}
-  let s='',y=top+Math.max(0,(availT-hh())*.4)+sz*k*.9;
+  while(sz>18&&hh()>availT){sz-=1;lz=Math.min(64,Math.round(sz*1.26));L=lay(sz,lz)}
+  /* 字少時把字放大填滿：下半頁一大片白，比字大一點更難看 */
+  while(sz<54&&hh()<availT*.86){sz+=2;lz=Math.min(64,Math.round(sz*1.26));L=lay(sz,lz)}
+  let s='',y=top+Math.max(0,(availT-hh())*.4)+lz*k*.9;
+  if(L[0]){s+=T(L[0],{x:P,y,size:lz,lh:1.5,fill:c.col.ink,font:c.bf});y+=L[0].length*lz*k*1.5+32}
   let bn=0;const bs=Math.min(40,sz*k*.95);
-  paras.forEach((p,i)=>{if(y>TBOTTOM())return;const ls=L[i].filter((_,j)=>y+j*sz*k*1.6<=TBOTTOM()+sz*k*.2);
+  rest.forEach((p,i)=>{if(y>TBOTTOM())return;const ls=(L[i+1]||[]).filter((_,j)=>y+j*sz*k*1.6<=TBOTTOM()+sz*k*.2);
     if(p.b)s+=bullet(c,P+14-bs/2,y-sz*k*.33-bs/2,bs,bn++,'dot');
-    s+=T(ls,{x:p.b?P+50:P,y,size:sz,lh:1.6,fill:c.col.ink,font:c.bf});y+=L[i].length*sz*k*1.6+sz*k*.7});
+    s+=T(ls,{x:p.b?P+50:P,y,size:sz,lh:1.6,fill:c.col.ink,font:c.bf});y+=(L[i+1]||[]).length*sz*k*1.6+sz*k*.7});
   return tPaper(c)+h.s+s;
 }});
 
@@ -148,6 +153,12 @@ def({id:'tStats',cat:'text',name:'文字・數據並列',hint:'不用圖片；�
       +T(labL,{x,y:y0+ns*k*1.05+64,size:34,lh:1.3,fill:c.col.ink,font:c.tf,weight:700});
     if(noteL.length)s+=T(noteL,{x,y:y0+ns*k*1.05+64+34*k*1.3*labL.length+16,size:22,lh:1.5,fill:c.col.mute,font:c.bf});
   });
+  /* 底部基線＋資料來源（內文）：整組數字才不會浮在半空中 */
+  if(c.t.body){
+    const cap=wrap(c.t.body,W-2*P,20,c.bf).slice(0,2);
+    s+=`<rect x="${P}" y="${f1(H-P-30-cap.length*20*k*1.5)}" width="${W-2*P}" height="2" fill="${tSoft(c)}"/>`
+     +T(cap,{x:P,y:H-P-10-cap.length*20*k*1.5+20*k*.8,size:20,lh:1.5,fill:c.col.mute,font:c.bf});
+  }
   return s;
 }});
 

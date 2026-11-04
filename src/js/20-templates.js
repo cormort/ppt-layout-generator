@@ -30,13 +30,41 @@ def({id:'hex',cat:'shape',name:'六邊形蜂巢',hint:'多張循環（約 20 格
   return bg(c.col.paper||c.col.light)+mosaic(c,sh)+stack(c,{x:140,cy:540,w:560,tSize:82,tColor:c.col.ink,sColor:c.col.mt});
 }});
 
-def({id:'tree',cat:'shape',name:'葉形大樹',hint:'1 張最佳（也可多張）',render(c){
-  const tx=1390,sh=[];
-  const leaf=(L,h,ang,x,y)=>{const pts=rot([[0,0],[L,0],[L/2,-h/2],[L/2,h/2]],ang,x,y);return{el:`<path d="M0,0Q${f1(L/2)},${f1(-h)} ${f1(L)},0Q${f1(L/2)},${f1(h)} 0,0Z" transform="translate(${f1(x)} ${f1(y)}) rotate(${ang})"/>`,b:bbox(pts)}};
-  for(let k=0;k<7;k++){const y=905-k*105,L=330-k*30,h=L*.42;sh.push(leaf(L,h,205,tx-6,y),leaf(L,h,335,tx+6,y-40))}
-  sh.push(leaf(170,80,270,tx,250));
-  return bg(c.col.paper||mix(c.col.light,'#ffffff',.5))+`<line x1="${tx}" y1="990" x2="${tx}" y2="260" stroke="${c.col.dark}" stroke-width="7" stroke-linecap="round" opacity=".55"/>`
-   +mosaic(c,sh)+stack(c,{x:150,cy:540,w:640,tSize:80,tColor:c.col.ink,sColor:c.col.mt});
+/* 葉形大樹：樹枝用遞迴分岔畫（越上面越細），葉子是照片；
+   照片用 <defs>＋<use> 共用，18 片葉子只內嵌一次，SVG 不會爆掉 */
+def({id:'tree',cat:'shape',name:'葉形大樹',hint:'1 張最佳（也可多張）；樹枝遞迴分岔、葉片就是照片',render(c){
+  const rnd=rng(5),tx=W*.70,base=H*.955,L0=H*.215,segs={},tips=[];
+  (function grow(x,y,len,ang,dep){
+    const x2=x+Math.cos(ang)*len,y2=y+Math.sin(ang)*len;
+    (segs[dep]=segs[dep]||[]).push(`M${f1(x)},${f1(y)}L${f1(x2)},${f1(y2)}`);
+    if(dep<=1){tips.push([x2,y2,ang]);return}
+    const n=dep>=5?2:dep>2?2+(rnd()<.25?1:0):2;
+    for(let i=0;i<n;i++){
+      const a=ang+(i-(n-1)/2)*(dep>3?.52:.78)+(rnd()-.5)*.18;
+      grow(x2,y2,len*(.7+.1*rnd()),a,dep-1);
+    }
+  })(tx,base,L0,-Math.PI/2,5);
+  const wds={5:18,4:12,3:8,2:5,1:3};let s='';
+  for(const dep of [5,4,3,2,1])if(segs[dep])s+=`<path d="${segs[dep].join('')}" fill="none" stroke="${c.col.dark}" stroke-width="${wds[dep]}" stroke-linecap="round" opacity=".92"/>`;
+  /* 葉片：尖端在原點、朝 +x 長出去，跟著樹枝方向、再加一點散開 */
+  const pool=(c.imgs||[]).slice(0,12),ids=pool.map(()=>c.id());
+  const defs=pool.map((im,n)=>`<image id="${ids[n]}" href="${im.src}" width="${im.w||1}" height="${im.h||1}"/>`).join('');
+  const cropVB=(im,bw,bh)=>{const iw=im.w||1,ih=im.h||1,A=bw/bh;let cw,ch;
+    if(iw/ih>A){ch=ih;cw=ih*A}else{cw=iw;ch=iw/A}
+    return`${f1((iw-cw)/2)} ${f1((ih-ch)/2)} ${f1(cw)} ${f1(ch)}`};
+  let leaves='',lclip='';
+  const leafAt=(x,y,ang,i,side)=>{
+    const len=L0*(.42+.12*rnd()),h=len*.42,deg=ang*180/Math.PI+side*32+(rnd()-.5)*20;
+    const d=`M0,0Q${f1(len*.45)},${f1(-h)} ${f1(len)},0Q${f1(len*.45)},${f1(h)} 0,0Z`;
+    const b=bbox(rot([[0,0],[len*.45,-h],[len,0],[len*.45,h]],deg,x,y)),cid=c.id(),k=i%pool.length;
+    lclip+=`<clipPath id="${cid}"><path d="${d}" transform="translate(${f1(x)} ${f1(y)}) rotate(${f1(deg)})"/></clipPath>`;
+    leaves+=`<g clip-path="url(#${cid})"><svg x="${f1(b[0])}" y="${f1(b[1])}" width="${f1(b[2])}" height="${f1(b[3])}" viewBox="${cropVB(pool[k],b[2],b[3])}" preserveAspectRatio="none"><use href="#${ids[k]}"/></svg></g>`;
+  };
+  tips.forEach(([x,y,ang],i)=>{leafAt(x,y,ang,i,-1);leafAt(x,y,ang,i,1)});
+  return bg(c.col.paper||mix(c.col.light,'#ffffff',.5))+`<defs>${defs}${lclip}</defs>`
+   +`<ellipse cx="${f1(tx)}" cy="${f1(base+6)}" rx="${f1(W*.16)}" ry="${f1(H*.016)}" fill="${c.col.dark}" opacity=".12"/>`
+   +s+(leaves?`<g filter="url(#${c.sh})">${leaves}</g>`:'')
+   +stack(c,{x:W*.06,cy:H*.5,w:W*.30,tSize:76,tColor:c.col.ink,sColor:c.col.mt});
 }});
 
 def({id:'triangle',cat:'cover',name:'封面・三角切割',hint:'1 張',render(c){
@@ -202,7 +230,7 @@ def({id:'tocNum',cat:'toc',name:'目錄・大字編號',hint:'不用照片；項
   /* 直式：1–2 章排一欄（數字才夠大），3 章以上排 2 欄 */
   const nc=wide?n:(n<=2?1:2),rows=Math.max(1,Math.ceil(n/nc));
   const gapC=wide?44:32,rowH=(H-h.y-P)/rows,colW=(W-2*P-(nc-1)*gapC)/nc;
-  const num=Math.min(wide?250:190,Math.round(colW*.86));
+  const num=Math.min(wide?292:200,Math.round(colW*.95));
   const cellH=num*k+44+40*k*1.25+2*24*k*1.5;
   let s=bg(c.col.paper||'#fff')+h.s;
   it.forEach((o,i)=>{
@@ -438,14 +466,22 @@ def({id:'ocean',cat:'cover',name:'大標題・漸層淡出',hint:'1 張；副標
    +(c.t.body?T(wrap(c.t.body,1240,26,c.bf).slice(0,2),{x:960,y:1018+dy,size:26,lh:1.55,fill:c.col.ink,op:.6,font:c.bf,anchor:'middle'}):'');
 }});
 
-def({id:'pixel',cat:'shape',name:'方塊溶解',hint:'1 張（人像很適合）',render(c){
-  const m=c.id(),rnd=rng(7);let sq='',acc='';
-  for(let col=0;col<6;col++)for(let row=0;row<14;row++){const x=520+col*80,y=row*80,p=(col+1)/7;
-    if(rnd()<p){const v=Math.round(255*(.3+.7*rnd()));sq+=`<rect x="${x+4}" y="${y+4}" width="72" height="72" fill="rgb(${v},${v},${v})"/>`}
-    else if(rnd()<.18)acc+=`<rect x="${x+4}" y="${y+4}" width="72" height="72" fill="${c.col.main}" opacity=".18"/>`}
-  return bg(c.col.paper||'#fff')+`<defs><mask id="${m}" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}"><rect x="1000" width="920" height="${H}" fill="#fff"/>${sq}</mask></defs>`
-   +acc+IMG(c.imgs[0],520,0,1400,H,`mask="url(#${m})"`)
-   +T([String(c.t.subtitle||'').toUpperCase()],{x:90,y:1040,size:190,fill:c.col.mt,op:.09,font:'Arial Black,Arial',weight:900})
-   +stack(c,{x:130,cy:500,w:420,tSize:110,tColor:c.col.main,sColor:c.col.dark,bSize:24});
+/* 方塊溶解：方塊由左往右越密越大，接進右側照片；只用一階色（不放雜點），縮圖才不會像雜訊 */
+def({id:'pixel',cat:'shape',name:'方塊溶解',hint:'1 張（人像很適合）；方塊由疏到密接進照片',render(c){
+  const m=c.id(),wm=c.id(),rnd=rng(7),X0=W*.28,X1=W*.52,st=Math.max(26,Math.round(W*.027));let sq='';
+  for(let x=X0;x<X1;x+=st)for(let y=0;y<H;y+=st){
+    const t=(x-X0)/(X1-X0);
+    /* 密度用平方遞增：左邊幾乎沒有、靠近照片才滿格 */
+    if(rnd()<t*t*1.02){
+      const sz=st*(.40+.54*t),o=(st-sz)/2;
+      sq+=`<rect x="${f1(x+o)}" y="${f1(y+o)}" width="${f1(sz)}" height="${f1(sz)}" fill="#fff"/>`;
+    }
+  }
+  return bg(c.col.paper||'#fff')+`<defs><mask id="${m}" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}"><rect x="${f1(X1)}" width="${f1(W-X1)}" height="${H}" fill="#fff"/>${sq}</mask></defs>`
+   +IMG(c.imgs[0],X0,0,W-X0,H,`mask="url(#${m})"`)
+   /* 浮水印在溶解帶之前就切掉，不然會跟方塊疊在一起變雜訊 */
+   +`<defs><clipPath id="${wm}"><rect width="${f1(X0)}" height="${H}"/></clipPath></defs>`
+   +`<g clip-path="url(#${wm})">`+T([String(c.t.subtitle||'').toUpperCase()],{x:90,y:1040,size:190,fill:c.col.mt,op:.09,font:'Arial Black,Arial',weight:900})+`</g>`
+   +stack(c,{x:130,cy:500,w:Math.round(W*.19),tSize:110,tColor:c.col.main,sColor:c.col.dark,bSize:24});
 }});
 

@@ -711,13 +711,41 @@ def({id:'hex',cat:'shape',name:'六邊形蜂巢',hint:'多張循環（約 20 格
   return bg(c.col.paper||c.col.light)+mosaic(c,sh)+stack(c,{x:140,cy:540,w:560,tSize:82,tColor:c.col.ink,sColor:c.col.mt});
 }});
 
-def({id:'tree',cat:'shape',name:'葉形大樹',hint:'1 張最佳（也可多張）',render(c){
-  const tx=1390,sh=[];
-  const leaf=(L,h,ang,x,y)=>{const pts=rot([[0,0],[L,0],[L/2,-h/2],[L/2,h/2]],ang,x,y);return{el:`<path d="M0,0Q${f1(L/2)},${f1(-h)} ${f1(L)},0Q${f1(L/2)},${f1(h)} 0,0Z" transform="translate(${f1(x)} ${f1(y)}) rotate(${ang})"/>`,b:bbox(pts)}};
-  for(let k=0;k<7;k++){const y=905-k*105,L=330-k*30,h=L*.42;sh.push(leaf(L,h,205,tx-6,y),leaf(L,h,335,tx+6,y-40))}
-  sh.push(leaf(170,80,270,tx,250));
-  return bg(c.col.paper||mix(c.col.light,'#ffffff',.5))+`<line x1="${tx}" y1="990" x2="${tx}" y2="260" stroke="${c.col.dark}" stroke-width="7" stroke-linecap="round" opacity=".55"/>`
-   +mosaic(c,sh)+stack(c,{x:150,cy:540,w:640,tSize:80,tColor:c.col.ink,sColor:c.col.mt});
+/* 葉形大樹：樹枝用遞迴分岔畫（越上面越細），葉子是照片；
+   照片用 <defs>＋<use> 共用，18 片葉子只內嵌一次，SVG 不會爆掉 */
+def({id:'tree',cat:'shape',name:'葉形大樹',hint:'1 張最佳（也可多張）；樹枝遞迴分岔、葉片就是照片',render(c){
+  const rnd=rng(5),tx=W*.70,base=H*.955,L0=H*.215,segs={},tips=[];
+  (function grow(x,y,len,ang,dep){
+    const x2=x+Math.cos(ang)*len,y2=y+Math.sin(ang)*len;
+    (segs[dep]=segs[dep]||[]).push(`M${f1(x)},${f1(y)}L${f1(x2)},${f1(y2)}`);
+    if(dep<=1){tips.push([x2,y2,ang]);return}
+    const n=dep>=5?2:dep>2?2+(rnd()<.25?1:0):2;
+    for(let i=0;i<n;i++){
+      const a=ang+(i-(n-1)/2)*(dep>3?.52:.78)+(rnd()-.5)*.18;
+      grow(x2,y2,len*(.7+.1*rnd()),a,dep-1);
+    }
+  })(tx,base,L0,-Math.PI/2,5);
+  const wds={5:18,4:12,3:8,2:5,1:3};let s='';
+  for(const dep of [5,4,3,2,1])if(segs[dep])s+=`<path d="${segs[dep].join('')}" fill="none" stroke="${c.col.dark}" stroke-width="${wds[dep]}" stroke-linecap="round" opacity=".92"/>`;
+  /* 葉片：尖端在原點、朝 +x 長出去，跟著樹枝方向、再加一點散開 */
+  const pool=(c.imgs||[]).slice(0,12),ids=pool.map(()=>c.id());
+  const defs=pool.map((im,n)=>`<image id="${ids[n]}" href="${im.src}" width="${im.w||1}" height="${im.h||1}"/>`).join('');
+  const cropVB=(im,bw,bh)=>{const iw=im.w||1,ih=im.h||1,A=bw/bh;let cw,ch;
+    if(iw/ih>A){ch=ih;cw=ih*A}else{cw=iw;ch=iw/A}
+    return`${f1((iw-cw)/2)} ${f1((ih-ch)/2)} ${f1(cw)} ${f1(ch)}`};
+  let leaves='',lclip='';
+  const leafAt=(x,y,ang,i,side)=>{
+    const len=L0*(.42+.12*rnd()),h=len*.42,deg=ang*180/Math.PI+side*32+(rnd()-.5)*20;
+    const d=`M0,0Q${f1(len*.45)},${f1(-h)} ${f1(len)},0Q${f1(len*.45)},${f1(h)} 0,0Z`;
+    const b=bbox(rot([[0,0],[len*.45,-h],[len,0],[len*.45,h]],deg,x,y)),cid=c.id(),k=i%pool.length;
+    lclip+=`<clipPath id="${cid}"><path d="${d}" transform="translate(${f1(x)} ${f1(y)}) rotate(${f1(deg)})"/></clipPath>`;
+    leaves+=`<g clip-path="url(#${cid})"><svg x="${f1(b[0])}" y="${f1(b[1])}" width="${f1(b[2])}" height="${f1(b[3])}" viewBox="${cropVB(pool[k],b[2],b[3])}" preserveAspectRatio="none"><use href="#${ids[k]}"/></svg></g>`;
+  };
+  tips.forEach(([x,y,ang],i)=>{leafAt(x,y,ang,i,-1);leafAt(x,y,ang,i,1)});
+  return bg(c.col.paper||mix(c.col.light,'#ffffff',.5))+`<defs>${defs}${lclip}</defs>`
+   +`<ellipse cx="${f1(tx)}" cy="${f1(base+6)}" rx="${f1(W*.16)}" ry="${f1(H*.016)}" fill="${c.col.dark}" opacity=".12"/>`
+   +s+(leaves?`<g filter="url(#${c.sh})">${leaves}</g>`:'')
+   +stack(c,{x:W*.06,cy:H*.5,w:W*.30,tSize:76,tColor:c.col.ink,sColor:c.col.mt});
 }});
 
 def({id:'triangle',cat:'cover',name:'封面・三角切割',hint:'1 張',render(c){
@@ -883,7 +911,7 @@ def({id:'tocNum',cat:'toc',name:'目錄・大字編號',hint:'不用照片；項
   /* 直式：1–2 章排一欄（數字才夠大），3 章以上排 2 欄 */
   const nc=wide?n:(n<=2?1:2),rows=Math.max(1,Math.ceil(n/nc));
   const gapC=wide?44:32,rowH=(H-h.y-P)/rows,colW=(W-2*P-(nc-1)*gapC)/nc;
-  const num=Math.min(wide?250:190,Math.round(colW*.86));
+  const num=Math.min(wide?292:200,Math.round(colW*.95));
   const cellH=num*k+44+40*k*1.25+2*24*k*1.5;
   let s=bg(c.col.paper||'#fff')+h.s;
   it.forEach((o,i)=>{
@@ -1119,15 +1147,23 @@ def({id:'ocean',cat:'cover',name:'大標題・漸層淡出',hint:'1 張；副標
    +(c.t.body?T(wrap(c.t.body,1240,26,c.bf).slice(0,2),{x:960,y:1018+dy,size:26,lh:1.55,fill:c.col.ink,op:.6,font:c.bf,anchor:'middle'}):'');
 }});
 
-def({id:'pixel',cat:'shape',name:'方塊溶解',hint:'1 張（人像很適合）',render(c){
-  const m=c.id(),rnd=rng(7);let sq='',acc='';
-  for(let col=0;col<6;col++)for(let row=0;row<14;row++){const x=520+col*80,y=row*80,p=(col+1)/7;
-    if(rnd()<p){const v=Math.round(255*(.3+.7*rnd()));sq+=`<rect x="${x+4}" y="${y+4}" width="72" height="72" fill="rgb(${v},${v},${v})"/>`}
-    else if(rnd()<.18)acc+=`<rect x="${x+4}" y="${y+4}" width="72" height="72" fill="${c.col.main}" opacity=".18"/>`}
-  return bg(c.col.paper||'#fff')+`<defs><mask id="${m}" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}"><rect x="1000" width="920" height="${H}" fill="#fff"/>${sq}</mask></defs>`
-   +acc+IMG(c.imgs[0],520,0,1400,H,`mask="url(#${m})"`)
-   +T([String(c.t.subtitle||'').toUpperCase()],{x:90,y:1040,size:190,fill:c.col.mt,op:.09,font:'Arial Black,Arial',weight:900})
-   +stack(c,{x:130,cy:500,w:420,tSize:110,tColor:c.col.main,sColor:c.col.dark,bSize:24});
+/* 方塊溶解：方塊由左往右越密越大，接進右側照片；只用一階色（不放雜點），縮圖才不會像雜訊 */
+def({id:'pixel',cat:'shape',name:'方塊溶解',hint:'1 張（人像很適合）；方塊由疏到密接進照片',render(c){
+  const m=c.id(),wm=c.id(),rnd=rng(7),X0=W*.28,X1=W*.52,st=Math.max(26,Math.round(W*.027));let sq='';
+  for(let x=X0;x<X1;x+=st)for(let y=0;y<H;y+=st){
+    const t=(x-X0)/(X1-X0);
+    /* 密度用平方遞增：左邊幾乎沒有、靠近照片才滿格 */
+    if(rnd()<t*t*1.02){
+      const sz=st*(.40+.54*t),o=(st-sz)/2;
+      sq+=`<rect x="${f1(x+o)}" y="${f1(y+o)}" width="${f1(sz)}" height="${f1(sz)}" fill="#fff"/>`;
+    }
+  }
+  return bg(c.col.paper||'#fff')+`<defs><mask id="${m}" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}"><rect x="${f1(X1)}" width="${f1(W-X1)}" height="${H}" fill="#fff"/>${sq}</mask></defs>`
+   +IMG(c.imgs[0],X0,0,W-X0,H,`mask="url(#${m})"`)
+   /* 浮水印在溶解帶之前就切掉，不然會跟方塊疊在一起變雜訊 */
+   +`<defs><clipPath id="${wm}"><rect width="${f1(X0)}" height="${H}"/></clipPath></defs>`
+   +`<g clip-path="url(#${wm})">`+T([String(c.t.subtitle||'').toUpperCase()],{x:90,y:1040,size:190,fill:c.col.mt,op:.09,font:'Arial Black,Arial',weight:900})+`</g>`
+   +stack(c,{x:130,cy:500,w:Math.round(W*.19),tSize:110,tColor:c.col.main,sColor:c.col.dark,bSize:24});
 }});
 
 /* ---------- business templates ---------- */
@@ -1243,7 +1279,7 @@ def({id:'tList',cat:'text',name:'文字・條列重點',hint:'不用圖片；項
     y+=al.length*sz*k*1.32+(bl.length?bl.length*sz*.72*k*1.5+6:0)+sz*k*.75;return r});return{a,rows,h:y}});
   /* 項目少時字放大一點；放滿時從頂端排，有空時整組往中間移（略偏上，視覺比正中央穩） */
   let sz=it.length<=3?44:it.length<=5?40:36,L=lay(sz);while(sz>18&&Math.max(...L.map(l=>l.h))>TBOTTOM()-top){sz-=2;L=lay(sz)}
-  top+=Math.max(0,(TBOTTOM()-top-Math.max(...L.map(l=>l.h)))*.3);
+  top+=Math.max(0,(TBOTTOM()-top-Math.max(...L.map(l=>l.h)))*.42);
   const bs=Math.max(30,sz*1.05)*k;let s='';
   for(const col of L)for(const r of col.rows){const y0=top+r.y;if(y0+sz*k>TBOTTOM())break;
     const by=y0+sz*k*.95-bs*.72;
@@ -1300,17 +1336,22 @@ def({id:'tText',cat:'text',name:'文字・標題＋段落',hint:'不用圖片；
   const h=head(c),k=FS,top=h.y,P=TP(),w=W-2*P;
   const paras=[...String(c.t.body||'').split('\n').filter(s=>s.trim()).map(t=>({t,b:false})),
     ...String(c.t.items||'').split('\n').map(s=>s.trim()).filter(Boolean).map(t=>({t:t.replace(/[|｜]/,'：').replace(/[|｜]/g,'　'),b:true}))];
-  const lay=sz=>paras.map(p=>wrap(p.t,p.b?w-50:w,sz,c.bf));
-  let sz=34,L=lay(sz);const hh=()=>L.reduce((a,l)=>a+l.length*sz*k*1.6+sz*k*.7,0);
+  /* 第一段當引言（字大一點、顏色最重），其餘才是本文 —— 整段同一種字級就是「她做的」那種樣子 */
+  const lead=paras.length>1&&!paras[0].b?paras[0]:null;
+  const rest=lead?paras.slice(1):paras;
+  const lay=(sz,lz)=>[lead?wrap(lead.t,w,lz,c.bf):null,...rest.map(p=>wrap(p.t,p.b?w-50:w,sz,c.bf))];
+  let sz=34,lz=Math.min(64,Math.round(sz*1.26)),L=lay(sz,lz);
+  const hh=()=>(L[0]?L[0].length*lz*k*1.5+32:0)+L.slice(1).reduce((a,l)=>a+l.length*sz*k*1.6+sz*k*.7,0);
   const availT=TBOTTOM()-top;
-  while(sz>18&&hh()>availT){sz-=1;L=lay(sz)}
-  /* 字少時把字放大填滿（最多 56）：下半頁一大片白，比字大一點更難看 */
-  while(sz<60&&hh()<availT*.86){sz+=2;L=lay(sz)}
-  let s='',y=top+Math.max(0,(availT-hh())*.4)+sz*k*.9;
+  while(sz>18&&hh()>availT){sz-=1;lz=Math.min(64,Math.round(sz*1.26));L=lay(sz,lz)}
+  /* 字少時把字放大填滿：下半頁一大片白，比字大一點更難看 */
+  while(sz<54&&hh()<availT*.86){sz+=2;lz=Math.min(64,Math.round(sz*1.26));L=lay(sz,lz)}
+  let s='',y=top+Math.max(0,(availT-hh())*.4)+lz*k*.9;
+  if(L[0]){s+=T(L[0],{x:P,y,size:lz,lh:1.5,fill:c.col.ink,font:c.bf});y+=L[0].length*lz*k*1.5+32}
   let bn=0;const bs=Math.min(40,sz*k*.95);
-  paras.forEach((p,i)=>{if(y>TBOTTOM())return;const ls=L[i].filter((_,j)=>y+j*sz*k*1.6<=TBOTTOM()+sz*k*.2);
+  rest.forEach((p,i)=>{if(y>TBOTTOM())return;const ls=(L[i+1]||[]).filter((_,j)=>y+j*sz*k*1.6<=TBOTTOM()+sz*k*.2);
     if(p.b)s+=bullet(c,P+14-bs/2,y-sz*k*.33-bs/2,bs,bn++,'dot');
-    s+=T(ls,{x:p.b?P+50:P,y,size:sz,lh:1.6,fill:c.col.ink,font:c.bf});y+=L[i].length*sz*k*1.6+sz*k*.7});
+    s+=T(ls,{x:p.b?P+50:P,y,size:sz,lh:1.6,fill:c.col.ink,font:c.bf});y+=(L[i+1]||[]).length*sz*k*1.6+sz*k*.7});
   return tPaper(c)+h.s+s;
 }});
 
@@ -1351,6 +1392,12 @@ def({id:'tStats',cat:'text',name:'文字・數據並列',hint:'不用圖片；�
       +T(labL,{x,y:y0+ns*k*1.05+64,size:34,lh:1.3,fill:c.col.ink,font:c.tf,weight:700});
     if(noteL.length)s+=T(noteL,{x,y:y0+ns*k*1.05+64+34*k*1.3*labL.length+16,size:22,lh:1.5,fill:c.col.mute,font:c.bf});
   });
+  /* 底部基線＋資料來源（內文）：整組數字才不會浮在半空中 */
+  if(c.t.body){
+    const cap=wrap(c.t.body,W-2*P,20,c.bf).slice(0,2);
+    s+=`<rect x="${P}" y="${f1(H-P-30-cap.length*20*k*1.5)}" width="${W-2*P}" height="2" fill="${tSoft(c)}"/>`
+     +T(cap,{x:P,y:H-P-10-cap.length*20*k*1.5+20*k*.8,size:20,lh:1.5,fill:c.col.mute,font:c.bf});
+  }
   return s;
 }});
 
