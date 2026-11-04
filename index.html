@@ -199,6 +199,15 @@ details.more summary{cursor:pointer;font-size:13px;padding:6px 0}
 .biz{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .biz button{display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;min-height:34px;padding:0 8px;cursor:pointer;font:inherit;font-size:12px}
 .biz i{width:14px;height:14px;border-radius:3px;flex:none}
+/* 套裝：預覽卡（用第 1 頁內容畫的封面＋名稱＋說明），目前樣式符合的那套外框標主色 */
+.suites{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.suites button{display:flex;flex-direction:column;gap:4px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);padding:4px 4px 6px;font:inherit;text-align:left;cursor:pointer;min-width:0}
+.suites button:hover{border-color:var(--muted)}
+.suites button[aria-pressed="true"]{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+.suites svg{display:block;width:100%;height:auto;border-radius:4px;pointer-events:none}
+.suites .nm{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:0 2px}
+.suites .nm i{width:10px;height:10px;border-radius:2px;flex:none}
+.suites .hint{font-size:11px;line-height:1.4;color:var(--muted);padding:0 2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .scope{display:inline-block;font-size:11px;font-weight:400;background:var(--soft);color:var(--acc);border-radius:5px;padding:0 6px;margin-left:6px}
 
 dialog.dlg{border:1px solid var(--line);border-radius:14px;padding:0;width:min(640px,94vw);background:var(--panel);color:var(--ink);box-shadow:0 20px 50px var(--shadow)}
@@ -237,6 +246,9 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.35)}
 .rb svg .a{stroke:var(--acc)}
 .rb svg .f{fill:var(--acc)}
 .rb.lg svg{width:18px;height:18px}
+.rsel{padding-right:2px}
+.rsel select{width:auto;min-height:26px;padding:1px 4px;border-color:transparent;background:transparent;font-size:13px;cursor:pointer}
+.rsel:hover select{border-color:var(--line)}
 .ihd{display:flex;align-items:center;justify-content:space-between;padding:8px 8px 0 16px}
 .ihd b{font-size:14px}
 .status{display:flex;align-items:center;gap:16px;height:28px;padding:0 10px 0 14px;background:var(--panel);border-top:1px solid var(--line);font-size:12px;color:var(--muted);flex:none}
@@ -495,15 +507,14 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.35)}
     </div>
 
     <div class="rp" data-rp="design">
-      <div class="rg"><div class="gi" id="rRatio"></div><span class="gl">投影片大小</span></div>
+      <div class="rg"><div class="gi"><label class="rb rsel" title="投影片大小"><svg viewBox="0 0 24 24"><rect class="a" x="3" y="6" width="18" height="12" rx="1.5"/></svg><select id="rRatio" aria-label="投影片大小"></select></label></div><span class="gl">投影片大小</span></div>
+      <div class="rg"><div class="gi" id="rSuite"></div><span class="gl">套裝</span></div>
       <div class="rg"><div class="gi">
-        <button class="rb lg" data-focus="suites"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path class="a" d="M3 15l5-4 4 3 4-5 5 4"/></svg>套裝</button>
         <button class="rb lg" data-focus="biz"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle class="a f" cx="9" cy="10" r="1.5"/><circle class="a f" cx="14" cy="8.5" r="1.5"/><circle class="a f" cx="15.5" cy="13" r="1.5"/></svg>配色</button>
         <button class="rb lg" data-focus="tf"><svg viewBox="0 0 24 24"><path d="M5 19L11 5h2l6 14M8 14h8"/></svg>字型</button>
       </div><span class="gl">佈景主題</span></div>
       <div class="rg"><div class="gi">
         <div class="rcol">
-          <button class="rb" data-focus="color"><svg viewBox="0 0 24 24"><path d="M12 3l6 8a6 6 0 11-12 0z"/></svg>主色與輔色</button>
           <button class="rb" data-do="pick"><svg viewBox="0 0 24 24"><path d="M14 4l6 6-9 9H5v-6z"/><path class="a" d="M12 6l6 6"/></svg>從照片取色</button>
           <button class="rb" data-focus="bgOn"><svg viewBox="0 0 24 24"><rect class="a" x="3" y="5" width="18" height="14" rx="1.5"/></svg>背景色</button>
         </div>
@@ -662,7 +673,7 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.35)}
       <label for="accent">輔色</label>
       <div class="row"><input type="color" id="accent" aria-label="輔色"><span class="empty">數字、線條、色塊點綴</span></div>
       <label for="suites">套裝（整份簡報一次換：配色＋字型＋每頁版型）</label>
-      <div class="biz" id="suites"></div>
+      <div class="suites" id="suites"></div>
       <p class="hintline">套裝只換版型與樣式，標題、項目、照片都不動；可按復原。</p>
       <label for="biz">配色組（主色＋輔色）</label>
       <div class="biz" id="biz"></div>
@@ -1767,27 +1778,42 @@ function hdr(c,{tMax=64}={}){
 
 /* ---------- 套裝：一鍵把整份簡報換成同一套設計（配色＋字型＋每頁角色對應的版型） ----------
    單一版型好看，不代表整份簡報好看：一份簡報要「封面→章節→內容→數據→結語」都在
-   同一個語言裡。這裡把這件事包成 4 套，套用時只換版型與樣式，內容一個字都不動。 */
+   同一個語言裡。這裡把這件事包成 8 套，套用時只換版型與樣式，內容一個字都不動。
+   只換「結構頁」（封面、章節、目錄、一般文字、引言、表格、照片、結尾）。圖表、地圖、數據並列、重點方格、圖卡、
+   商務（時間軸、流程、數據亮點…）、對比、直排的版型本身就是內容的形狀（折線換成直條、地圖換成長條、時間軸換成
+   照片拼貼就錯了），所以不在 roles 裡：保留原版型，只吃新的配色與字型。 */
 const SUITES=[
   {id:'annual',name:'年度報告',hint:'藏青金・封面→章節→數據→結語，正式、保守',
    color:'#1f3a5f',accent:'#c9a24a',tf:0,bf:0,
-   roles:{cover:'split',sec:'secStrip',toc:'tocNum',text:'tList',data:'cBar',quote:'tQuote',table:'tTable',photo:'diagTime',wall:'wall',card:'cards',closing:'thanks'}},
+   roles:{cover:'split',sec:'secStrip',toc:'tocNum',text:'tList',quote:'tQuote',table:'tTable',photo:'arch',wall:'wall',closing:'thanks'}},
   {id:'lecture',name:'課程講義',hint:'墨綠米・巨字封面＋大字編號章節，字大、投影清楚',
    color:'#2f5a46',accent:'#d8b98a',tf:2,bf:0,
-   roles:{cover:'cBig',sec:'bignum',toc:'tocNum',text:'tList',data:'cBar',quote:'tQuote',table:'tTable',photo:'curve',wall:'wall',card:'cards',closing:'thanks'}},
+   roles:{cover:'cBig',sec:'bignum',toc:'tocNum',text:'tList',quote:'tQuote',table:'tTable',photo:'arch',wall:'wall',closing:'thanks'}},
   {id:'brand',name:'品牌提案',hint:'酒紅灰・雜誌風（襯線字、暖紙底），適合刊物與提案',
    color:'#7a2635',accent:'#a8a8a8',tf:3,bf:2,
-   roles:{cover:'mCover',sec:'secFade',toc:'mIndex',text:'tText',data:'cBar',quote:'tQuote',table:'tTable',photo:'posterWall',wall:'posterWall',card:'kPortrait',closing:'thanks'}},
-  {id:'review',name:'專案回顧',hint:'商務藍・海報字標封面＋時程／滿版章節，動態感強',
+   roles:{cover:'mCover',sec:'secFade',toc:'mIndex',text:'tText',quote:'tQuote',table:'tTable',photo:'circles',wall:'posterWall',closing:'thanks'}},
+  {id:'review',name:'專案回顧',hint:'商務藍・海報字標封面＋滿版章節＋波浪分格，動態感強',
    color:'#1d5fa8',accent:'#38b2e8',tf:0,bf:0,
-   roles:{cover:'cLockup',sec:'secFull',toc:'tocNum',text:'tList',data:'cBar',quote:'tQuote',table:'tTable',photo:'diagTime',wall:'nightWall',card:'kpi',closing:'thanks'}},
+   roles:{cover:'cLockup',sec:'secFull',toc:'tocNum',text:'tList',quote:'tQuote',table:'tTable',photo:'waveBand',wall:'nightWall',closing:'thanks'}},
+  {id:'tech',name:'科技發表',hint:'科技紫・三角切割封面＋弧面屏目錄＋蜂巢拼貼，適合產品發表、系統上線',
+   color:'#3b2f8f',accent:'#22c3c3',tf:0,bf:0,
+   roles:{cover:'triangle',sec:'secFull',toc:'screens',text:'tList',quote:'tQuote',table:'tTable',photo:'hex',wall:'nightWall',closing:'thanks'}},
+  {id:'oriental',name:'東方雅韻',hint:'硃砂金・撕紙宣紙封面＋宣紙金句＋扇形畫廊，適合文化、節慶、典禮',
+   color:'#8c2b1d',accent:'#b8925a',tf:1,bf:2,
+   roles:{cover:'cnTear',sec:'secFade',toc:'ring',text:'tText',quote:'cnQuote',table:'tTable',photo:'fan',wall:'wall',closing:'thanks'}},
+  {id:'event',name:'活動紀錄',hint:'深灰橘・層疊色帶封面＋弧頂照片分格，適合活動成果、社區與營隊紀錄',
+   color:'#3b3f46',accent:'#f08a24',tf:0,bf:0,
+   roles:{cover:'waves',sec:'bignum',toc:'fanToc',text:'tList',quote:'tQuote',table:'tTable',photo:'arch',wall:'wall',closing:'thanks'}},
+  {id:'pitch',name:'新創提案',hint:'青綠橘・螢光標記封面＋霧面豎板目錄，年輕俐落，適合提案與募資',
+   color:'#0f5f5a',accent:'#f2a541',tf:0,bf:0,
+   roles:{cover:'cMarker',sec:'secStrip',toc:'glass',text:'tList',quote:'tQuote',table:'tTable',photo:'waveBand',wall:'posterWall',closing:'thanks'}},
 ];
 const SUITEBY=Object.fromEntries(SUITES.map(s=>[s.id,s]));
 /* 版型 → 角色。分類只能猜到大方向（雜誌、地圖這些要逐一指名） */
 const ROLE_BY_ID={thanks:'closing',mCover:'cover',mIndex:'toc',mFeature:'text',mColumns:'text',twMap:'data',
   cBig:'cover',cFrame:'cover',cMarker:'cover',cEcho:'cover',cLockup:'cover',cBand:'cover',ocean:'cover',duotone:'cover',
   kPortrait:'card',cutoutCard:'card',kPhoto:'card',kAnnounce:'card',kList:'card',kNumber:'card',kQuote:'card',petalFan:'card',
-  split:'cover',wall:'wall',posterWall:'wall',nightWall:'wall',tQuote:'quote',tTable:'table'};
+  split:'cover',wall:'wall',tGrid:'keep',tStats:'keep',vertical:'keep',cnQuote:'quote',cnTear:'cover',posterWall:'wall',nightWall:'wall',tQuote:'quote',tTable:'table'};
 function roleOf(p){
   const id=p&&p.tpl,t=TPLBY[id];
   if(ROLE_BY_ID[id])return ROLE_BY_ID[id];
@@ -1800,6 +1826,7 @@ function roleOf(p){
   if(t.cat==='card')return 'card';
   if(t.cat==='mag')return 'text';
   if(t.cat==='wall')return 'wall';
+  if(t.cat==='biz'||t.cat==='cmp')return 'keep';
   return 'photo';
 }
 /* id 或中文名都認（命令列輸入「年度報告」也可以） */
@@ -1820,6 +1847,22 @@ function applySuite(id,{colors=true}={}){
   /* 目前這一頁的版型也要同步，否則接下來 storePage() 會把舊版型寫回去 */
   if(S.pages[S.cur])S.tpl=S.pages[S.cur].tpl;
   return n;
+}
+/* 樣式窗格的套裝按鈕：用第 1 頁的內容、套裝的配色字型畫出它的封面，先看再套；目前樣式符合的那套標成選取。
+   跟著頁面縮圖一起重畫（drawPages），內容沒變就不重畫 */
+const suiteOn=su=>S.color===su.color&&S.accent===su.accent&&S.tf===su.tf&&S.bf===su.bf;
+let suiteSig='';
+function drawSuites(){
+  const p=S.pages[0];if(!p)return;
+  const ids=p.sel.filter(id=>lib.some(x=>x.id===id));
+  const sig=[S.ratio,JSON.stringify(ovOf(p)),ids.join(),S.logo,S.logoPos,S.logoSize,S.logoBg,S.footer,S.company,S.date,S.page,S.fs,S.bullet,S.bgOn,S.bg,S.single,S.focal].join('\u0001');
+  if(sig!==suiteSig){
+    suiteSig=sig;const imgs=imgsOf(ids,'thumb');
+    $('suites').innerHTML=SUITES.map(su=>{const tpl=tplFor(su.roles.cover);
+      const svg=withState({...ovOf(p),pageNo:0,tpl,color:su.color,accent:su.accent,tf:su.tf,bf:su.bf},()=>renderSVG(TPLBY[tpl],imgs,'su'+su.id+'_'));
+      return`<button data-suite="${su.id}" title="${esc(su.hint)}">${svg}<span class="nm"><i style="background:${su.color}"></i><i style="background:${su.accent}"></i>${su.name}</span><span class="hint">${esc(su.hint)}</span></button>`}).join('');
+  }
+  for(const b of $('suites').children)b.setAttribute('aria-pressed',String(suiteOn(SUITEBY[b.dataset.suite])));
 }
 /* ---------- 數據圖表：項目第一欄是類別，其餘欄是數值；第一列不是數字時當系列名稱 ---------- */
 function numOf(s){
@@ -2936,7 +2979,6 @@ $('color').value=S.color;$('color').oninput=()=>{S.color=$('color').value;save()
 $('sw').innerHTML=SWATCH.map(c=>`<button style="background:${c}" data-c="${c}" title="${c}" aria-label="套用 ${c}"></button>`).join('');
 $('sw').onclick=e=>{const c=e.target.dataset.c;if(!c)return;S.color=c;$('color').value=c;save();refresh()};
 $('accent').value=S.accent;$('accent').oninput=()=>{S.accent=$('accent').value;save();refresh()};
-$('suites').innerHTML=SUITES.map(su=>`<button data-suite="${su.id}" title="${esc(su.hint)}"><i style="background:${su.color}"></i><i style="background:${su.accent}"></i>${su.name}</button>`).join('');
 $('suites').onclick=e=>{const b=e.target.closest('button');if(!b)return;
   const su=SUITEBY[b.dataset.suite];if(!su)return;
   const n=applySuite(su.id);
@@ -3174,6 +3216,7 @@ function drawPages(){
     `<div class="ctl"><button data-a="l" aria-label="往前移" title="往前移">↑</button><button data-a="d" aria-label="複製這一頁" title="複製這一頁">⧉</button><button data-a="x" aria-label="刪除這一頁" title="刪除這一頁">✕</button><button data-a="r" aria-label="往後移" title="往後移">↓</button></div></div>`).join('')+
     '<button class="pgadd" id="pgAdd" title="在目前這一頁後面新增">＋<br>新增頁</button>';
   for(const k of[...pgCache.keys()])if(k>=S.pages.length)pgCache.delete(k);
+  drawSuites();
 }
 $('pages').onclick=e=>{
   if(e.target.closest('#pgAdd')){addPage(false);return}
@@ -4178,8 +4221,8 @@ function ribClick(e){
   else if(d.cat){openPane('tpl');const f=$('filters').querySelector(`[data-v="${d.cat}"]`);if(f)f.click();else toast('這個尺寸沒有這類版型')}
   else if(d.tab)openPane(d.tab);
   else if(d.focus){openPane('style');const el=$(d.focus);el.scrollIntoView({block:'center',behavior:'smooth'});el.focus({preventScroll:true})}
-  else if(d.ratio){$('ratioSeg').querySelector(`[data-v="${d.ratio}"]`).click();ribState()}
   else if(d.theme){$('theme').querySelector(`[data-v="${d.theme}"]`).click();ribState()}
+  else if(d.suite){$('suites').querySelector(`[data-suite="${d.suite}"]`).click();ribState()}
 }
 let rib='home';try{rib=sessionStorage.getItem('lgRib')||'home'}catch(e){}
 function setRib(t){
@@ -4188,12 +4231,14 @@ function setRib(t){
   $('rbody').querySelectorAll('.rp').forEach(p=>p.classList.toggle('on',p.dataset.rp===t));
   try{sessionStorage.setItem('lgRib',t)}catch(e){}
 }
-/* 尺寸與外觀按鈕：清單取自既有的 RATIO_NAMES／THEMES，按下去仍走原本的控制項 */
-const RIB_IC={'16:9':[20,11.25],'1:1':[14,14],'4:5':[12.8,16],'3:4':[12,16],'9:16':[9,16]};
-$('rRatio').innerHTML=RATIO_NAMES.map(([v])=>{const[w,h]=RIB_IC[v]||[16,12];return`<button class="rb lg" data-ratio="${v}"><svg viewBox="0 0 24 24"><rect class="a" x="${12-w/2}" y="${12-h/2}" width="${w}" height="${h}" rx="1.2"/></svg>${v}</button>`}).join('');
+/* 尺寸選單與外觀按鈕：清單取自既有的 RATIO_NAMES／THEMES，選了仍走原本的控制項 */
+$('rRatio').innerHTML=RATIO_NAMES.map(([v,n])=>`<option value="${v}">${n}</option>`).join('');
+$('rRatio').onchange=()=>{$('ratioSeg').querySelector(`[data-v="${$('rRatio').value}"]`).click();ribState()};
 $('rTheme').innerHTML=THEMES.map(([v,n])=>`<button class="rb lg" data-theme="${v}"><svg viewBox="0 0 24 24">${v==='dark'?'<path class="a f" d="M19 14A8 8 0 019 4a8 8 0 1010 10z"/>':v==='light'?'<circle class="a" cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/>':'<circle cx="12" cy="12" r="8"/><path class="a f" d="M12 4a8 8 0 000 16z"/>'}</svg>${n}</button>`).join('');
+$('rSuite').innerHTML=SUITES.map(su=>`<button class="rb lg" data-suite="${su.id}" title="${esc(su.hint)}"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="12" height="14" rx="2" fill="${su.color}" stroke="none"/><rect x="16" y="5" width="5" height="14" rx="1.5" fill="${su.accent}" stroke="none"/></svg>${su.name}</button>`).join('');
 function ribState(){
-  document.querySelectorAll('[data-ratio]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.ratio===S.ratio)));
+  document.querySelectorAll('#rSuite [data-suite]').forEach(b=>b.setAttribute('aria-pressed',String(suiteOn(SUITEBY[b.dataset.suite]))));
+  $('rRatio').value=S.ratio;
   document.querySelectorAll('[data-theme]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.theme===S.theme)));
   $('stSlide').textContent=`投影片 ${S.cur+1} / ${S.pages.length}`;$('stRatio').textContent=S.ratio;
 }

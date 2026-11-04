@@ -1,26 +1,41 @@
 /* ---------- 套裝：一鍵把整份簡報換成同一套設計（配色＋字型＋每頁角色對應的版型） ----------
    單一版型好看，不代表整份簡報好看：一份簡報要「封面→章節→內容→數據→結語」都在
-   同一個語言裡。這裡把這件事包成 4 套，套用時只換版型與樣式，內容一個字都不動。 */
+   同一個語言裡。這裡把這件事包成 8 套，套用時只換版型與樣式，內容一個字都不動。
+   只換「結構頁」（封面、章節、目錄、一般文字、引言、表格、照片、結尾）。圖表、地圖、數據並列、重點方格、圖卡、
+   商務（時間軸、流程、數據亮點…）、對比、直排的版型本身就是內容的形狀（折線換成直條、地圖換成長條、時間軸換成
+   照片拼貼就錯了），所以不在 roles 裡：保留原版型，只吃新的配色與字型。 */
 const SUITES=[
   {id:'annual',name:'年度報告',hint:'藏青金・封面→章節→數據→結語，正式、保守',
    color:'#1f3a5f',accent:'#c9a24a',tf:0,bf:0,
-   roles:{cover:'split',sec:'secStrip',toc:'tocNum',text:'tList',data:'cBar',quote:'tQuote',table:'tTable',photo:'diagTime',wall:'wall',card:'cards',closing:'thanks'}},
+   roles:{cover:'split',sec:'secStrip',toc:'tocNum',text:'tList',quote:'tQuote',table:'tTable',photo:'arch',wall:'wall',closing:'thanks'}},
   {id:'lecture',name:'課程講義',hint:'墨綠米・巨字封面＋大字編號章節，字大、投影清楚',
    color:'#2f5a46',accent:'#d8b98a',tf:2,bf:0,
-   roles:{cover:'cBig',sec:'bignum',toc:'tocNum',text:'tList',data:'cBar',quote:'tQuote',table:'tTable',photo:'curve',wall:'wall',card:'cards',closing:'thanks'}},
+   roles:{cover:'cBig',sec:'bignum',toc:'tocNum',text:'tList',quote:'tQuote',table:'tTable',photo:'arch',wall:'wall',closing:'thanks'}},
   {id:'brand',name:'品牌提案',hint:'酒紅灰・雜誌風（襯線字、暖紙底），適合刊物與提案',
    color:'#7a2635',accent:'#a8a8a8',tf:3,bf:2,
-   roles:{cover:'mCover',sec:'secFade',toc:'mIndex',text:'tText',data:'cBar',quote:'tQuote',table:'tTable',photo:'posterWall',wall:'posterWall',card:'kPortrait',closing:'thanks'}},
-  {id:'review',name:'專案回顧',hint:'商務藍・海報字標封面＋時程／滿版章節，動態感強',
+   roles:{cover:'mCover',sec:'secFade',toc:'mIndex',text:'tText',quote:'tQuote',table:'tTable',photo:'circles',wall:'posterWall',closing:'thanks'}},
+  {id:'review',name:'專案回顧',hint:'商務藍・海報字標封面＋滿版章節＋波浪分格，動態感強',
    color:'#1d5fa8',accent:'#38b2e8',tf:0,bf:0,
-   roles:{cover:'cLockup',sec:'secFull',toc:'tocNum',text:'tList',data:'cBar',quote:'tQuote',table:'tTable',photo:'diagTime',wall:'nightWall',card:'kpi',closing:'thanks'}},
+   roles:{cover:'cLockup',sec:'secFull',toc:'tocNum',text:'tList',quote:'tQuote',table:'tTable',photo:'waveBand',wall:'nightWall',closing:'thanks'}},
+  {id:'tech',name:'科技發表',hint:'科技紫・三角切割封面＋弧面屏目錄＋蜂巢拼貼，適合產品發表、系統上線',
+   color:'#3b2f8f',accent:'#22c3c3',tf:0,bf:0,
+   roles:{cover:'triangle',sec:'secFull',toc:'screens',text:'tList',quote:'tQuote',table:'tTable',photo:'hex',wall:'nightWall',closing:'thanks'}},
+  {id:'oriental',name:'東方雅韻',hint:'硃砂金・撕紙宣紙封面＋宣紙金句＋扇形畫廊，適合文化、節慶、典禮',
+   color:'#8c2b1d',accent:'#b8925a',tf:1,bf:2,
+   roles:{cover:'cnTear',sec:'secFade',toc:'ring',text:'tText',quote:'cnQuote',table:'tTable',photo:'fan',wall:'wall',closing:'thanks'}},
+  {id:'event',name:'活動紀錄',hint:'深灰橘・層疊色帶封面＋弧頂照片分格，適合活動成果、社區與營隊紀錄',
+   color:'#3b3f46',accent:'#f08a24',tf:0,bf:0,
+   roles:{cover:'waves',sec:'bignum',toc:'fanToc',text:'tList',quote:'tQuote',table:'tTable',photo:'arch',wall:'wall',closing:'thanks'}},
+  {id:'pitch',name:'新創提案',hint:'青綠橘・螢光標記封面＋霧面豎板目錄，年輕俐落，適合提案與募資',
+   color:'#0f5f5a',accent:'#f2a541',tf:0,bf:0,
+   roles:{cover:'cMarker',sec:'secStrip',toc:'glass',text:'tList',quote:'tQuote',table:'tTable',photo:'waveBand',wall:'posterWall',closing:'thanks'}},
 ];
 const SUITEBY=Object.fromEntries(SUITES.map(s=>[s.id,s]));
 /* 版型 → 角色。分類只能猜到大方向（雜誌、地圖這些要逐一指名） */
 const ROLE_BY_ID={thanks:'closing',mCover:'cover',mIndex:'toc',mFeature:'text',mColumns:'text',twMap:'data',
   cBig:'cover',cFrame:'cover',cMarker:'cover',cEcho:'cover',cLockup:'cover',cBand:'cover',ocean:'cover',duotone:'cover',
   kPortrait:'card',cutoutCard:'card',kPhoto:'card',kAnnounce:'card',kList:'card',kNumber:'card',kQuote:'card',petalFan:'card',
-  split:'cover',wall:'wall',posterWall:'wall',nightWall:'wall',tQuote:'quote',tTable:'table'};
+  split:'cover',wall:'wall',tGrid:'keep',tStats:'keep',vertical:'keep',cnQuote:'quote',cnTear:'cover',posterWall:'wall',nightWall:'wall',tQuote:'quote',tTable:'table'};
 function roleOf(p){
   const id=p&&p.tpl,t=TPLBY[id];
   if(ROLE_BY_ID[id])return ROLE_BY_ID[id];
@@ -33,6 +48,7 @@ function roleOf(p){
   if(t.cat==='card')return 'card';
   if(t.cat==='mag')return 'text';
   if(t.cat==='wall')return 'wall';
+  if(t.cat==='biz'||t.cat==='cmp')return 'keep';
   return 'photo';
 }
 /* id 或中文名都認（命令列輸入「年度報告」也可以） */
@@ -53,4 +69,20 @@ function applySuite(id,{colors=true}={}){
   /* 目前這一頁的版型也要同步，否則接下來 storePage() 會把舊版型寫回去 */
   if(S.pages[S.cur])S.tpl=S.pages[S.cur].tpl;
   return n;
+}
+/* 樣式窗格的套裝按鈕：用第 1 頁的內容、套裝的配色字型畫出它的封面，先看再套；目前樣式符合的那套標成選取。
+   跟著頁面縮圖一起重畫（drawPages），內容沒變就不重畫 */
+const suiteOn=su=>S.color===su.color&&S.accent===su.accent&&S.tf===su.tf&&S.bf===su.bf;
+let suiteSig='';
+function drawSuites(){
+  const p=S.pages[0];if(!p)return;
+  const ids=p.sel.filter(id=>lib.some(x=>x.id===id));
+  const sig=[S.ratio,JSON.stringify(ovOf(p)),ids.join(),S.logo,S.logoPos,S.logoSize,S.logoBg,S.footer,S.company,S.date,S.page,S.fs,S.bullet,S.bgOn,S.bg,S.single,S.focal].join('\u0001');
+  if(sig!==suiteSig){
+    suiteSig=sig;const imgs=imgsOf(ids,'thumb');
+    $('suites').innerHTML=SUITES.map(su=>{const tpl=tplFor(su.roles.cover);
+      const svg=withState({...ovOf(p),pageNo:0,tpl,color:su.color,accent:su.accent,tf:su.tf,bf:su.bf},()=>renderSVG(TPLBY[tpl],imgs,'su'+su.id+'_'));
+      return`<button data-suite="${su.id}" title="${esc(su.hint)}">${svg}<span class="nm"><i style="background:${su.color}"></i><i style="background:${su.accent}"></i>${su.name}</span><span class="hint">${esc(su.hint)}</span></button>`}).join('');
+  }
+  for(const b of $('suites').children)b.setAttribute('aria-pressed',String(suiteOn(SUITEBY[b.dataset.suite])));
 }

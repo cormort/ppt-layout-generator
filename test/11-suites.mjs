@@ -60,6 +60,32 @@ test('套用套裝：版型照角色換、樣式跟著換、內容一個字都�
   eq(got.accent, '#c9a24a', '輔色沒換');
 });
 
+test('套用套裝：圖表、地圖、數據並列、重點方格、圖卡、商務、對比、直排保留原版型（版型就是內容的形狀）', async ({ page }) => {
+  const got = await page.run(`(()=>{
+    S.ratio='16:9';
+    const keep=['cLine','cPie','cHbar','twMap','tStats','tGrid','kNumber','timeline','steps','kpi','cmp','vertical'];
+    S.pages=keep.map(tpl=>cleanPage({tpl,title:tpl,body:'',items:''}));S.cur=0;
+    const out={};
+    for(const su of SUITES){applySuite(su.id);out[su.id]=S.pages.map(p=>p.tpl)}
+    return {keep,out};
+  })()`);
+  for (const [id, tpls] of Object.entries(got.out)) deepEq(tpls, got.keep, id + ' 套裝不該換掉這些頁的版型');
+});
+
+test('套裝之間來回切換不會飄：每個套裝用的版型都認得回同一個角色', async ({ page }) => {
+  const got = await page.run(`(()=>{
+    const bad=[];
+    for(const su of SUITES)for(const [role,id] of Object.entries(su.roles)){const r=roleOf({tpl:id});if(r!==role)bad.push(su.id+'/'+role+'→'+id+' 被認成 '+r)}
+    S.ratio='16:9';
+    const deck=()=>['cFrame','tocNum','bignum','tList','tQuote','tTable','heart','wall','cLine','timeline','thanks'].map(tpl=>cleanPage({tpl,title:tpl,body:'',items:''}));
+    S.pages=deck();S.cur=0;applySuite('annual');const direct=S.pages.map(p=>p.tpl);
+    S.pages=deck();for(const su of SUITES)applySuite(su.id);applySuite('annual');const chain=S.pages.map(p=>p.tpl);
+    return {bad,direct,chain};
+  })()`);
+  deepEq(got.bad, [], '角色對不回來：\n      ' + got.bad.join('\n      '));
+  deepEq(got.chain, got.direct, '輪流套過所有套裝再套回年度報告，結果應該跟直接套一樣');
+});
+
 test('中文名稱也認得（命令列打「年度報告」）', async ({ page }) => {
   const got = await page.run(`(()=>{
     const a=suiteFrom('年度報告'),b=suiteFrom('annual'),c=suiteFrom('品牌'),d=suiteFrom('不存在的套裝');

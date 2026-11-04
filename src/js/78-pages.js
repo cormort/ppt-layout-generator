@@ -45,6 +45,7 @@ function drawPages(){
     `<div class="ctl"><button data-a="l" aria-label="往前移" title="往前移">↑</button><button data-a="d" aria-label="複製這一頁" title="複製這一頁">⧉</button><button data-a="x" aria-label="刪除這一頁" title="刪除這一頁">✕</button><button data-a="r" aria-label="往後移" title="往後移">↓</button></div></div>`).join('')+
     '<button class="pgadd" id="pgAdd" title="在目前這一頁後面新增">＋<br>新增頁</button>';
   for(const k of[...pgCache.keys()])if(k>=S.pages.length)pgCache.delete(k);
+  drawSuites();
 }
 $('pages').onclick=e=>{
   if(e.target.closest('#pgAdd')){addPage(false);return}

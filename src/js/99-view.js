@@ -24,8 +24,8 @@ function ribClick(e){
   else if(d.cat){openPane('tpl');const f=$('filters').querySelector(`[data-v="${d.cat}"]`);if(f)f.click();else toast('這個尺寸沒有這類版型')}
   else if(d.tab)openPane(d.tab);
   else if(d.focus){openPane('style');const el=$(d.focus);el.scrollIntoView({block:'center',behavior:'smooth'});el.focus({preventScroll:true})}
-  else if(d.ratio){$('ratioSeg').querySelector(`[data-v="${d.ratio}"]`).click();ribState()}
   else if(d.theme){$('theme').querySelector(`[data-v="${d.theme}"]`).click();ribState()}
+  else if(d.suite){$('suites').querySelector(`[data-suite="${d.suite}"]`).click();ribState()}
 }
 let rib='home';try{rib=sessionStorage.getItem('lgRib')||'home'}catch(e){}
 function setRib(t){
@@ -34,12 +34,14 @@ function setRib(t){
   $('rbody').querySelectorAll('.rp').forEach(p=>p.classList.toggle('on',p.dataset.rp===t));
   try{sessionStorage.setItem('lgRib',t)}catch(e){}
 }
-/* 尺寸與外觀按鈕：清單取自既有的 RATIO_NAMES／THEMES，按下去仍走原本的控制項 */
-const RIB_IC={'16:9':[20,11.25],'1:1':[14,14],'4:5':[12.8,16],'3:4':[12,16],'9:16':[9,16]};
-$('rRatio').innerHTML=RATIO_NAMES.map(([v])=>{const[w,h]=RIB_IC[v]||[16,12];return`<button class="rb lg" data-ratio="${v}"><svg viewBox="0 0 24 24"><rect class="a" x="${12-w/2}" y="${12-h/2}" width="${w}" height="${h}" rx="1.2"/></svg>${v}</button>`}).join('');
+/* 尺寸選單與外觀按鈕：清單取自既有的 RATIO_NAMES／THEMES，選了仍走原本的控制項 */
+$('rRatio').innerHTML=RATIO_NAMES.map(([v,n])=>`<option value="${v}">${n}</option>`).join('');
+$('rRatio').onchange=()=>{$('ratioSeg').querySelector(`[data-v="${$('rRatio').value}"]`).click();ribState()};
 $('rTheme').innerHTML=THEMES.map(([v,n])=>`<button class="rb lg" data-theme="${v}"><svg viewBox="0 0 24 24">${v==='dark'?'<path class="a f" d="M19 14A8 8 0 019 4a8 8 0 1010 10z"/>':v==='light'?'<circle class="a" cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/>':'<circle cx="12" cy="12" r="8"/><path class="a f" d="M12 4a8 8 0 000 16z"/>'}</svg>${n}</button>`).join('');
+$('rSuite').innerHTML=SUITES.map(su=>`<button class="rb lg" data-suite="${su.id}" title="${esc(su.hint)}"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="12" height="14" rx="2" fill="${su.color}" stroke="none"/><rect x="16" y="5" width="5" height="14" rx="1.5" fill="${su.accent}" stroke="none"/></svg>${su.name}</button>`).join('');
 function ribState(){
-  document.querySelectorAll('[data-ratio]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.ratio===S.ratio)));
+  document.querySelectorAll('#rSuite [data-suite]').forEach(b=>b.setAttribute('aria-pressed',String(suiteOn(SUITEBY[b.dataset.suite]))));
+  $('rRatio').value=S.ratio;
   document.querySelectorAll('[data-theme]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.theme===S.theme)));
   $('stSlide').textContent=`投影片 ${S.cur+1} / ${S.pages.length}`;$('stRatio').textContent=S.ratio;
 }

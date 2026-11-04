@@ -72,7 +72,6 @@ $('color').value=S.color;$('color').oninput=()=>{S.color=$('color').value;save()
 $('sw').innerHTML=SWATCH.map(c=>`<button style="background:${c}" data-c="${c}" title="${c}" aria-label="套用 ${c}"></button>`).join('');
 $('sw').onclick=e=>{const c=e.target.dataset.c;if(!c)return;S.color=c;$('color').value=c;save();refresh()};
 $('accent').value=S.accent;$('accent').oninput=()=>{S.accent=$('accent').value;save();refresh()};
-$('suites').innerHTML=SUITES.map(su=>`<button data-suite="${su.id}" title="${esc(su.hint)}"><i style="background:${su.color}"></i><i style="background:${su.accent}"></i>${su.name}</button>`).join('');
 $('suites').onclick=e=>{const b=e.target.closest('button');if(!b)return;
   const su=SUITEBY[b.dataset.suite];if(!su)return;
   const n=applySuite(su.id);
