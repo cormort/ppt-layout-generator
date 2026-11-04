@@ -127,13 +127,14 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:${PLA
 <script>window.__DECK=${jsSafe({title,start,slides:deck.slides,imgs:deck.imgs,presenterHtml})}<\/script>
 <script>(${PLAYER})()<\/script></body></html>`;
 }
-$('playBtn').onclick=async()=>{
+async function play(start){
   /* 先同步開視窗（避免被擋），再寫入內容 */
   const w=window.open('','_blank');if(!w){toast('瀏覽器擋住了新視窗，請允許本頁開彈出視窗');return}
   w.document.write('<p style="font:16px sans-serif;padding:24px">準備簡報中…</p>');
-  try{storePage();const html=playerHtml(await deckSlides(),{title:deckName(),start:S.cur});w.document.open();w.document.write(html);w.document.close()}
+  try{storePage();const html=playerHtml(await deckSlides(),{title:deckName(),start});w.document.open();w.document.write(html);w.document.close()}
   catch(e){console.error(e);w.close();toast('播放失敗：'+e.message)}
-};
+}
+$('playBtn').onclick=()=>play(S.cur);
 $('htmlOut').onclick=async()=>{
   const btn=$('htmlOut');btn.disabled=true;
   try{toast('產生 HTML 簡報中…');const deck=await deckSlides(),html=playerHtml(deck,{title:deckName()});
