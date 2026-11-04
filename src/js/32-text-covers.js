@@ -26,12 +26,15 @@ def({id:'cBig',cat:'cover',name:'封面・巨字排版',hint:'不用圖片；標
 /* 框線典雅：雙線框，置中排：小標 → 標題 → 菱形分隔 → 說明（頒獎、典禮、正式場合） */
 def({id:'cFrame',cat:'cover',name:'封面・框線典雅',hint:'不用圖片；置中雙線框，適合典禮、頒獎、正式報告',ratios:ALLR,render(c){
   const k=FS,wide=W>H,m=wide?56:44,fb=footH()?footH()+8:m,cx=W/2,w=W-2*m-(wide?260:120),ml=wide?2:4;
-  const{ts,tl}=fitTitle(c,w,wide?130:150,ml),sl=wrap(c.t.subtitle,w,26,c.bf,600).slice(0,2),bl=wrap(c.t.body,w*.86,26,c.bf).slice(0,wide?2:4);
+  const{ts,tl}=fitTitle(c,w,wide?146:158,ml),sl=wrap(c.t.subtitle,w,26,c.bf,600).slice(0,2),bl=wrap(c.t.body,w*.86,26,c.bf).slice(0,wide?2:4);
   const sh=sl.length?(sl.length-1)*26*k*1.4+26*k+56:0,th=(tl.length-1)*ts*k*1.2,bh=bl.length?92+(bl.length-1)*26*k*1.6+26*k:60;
   const tot=sh+ts*k*.85+th+bh,y0=m+(H-m-fb-tot)/2,tY=y0+sh+ts*k*.85,oY=tY+th+52;
   const ink=c.col.ink,o=o=>`stroke="${ink}" stroke-opacity="${o}" fill="none"`;
   return bg(c.col.paper||c.col.light)
    +`<rect x="${m}" y="${m}" width="${W-2*m}" height="${H-m-fb}" ${o(.55)} stroke-width="3"/><rect x="${m+14}" y="${m+14}" width="${W-2*m-28}" height="${H-m-fb-28}" ${o(.3)} stroke-width="1.5"/>`
+   /* 四角的小刻痕：讓雙框看起來像邀請卡，而不是一個矩形 */
+   +[[m+34,m+34,1,1],[W-m-34,m+34,-1,1],[m+34,H-m-fb-34,1,-1],[W-m-34,H-m-fb-34,-1,-1]]
+     .map(([x,y,sx,sy])=>`<path d="M${f1(x)},${f1(y+26*sy)}L${f1(x)},${f1(y)}L${f1(x+26*sx)},${f1(y)}" fill="none" stroke="${c.col.acc}" stroke-width="2.5" stroke-opacity=".85"/>`).join('')
    +T(sl,{x:cx,y:y0+26*k,size:26,lh:1.4,fill:c.col.mt,font:c.bf,weight:600,ls:8,anchor:'middle'})
    +T(tl,{x:cx,y:tY,size:ts,lh:1.2,fill:ink,font:c.tf,weight:800,anchor:'middle',ls:4})
    +`<line x1="${f1(cx-150)}" y1="${f1(oY)}" x2="${f1(cx-22)}" y2="${f1(oY)}" ${o(.4)} stroke-width="2"/><line x1="${f1(cx+22)}" y1="${f1(oY)}" x2="${f1(cx+150)}" y2="${f1(oY)}" ${o(.4)} stroke-width="2"/>`
