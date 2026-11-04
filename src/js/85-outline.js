@@ -9,7 +9,8 @@ const TPL_ALIAS={封面:'split',章節:'bignum',條列:'tList',方格:'tGrid',�
   去背:'cutoutCard',去背主體:'cutoutCard',主體:'cutoutCard',雙色調:'duotone',雙色:'duotone',
   花瓣:'petalFan',花瓣扇:'petalFan',花瓣圖文:'petalFan',扇頁:'petalFan',花開:'petalFan',花:'petalFan',
   斜切時間軸:'diagTime',時間軸斜切:'diagTime',滿版時間軸:'diagTime',斜線時間軸:'diagTime',里程碑:'diagTime',時間軸:'diagTime',
-  曲面拼貼:'posterWall',海報拼貼:'posterWall',拼貼牆:'posterWall',截圖牆:'posterWall',倒影:'posterWall',海報牆:'posterWall'};
+  曲面拼貼:'posterWall',海報拼貼:'posterWall',拼貼牆:'posterWall',截圖牆:'posterWall',倒影:'posterWall',海報牆:'posterWall',
+  夜空羽化:'nightWall',星空牆:'nightWall',夜景牆:'nightWall',夜牆:'nightWall',羽化:'nightWall',截圖牆夜景:'nightWall'};
 function tplFrom(v){
   v=String(v||'').trim();if(!v)return '';
   if(TPLBY[v])return v;if(TPL_ALIAS[v])return TPL_ALIAS[v];
