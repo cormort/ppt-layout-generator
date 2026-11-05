@@ -15,6 +15,7 @@ const HELP = `排版產生器 CLI — Markdown 大綱 → 含逐字稿的 PPTX
   node pptgen.mjs check <大綱.md> [選項]                  只檢查（不產生檔案），快
   node pptgen.mjs doctor <大綱.md> [--fix] [-o 修好.md]    一次做完：容量檢查＋健檢＋（--fix）自動修，
                                                          加上 --fix 會把修好的大綱存檔
+  node pptgen.mjs build 大綱.md --doctor [--fix]          輸出前先健檢；--fix 會先修好再輸出
   node pptgen.mjs preview <大綱.md> --pages 3,7 [-d 資料夾] 輸出指定頁的 PNG 預覽
   node pptgen.mjs from-pptx <簡報.pptx> [-o 大綱.md]       把既有 PPTX 轉成大綱（含逐字稿），方便 AI 讀與改
   node pptgen.mjs templates                               列出所有版型與容量
@@ -40,7 +41,9 @@ const HELP = `排版產生器 CLI — Markdown 大綱 → 含逐字稿的 PPTX
   --quality small        PPTX 底圖用 1 倍（檔案約小一半）；預設 std＝2 倍
   --no-images            輸入是 .pptx 時不帶入原簡報的照片
   --json                 以 JSON 輸出結果（給程式讀）
-  --fix                  doctor 專用：把可以自動修的項目修掉（重複標題、缺標題、放不下的版型）並存回大綱
+  --fix                  doctor 專用：把可以自動修的項目修掉並存回大綱；
+                         build／preview 加 --doctor 時，--fix 會先在記憶體裡修好再輸出
+  --doctor               build／preview 之前先跑一次健檢（會列出問題與可自動修的項目）
   --app <路徑或網址>      指定 index.html（預設：本工具旁邊的 index.html）
 
 結束代碼：0＝成功（可能有容量提醒）、1＝錯誤。
@@ -88,7 +91,7 @@ for (let i = 0; i < argv.length; i++) {
   if (!m || /^-\d/.test(a)) { pos.push(a); continue; }
   const k = ALIAS[m[1]] || m[1];
   if (m[2] !== undefined) flags[k] = m[2];
-  else if (['json', 'help', 'no-images', 'fix'].includes(k)) flags[k] = true;
+  else if (['json', 'help', 'no-images', 'fix', 'doctor'].includes(k)) flags[k] = true;
   else flags[k] = argv[++i];
 }
 const [cmd, input] = pos;
@@ -317,6 +320,26 @@ try {
       app.close(); process.exit(0);
     }
     if (bad.length) fail(bad.join('；'));
+    /* build／preview 加 --doctor：輸出前先健檢（--fix 會先在記憶體裡修好，不動大綱檔） */
+    if (flags.doctor && (cmd === 'build' || cmd === 'preview')) {
+      const KIND = { overflow: '文字放不下', photo: '缺照片', title: '沒有標題', dupe: '標題重複' };
+      const d = JSON.parse(await app.run(`(()=>{
+        const before=deckCheck(),plan=[];
+        if(${!!flags.fix})for(const o of before.issues)if(o.fix){const w=fixIssue(o);if(w)plan.push(w)}
+        const after=${!!flags.fix}?deckCheck():before;
+        return JSON.stringify({before:before.issues.length,issues:after.issues,plan});
+      })()`));
+      if (d.plan.length) out(`已先自動修好 ${d.plan.length} 處：` + d.plan.slice(0, 6).join('；') + (d.plan.length > 6 ? '…' : ''));
+      if (!d.issues.length) out('健檢：✓ 沒有發現問題');
+      else {
+        const by = {};
+        for (const o of d.issues) by[o.kind] = (by[o.kind] || 0) + 1;
+        out(`健檢：${d.issues.length} 個問題（` + Object.entries(by).map(([k, n]) => `${KIND[k] || k}×${n}`).join('、') + '）'
+          + (flags.fix ? '' : '；加上 --fix 可以自動修掉其中幾項'));
+        for (const o of d.issues.slice(0, 8)) out(`  · 第 ${o.i + 1} 頁［${KIND[o.kind] || o.kind}］${o.text}`);
+        if (d.issues.length > 8) out(`  · …另有 ${d.issues.length - 8} 項（用 doctor --json 看全部）`);
+      }
+    }
     const report = JSON.parse(await app.run(`JSON.stringify(S.pages.map((p,i)=>{
       const svg=withState(ovOf(p),()=>renderSVG(TPLBY[p.tpl],imgsOf(p.sel,'thumb'),'c'+i+'_'));
       const msg=withState(ovOf(p),()=>overflowNote(svg)),m=msg.match(/⚠\\s*(.+?)\\s*超出/);

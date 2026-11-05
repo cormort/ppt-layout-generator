@@ -90,3 +90,28 @@ test('doctor --fix：修好、存成新檔，原檔不動', async () => {
     for (const x of [f, o]) if (existsSync(x)) unlinkSync(x);
   }
 });
+
+test('build --doctor：輸出前先健檢，但仍然會產出檔案', async () => {
+  const f = join(root, 'test/.doctor-build.md'), o = join(root, 'test/.doctor-build.pptx');
+  writeFileSync(f, BROKEN);
+  try {
+    const r = run(['build', f, '-o', o, '--doctor']);
+    eq(r.status, 0, '有健檢提醒仍然要 exit 0（stderr：' + r.stderr.slice(0, 200) + '）');
+    ok(r.stdout.includes('健檢：'), '沒有先跑健檢：' + r.stdout.slice(0, 200));
+    ok(r.stdout.includes('標題重複'), '健檢沒有抓到重複標題');
+    ok(existsSync(o), '沒有產出 PPTX');
+  } finally { for (const x of [f, o]) if (existsSync(x)) unlinkSync(x); }
+});
+
+test('build --doctor --fix：先在記憶體修好再輸出，大綱檔不動', async () => {
+  const f = join(root, 'test/.doctor-buildfix.md'), o = join(root, 'test/.doctor-buildfix.pptx');
+  writeFileSync(f, BROKEN);
+  try {
+    const r = run(['build', f, '-o', o, '--doctor', '--fix']);
+    eq(r.status, 0, 'exit 0（stderr：' + r.stderr.slice(0, 200) + '）');
+    ok(r.stdout.includes('已先自動修好'), '沒有修：' + r.stdout.slice(0, 300));
+    ok(r.stdout.includes('（續）'), '修法說明沒有出現');
+    eq(readFileSync(f, 'utf8'), BROKEN, 'build 時不該改動大綱檔');
+    ok(existsSync(o), '沒有產出 PPTX');
+  } finally { for (const x of [f, o]) if (existsSync(x)) unlinkSync(x); }
+});
