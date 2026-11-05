@@ -85,4 +85,5 @@ function drawSuites(){
       return`<button data-suite="${su.id}" title="${esc(su.hint)}">${svg}<span class="nm"><i style="background:${su.color}"></i><i style="background:${su.accent}"></i>${su.name}</span><span class="hint">${esc(su.hint)}</span></button>`}).join('');
   }
   for(const b of $('suites').children)b.setAttribute('aria-pressed',String(suiteOn(SUITEBY[b.dataset.suite])));
+  if(typeof ribState==='function')ribState();
 }
