@@ -2028,6 +2028,24 @@ function applySuite(id,{colors=true}={}){
   LAST_SUITE_FIT=countOverflow(n);
   return n;
 }
+/* 對「目前這份大綱」逐套試算：套上去之後缺照片幾頁、內容放不下幾頁。
+   只做計算，做完把狀態還原（頁面、配色、字型、目前版型）。 */
+function suggestSuites(){
+  storePage();
+  const snap=JSON.stringify(S.pages),keep={color:S.color,accent:S.accent,tf:S.tf,bf:S.bf,tpl:S.tpl};
+  const base=deckCheck();
+  const baseOf=r=>({issues:r.issues.length,photo:r.stats.placeholder,overflow:r.issues.filter(o=>o.kind==='overflow').length,dupe:r.issues.filter(o=>o.kind==='dupe').length});
+  const rows=[];
+  for(const su of SUITES){
+    applySuite(su.id,{colors:false});
+    rows.push({id:su.id,name:su.name,...baseOf(deckCheck())});
+  }
+  S.pages=JSON.parse(snap);Object.assign(S,keep);
+  /* 依「總問題數 → 缺照片數」排序，最好的放前面 */
+  rows.sort((a,b)=>a.issues-b.issues||a.photo-b.photo);
+  return {base:baseOf(base),suites:rows};
+}
+
 /* 樣式窗格的套裝按鈕：用第 1 頁的內容、套裝的配色字型畫出它的封面，先看再套；目前樣式符合的那套標成選取。
    跟著頁面縮圖一起重畫（drawPages），內容沒變就不重畫 */
 const suiteOn=su=>!!su&&S.color===su.color&&S.accent===su.accent&&S.tf===su.tf&&S.bf===su.bf;

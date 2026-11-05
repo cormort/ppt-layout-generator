@@ -115,3 +115,34 @@ test('build --doctor --fix：先在記憶體修好再輸出，大綱檔不動', 
     ok(existsSync(o), '沒有產出 PPTX');
   } finally { for (const x of [f, o]) if (existsSync(x)) unlinkSync(x); }
 });
+
+test('doctor：會依這份大綱推薦套裝（缺照片幾頁 → 幾頁）', async () => {
+  const f = join(root, 'test/.doctor-suite.md');
+  /* 兩個章節頁（原本都要照片）＋一頁文字：套上套裝後章節頁會改用不需要照片的版型 */
+  writeFileSync(f, `<!-- 版型: 章節頁 -->
+# 第一章
+## 說明
+> 逐字稿。
+
+---
+
+<!-- 版型: 章節頁 -->
+# 第二章
+## 說明
+> 逐字稿。
+
+---
+
+<!-- 版型: 文字・條列重點 -->
+# 重點
+- 甲|說明
+> 逐字稿。
+`);
+  try {
+    const r = run(['doctor', f]);
+    eq(r.status, 1, '還有缺照片，應該 exit 1');
+    ok(r.stdout.includes('套裝建議'), '沒有推薦套裝：' + r.stdout.slice(0, 300));
+    ok(/缺照片 2 → [01] 頁/.test(r.stdout), '建議應該寫出「缺照片 2 → 0/1 頁」：' + r.stdout.slice(-300));
+    ok(r.stdout.includes('--suite'), '沒有告訴使用者怎麼套用');
+  } finally { if (existsSync(f)) unlinkSync(f); }
+});

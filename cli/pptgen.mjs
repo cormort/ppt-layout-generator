@@ -303,6 +303,19 @@ try {
         for (const o of show) out(`  第 ${o.i + 1} 頁［${KIND[o.kind] || o.kind}］${o.text}${o.hint ? '　→ ' + o.hint : ''}`);
         if (r.issues.length > show.length) out(`  …另有 ${r.issues.length - show.length} 項，用 --json 看全部`);
       }
+      /* 套裝建議：用這份大綱實際試算，看哪一套最省照片、最少問題 */
+      const sg = JSON.parse(await app.run(`(()=>{try{return JSON.stringify(suggestSuites())}catch(e){return 'null'}})()`));
+      if (sg && sg.suites && sg.suites.length) {
+        const base = sg.base, best = sg.suites[0];
+        const line = s => `缺照片 ${base.photo} → ${s.photo} 頁、放不下 ${base.overflow} → ${s.overflow} 頁`;
+        if (best.photo < base.photo || best.overflow < base.overflow) {
+          out(`ℹ 套裝建議（用這份大綱試算過）：`);
+          for (const s of sg.suites.slice(0, 3)) out(`  · ${s.name}：${line(s)}${s.id === best.id ? '　← 最合適' : ''}`);
+          out(`  想套用：加 --suite ${best.name}`);
+        } else {
+          out(`ℹ 套裝：這份大綱套哪一套都不會比較省（缺照片 ${base.photo} 頁、放不下 ${base.overflow} 頁）`);
+        }
+      }
       if (!flags.fix && fixable.length) {
         out(`ℹ 其中 ${fixable.length} 項可以自動修：`);
         for (const w of r.plan.slice(0, 20)) out(`  · ${w}`);
