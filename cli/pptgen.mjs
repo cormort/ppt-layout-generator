@@ -13,6 +13,8 @@ const HELP = `排版產生器 CLI — Markdown 大綱 → 含逐字稿的 PPTX
 用法：
   node pptgen.mjs build <大綱.md> [-o 簡報.pptx] [選項]   產生 PPTX，並回報放不下的頁
   node pptgen.mjs check <大綱.md> [選項]                  只檢查（不產生檔案），快
+  node pptgen.mjs doctor <大綱.md> [--fix] [-o 修好.md]    一次做完：容量檢查＋健檢＋（--fix）自動修，
+                                                         加上 --fix 會把修好的大綱存檔
   node pptgen.mjs preview <大綱.md> --pages 3,7 [-d 資料夾] 輸出指定頁的 PNG 預覽
   node pptgen.mjs from-pptx <簡報.pptx> [-o 大綱.md]       把既有 PPTX 轉成大綱（含逐字稿），方便 AI 讀與改
   node pptgen.mjs templates                               列出所有版型與容量
@@ -38,6 +40,7 @@ const HELP = `排版產生器 CLI — Markdown 大綱 → 含逐字稿的 PPTX
   --quality small        PPTX 底圖用 1 倍（檔案約小一半）；預設 std＝2 倍
   --no-images            輸入是 .pptx 時不帶入原簡報的照片
   --json                 以 JSON 輸出結果（給程式讀）
+  --fix                  doctor 專用：把可以自動修的項目修掉（重複標題、缺標題、放不下的版型）並存回大綱
   --app <路徑或網址>      指定 index.html（預設：本工具旁邊的 index.html）
 
 結束代碼：0＝成功（可能有容量提醒）、1＝錯誤。
@@ -85,7 +88,7 @@ for (let i = 0; i < argv.length; i++) {
   if (!m || /^-\d/.test(a)) { pos.push(a); continue; }
   const k = ALIAS[m[1]] || m[1];
   if (m[2] !== undefined) flags[k] = m[2];
-  else if (['json', 'help', 'no-images'].includes(k)) flags[k] = true;
+  else if (['json', 'help', 'no-images', 'fix'].includes(k)) flags[k] = true;
   else flags[k] = argv[++i];
 }
 const [cmd, input] = pos;
@@ -105,7 +108,7 @@ if (cmd === 'install-skill') {
   out(`已安裝 Skill：${join(dir, 'SKILL.md')}\n重新開啟 Claude Code 後，說「把這份講稿做成簡報」就會使用。`);
   process.exit(0);
 }
-if (!['build', 'check', 'preview', 'templates', 'from-pptx', 'install-skill'].includes(cmd)) fail(`不認得的指令「${cmd}」；用 --help 看說明`);
+if (!['build', 'check', 'preview', 'templates', 'from-pptx', 'install-skill', 'doctor'].includes(cmd)) fail(`不認得的指令「${cmd}」；用 --help 看說明`);
 if (cmd !== 'templates' && !input) fail('請指定大綱檔或 PPTX，例如：node pptgen.mjs build 大綱.md');
 if (typeof WebSocket !== 'function') fail(`需要 Node 22 以上（目前 ${process.version}）`);
 
@@ -256,6 +259,55 @@ try {
         const r=await pagesFromPptx(b,{withImages:${cmd !== 'from-pptx' && !flags['no-images']}});
         S.pages=r.pages.slice(0,MAXPAGES);usePage(0);drawLib();
         return JSON.stringify({charts:r.charts,images:r.images,outline:outlineOf(S.pages)})})()`));
+    }
+    if (cmd === 'doctor') {
+      const r = JSON.parse(await app.run(`(()=>{
+        const rep=deckCheck();
+        const plan=[];
+        for(const o of rep.issues)if(o.fix){const w=fixIssue(o);if(w)plan.push(w)}
+        return JSON.stringify({issues:rep.issues,stats:rep.stats,plan,outline:outlineOf(S.pages)});
+      })()`));
+      const KIND = { overflow: '文字放不下', photo: '缺照片', title: '沒有標題', dupe: '標題重複' };
+      let by = {};
+      const tally = () => { by = {}; for (const o of r.issues) by[o.kind] = (by[o.kind] || 0) + 1; };
+      tally();
+      const fixable = r.issues.filter(o => o.fix);
+      let file = '';
+      if (flags.fix && r.plan.length) {
+        file = resolve(flags.out || stem + '_修好.md');
+        writeFileSync(file, r.outline);
+        /* 修完再跑一次，報告剩下的問題 */
+        const after = JSON.parse(await app.run(`(()=>{
+          importOutline(${JSON.stringify(r.outline)},'replace');
+          const rep=deckCheck();
+          return JSON.stringify({issues:rep.issues});
+        })()`));
+        r.issues = after.issues;tally();
+      }
+      if (flags.json) {
+        out(JSON.stringify({ pages: r.stats.pages, notes: r.stats.pages - r.stats.noNotes,
+          noNotes: r.stats.noNotes, byKind: by, issues: r.issues, plan: flags.fix ? [] : r.plan, fixed: flags.fix ? r.plan : [], file }, null, 1));
+        app.close(); process.exit(r.issues.length ? 1 : 0);
+      }
+      out(`共 ${r.stats.pages} 頁，${r.stats.pages - r.stats.noNotes} 頁有逐字稿`
+        + (r.stats.noNotes ? `（${r.stats.noNotes} 頁沒有逐字稿，要不要補由你決定）` : ''));
+      if (flags.fix && r.plan.length) out(`已自動修好 ${r.plan.length} 處：`);
+      if (flags.fix) for (const w of r.plan) out(`  ✓ ${w}`);
+      if (!r.issues.length) out('✓ 沒有發現問題');
+      else {
+        out(`還有 ${r.issues.length} 個問題：` + Object.entries(by).map(([k, n]) => `${KIND[k] || k}×${n}`).join('、'));
+        const show = r.issues.slice(0, 40);
+        for (const o of show) out(`  第 ${o.i + 1} 頁［${KIND[o.kind] || o.kind}］${o.text}${o.hint ? '　→ ' + o.hint : ''}`);
+        if (r.issues.length > show.length) out(`  …另有 ${r.issues.length - show.length} 項，用 --json 看全部`);
+      }
+      if (!flags.fix && fixable.length) {
+        out(`ℹ 其中 ${fixable.length} 項可以自動修：`);
+        for (const w of r.plan.slice(0, 20)) out(`  · ${w}`);
+        if (r.plan.length > 20) out(`  · …另有 ${r.plan.length - 20} 項`);
+        out('  加上 --fix 就會直接修好並存成新的大綱（-o 指定檔名）');
+      }
+      if (file) out(`已存成：${file}（原檔沒有動）`);
+      app.close(); process.exit(r.issues.length ? 1 : 0);
     }
     if (cmd === 'from-pptx') {
       const file = resolve(flags.out || stem + '_大綱.md');
