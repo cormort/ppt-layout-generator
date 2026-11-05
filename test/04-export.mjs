@@ -95,6 +95,7 @@ test('HTML 播放器帶正確的 viewBox 與逐字稿', async ({ page, downloads
   await page.run(`(async()=>{
     const wait=ms=>new Promise(r=>setTimeout(r,ms));
     document.getElementById('expBtn').click();await wait(80);
+    document.getElementById('htmlOut').click();await wait(200);   /* 第一次會先提醒缺照片 */
     document.getElementById('htmlOut').click();await wait(6000);
     return document.getElementById('toast').textContent;
   })()`);

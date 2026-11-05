@@ -97,15 +97,31 @@ test('中文名稱也認得（命令列打「年度報告」）', async ({ page 
 test('套裝：套用後會知道有幾頁「內容對新版型太多」', async ({ page }) => {
   const got = await page.run(`(()=>{
     S.ratio='16:9';S.color='#333333';S.accent='#999999';
-    /* 9 個項目的目錄：tocNum 上限 8 個 → 套年度報告（目錄→tocNum）應該被算出「放不下」 */
+    /* 30 個項目：套裝把「文字頁」換成 tList（上限 24 項）→ 應該被算出「放不下」 */
+    const many=[...Array(30)].map((_,i)=>'重點'+(i+1)+'|說明').join('\\n');
     S.pages=[
-      cleanPage({tpl:'mIndex',title:'大綱',body:'',items:'一|a\\n二|b\\n三|c\\n四|d\\n五|e\\n六|f\\n七|g\\n八|h\\n九|i'}),
+      cleanPage({tpl:'tText',title:'很多重點',body:'',items:many}),
       cleanPage({tpl:'thanks',title:'謝謝',body:'',items:''}),
     ];
     S.cur=0;
     const n=applySuite('annual');
     return {n,fit:LAST_SUITE_FIT,tpl:S.pages[0].tpl};
   })()`);
-  eq(got.tpl, 'tocNum', '目錄應該被換成 tocNum');
-  ok(got.fit >= 1, '9 個項目的目錄換成 tocNum 之後應該被算出「放不下」（實際 ' + got.fit + '）');
+  eq(got.tpl, 'tList', '文字頁應該被換成 tList');
+  ok(got.fit >= 1, '30 個項目的文字頁換成 tList 之後應該被算出「放不下」（實際 ' + got.fit + '）');
+});
+
+test('套裝：目錄超過 8 章時改用清單式目錄（大字編號會被截掉）', async ({ page }) => {
+  const got = await page.run(`(()=>{
+    S.ratio='16:9';S.color='#333';S.accent='#999';
+    const many=[...Array(10)].map((_,i)=>'第'+(i+1)+'章|Ch'+i).join('\\n');
+    const few=[...Array(6)].map((_,i)=>'第'+(i+1)+'章|Ch'+i).join('\\n');
+    S.pages=[cleanPage({tpl:'mIndex',title:'十個章節',body:'',items:many}),
+      cleanPage({tpl:'mIndex',title:'六個章節',body:'',items:few}),
+      cleanPage({tpl:'thanks',title:'謝謝',body:'',items:''})];
+    S.cur=0;applySuite('annual');
+    return {ten:S.pages[0].tpl,six:S.pages[1].tpl};
+  })()`);
+  eq(got.ten, 'mIndex', '10 章應該保留清單式目錄');
+  eq(got.six, 'tocNum', '6 章應該換成大字編號');
 });

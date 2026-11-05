@@ -115,7 +115,13 @@ function applySuite(id,{colors=true}={}){
   if(colors){S.color=su.color;S.accent=su.accent;S.tf=su.tf;S.bf=su.bf}
   let n=0;
   for(const p of S.pages){
-    const want=su.roles[roleOf(p)];
+    const role=roleOf(p);
+    let want=su.roles[role];
+    /* 目錄：項目超過 8 章就別用大字編號（會被截掉），改用清單式目錄 */
+    if(role==='toc'&&want){
+      const cnt=String(p.items||'').split('\n').filter(x=>x.trim()).length;
+      if(cnt>8)want='mIndex';
+    }
     if(!want||!TPLBY[want])continue;
     const next=tplFor(want);           /* 目前尺寸不支援時會換成相近的版型 */
     if(next!==p.tpl)n++;

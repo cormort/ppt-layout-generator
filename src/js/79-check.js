@@ -35,7 +35,8 @@ function deckCheck(){
     const list=missPhoto.slice(0,8).map(i=>i+1).join('、')+(missPhoto.length>8?'…':'');
     issues.push({i:missPhoto[0],kind:'photo',pages:missPhoto,
       text:`${missPhoto.length} 頁需要照片（第 ${list} 頁）`,
-      hint:'到「照片」分頁選照片；也可以只補封面與章節這幾頁'});
+      hint:'到「照片」分頁選照片；封面可以直接一鍵換成純文字封面',
+      fix:missPhoto.every(i=>{const t=TPLBY[tplFor(S.pages[i].tpl)];return t&&t.cat==='cover'})?'photo':''});
   }
   issues.sort((a,b)=>a.i-b.i||a.kind.localeCompare(b.kind));
   return {issues,stats:{pages:S.pages.length,noNotes,photoPages,placeholder}};
@@ -65,6 +66,15 @@ function fixIssue(o){
   if(o.kind==='title'){
     const n=TPLBY[tplFor(p.tpl)]?.name||'未命名';
     p.title=n;return `第 ${o.i+1} 頁補上標題「${n}」`;
+  }
+  if(o.kind==='photo'){
+    /* 只有封面有「不需要照片」的版本；章節頁那種沒有照片就是沒辦法 */
+    const base=TPLBY[tplFor(p.tpl)];
+    if(base&&base.cat==='cover'){
+      const id=tplFor('cBig');
+      if(TPLBY[id]){p.tpl=id;if(S.cur===o.i)S.tpl=id;return `第 ${o.i+1} 頁換成純文字封面「${TPLBY[id].name}」`}
+    }
+    return '';
   }
   if(o.kind==='overflow'){
     const id=fitTplFor(p);if(!id)return '';

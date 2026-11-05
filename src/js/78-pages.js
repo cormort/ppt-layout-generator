@@ -95,16 +95,35 @@ $('pages').onkeydown=e=>{if(e.key!=='Enter'&&e.key!==' ')return;const d=e.target
   P.addEventListener('drop',e=>{e.preventDefault();if(dragP==null)return;const d=e.target.closest('.pg'),j=d?+d.dataset.i:S.pages.length-1,i=dragP;dragP=null;
     if(i===j)drawPages();else movePage(i,j)});
   P.addEventListener('dragend',()=>{if(dragP!=null){dragP=null;drawPages()}});}
+/* 匯出前先講清楚：還有幾頁在用示意圖（照片版型但沒選照片） */
+function missingPhotoPages(){
+  return S.pages.map((p,i)=>({i,p})).filter(({p})=>usesPhoto(TPLBY[tplFor(p.tpl)]||{})&&!p.sel.length).map(({i})=>i);
+}
+let photoWarnAt=0;
+/* 不用瀏覽器confirm（會擋住自動化與部分瀏覽器）：第一次按先提醒，四秒內再按同一個按鈕就直接匯出 */
+function askPhoto(){
+  storePage();
+  const m=missingPhotoPages();
+  if(!m.length)return true;
+  if(Date.now()-photoWarnAt<4000)return true;
+  photoWarnAt=Date.now();
+  const list=m.slice(0,8).map(i=>i+1).join('、')+(m.length>8?'…':'');
+  toast(`還有 ${m.length} 頁沒有照片（第 ${list} 頁），匯出會用示意圖；要補照片請到「照片」分頁，確定要匯出再按一次`);
+  return false;
+}
 async function deckPages(){
   storePage();
   return Promise.all(S.pages.map(async(p,i)=>({tpl:TPLBY[tplFor(p.tpl)],imgs:await pageImages(p.sel),ov:{...ovOf(p),pageNo:i},notes:p.notes})));
 }
 const deckName=()=>safeName(S.fname||S.pages[0]?.title||'簡報');
 $('deckOut').onclick=async()=>{
+  if(!askPhoto())return;
   const btn=$('deckOut');btn.disabled=true;
   try{
     const pages=await deckPages(),n=pages.length,withNotes=pages.filter(p=>p.notes.trim()).length;
-    saveBlob(await buildPptx(pages,null,i=>toast(`製作投影片… ${i+1}/${n}`)),`${deckName()}_${n}頁.pptx`);
+    /* 進度每 10% 回報一次：29 頁大約每 3 頁一次，不會洗版也不會像卡住 */
+    const step=Math.max(1,Math.round(n/10));let last=-1;
+    saveBlob(await buildPptx(pages,null,i=>{const pct=Math.round(i/n*10);if(pct!==last&&(i%step===0||i===n-1)){last=pct;toast(`製作投影片… ${i+1}/${n}`)}}),`${deckName()}_${n}頁.pptx`);
     toast(`已輸出 ${n} 頁 PPTX`+(withNotes?`，其中 ${withNotes} 頁有逐字稿`:''));
   }catch(e){console.error(e);toast('輸出失敗：'+e.message)}
   finally{btn.disabled=false}

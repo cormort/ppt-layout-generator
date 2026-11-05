@@ -82,7 +82,7 @@ function drawGallery(force){
       +`<div class="meta"><div class="nm">${esc(t.name)}</div><div class="hint">${esc(t.hint)}</div></div></div>`}).join('')
     :`<p class="empty gal-empty">${S.cat==='fav'?'還沒有收藏任何版型：把滑鼠移到卡片右上角的 ☆ 按一下就會加進來。':S.cat==='recent'?'還沒有用過任何版型。':'這個分類在目前尺寸沒有版型。'}</p>`;
 }
-function drawAll(){drawStage();drawGallery(true);drawPages();if(typeof ribState==='function')ribState()}
+function drawAll(){drawStage();drawGallery(true);drawPages();if(typeof ribState==='function')ribState();if(typeof scheduleIssues==='function')scheduleIssues()}
 function pickTpl(id){
   rememberTpl(tplFor(id));
   /* 左側有選取多頁時：套到那些頁（批次換版型） */

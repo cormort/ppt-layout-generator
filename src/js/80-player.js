@@ -171,6 +171,7 @@ async function deckHtml(deck,opts={}){
   return {html,before:r.before,after:r.after,bytes:new Blob([html]).size};
 }
 async function exportHtml(btn,{pres=false}={}){
+  if(!askPhoto())return;
   btn.disabled=true;
   try{
     toast(pres?'產生「簡報者檢視」簡報中…':'產生 HTML 簡報中…');

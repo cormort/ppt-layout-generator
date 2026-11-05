@@ -765,6 +765,7 @@ dialog.chkdlg .chkl{flex:1 1 auto;min-height:0}
 <footer class="status" id="status">
   <span id="stSlide"></span><span id="stRatio"></span><span>自動儲存在這台電腦</span>
   <span class="grow"></span>
+  <button class="rb" id="stIssues" hidden title="開啟簡報健檢"><svg viewBox="0 0 24 24"><path class="a" d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span id="stIssuesN">0 個問題</span></button>
   <button class="rb" data-view="notes"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 14h18"/></svg>備忘稿</button>
   <button class="rb" data-view="insp"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M15 4v16"/></svg>格式窗格</button>
   <button class="rb" data-do="playBtn" title="從目前這一頁播放"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8M10 7.5l5 2.5-5 2.5z"/></svg>播放</button>
@@ -1966,7 +1967,13 @@ function applySuite(id,{colors=true}={}){
   if(colors){S.color=su.color;S.accent=su.accent;S.tf=su.tf;S.bf=su.bf}
   let n=0;
   for(const p of S.pages){
-    const want=su.roles[roleOf(p)];
+    const role=roleOf(p);
+    let want=su.roles[role];
+    /* 目錄：項目超過 8 章就別用大字編號（會被截掉），改用清單式目錄 */
+    if(role==='toc'&&want){
+      const cnt=String(p.items||'').split('\n').filter(x=>x.trim()).length;
+      if(cnt>8)want='mIndex';
+    }
     if(!want||!TPLBY[want])continue;
     const next=tplFor(want);           /* 目前尺寸不支援時會換成相近的版型 */
     if(next!==p.tpl)n++;
@@ -3356,7 +3363,7 @@ function drawGallery(force){
       +`<div class="meta"><div class="nm">${esc(t.name)}</div><div class="hint">${esc(t.hint)}</div></div></div>`}).join('')
     :`<p class="empty gal-empty">${S.cat==='fav'?'還沒有收藏任何版型：把滑鼠移到卡片右上角的 ☆ 按一下就會加進來。':S.cat==='recent'?'還沒有用過任何版型。':'這個分類在目前尺寸沒有版型。'}</p>`;
 }
-function drawAll(){drawStage();drawGallery(true);drawPages();if(typeof ribState==='function')ribState()}
+function drawAll(){drawStage();drawGallery(true);drawPages();if(typeof ribState==='function')ribState();if(typeof scheduleIssues==='function')scheduleIssues()}
 function pickTpl(id){
   rememberTpl(tplFor(id));
   /* 左側有選取多頁時：套到那些頁（批次換版型） */
@@ -3482,16 +3489,35 @@ $('pages').onkeydown=e=>{if(e.key!=='Enter'&&e.key!==' ')return;const d=e.target
   P.addEventListener('drop',e=>{e.preventDefault();if(dragP==null)return;const d=e.target.closest('.pg'),j=d?+d.dataset.i:S.pages.length-1,i=dragP;dragP=null;
     if(i===j)drawPages();else movePage(i,j)});
   P.addEventListener('dragend',()=>{if(dragP!=null){dragP=null;drawPages()}});}
+/* 匯出前先講清楚：還有幾頁在用示意圖（照片版型但沒選照片） */
+function missingPhotoPages(){
+  return S.pages.map((p,i)=>({i,p})).filter(({p})=>usesPhoto(TPLBY[tplFor(p.tpl)]||{})&&!p.sel.length).map(({i})=>i);
+}
+let photoWarnAt=0;
+/* 不用瀏覽器confirm（會擋住自動化與部分瀏覽器）：第一次按先提醒，四秒內再按同一個按鈕就直接匯出 */
+function askPhoto(){
+  storePage();
+  const m=missingPhotoPages();
+  if(!m.length)return true;
+  if(Date.now()-photoWarnAt<4000)return true;
+  photoWarnAt=Date.now();
+  const list=m.slice(0,8).map(i=>i+1).join('、')+(m.length>8?'…':'');
+  toast(`還有 ${m.length} 頁沒有照片（第 ${list} 頁），匯出會用示意圖；要補照片請到「照片」分頁，確定要匯出再按一次`);
+  return false;
+}
 async function deckPages(){
   storePage();
   return Promise.all(S.pages.map(async(p,i)=>({tpl:TPLBY[tplFor(p.tpl)],imgs:await pageImages(p.sel),ov:{...ovOf(p),pageNo:i},notes:p.notes})));
 }
 const deckName=()=>safeName(S.fname||S.pages[0]?.title||'簡報');
 $('deckOut').onclick=async()=>{
+  if(!askPhoto())return;
   const btn=$('deckOut');btn.disabled=true;
   try{
     const pages=await deckPages(),n=pages.length,withNotes=pages.filter(p=>p.notes.trim()).length;
-    saveBlob(await buildPptx(pages,null,i=>toast(`製作投影片… ${i+1}/${n}`)),`${deckName()}_${n}頁.pptx`);
+    /* 進度每 10% 回報一次：29 頁大約每 3 頁一次，不會洗版也不會像卡住 */
+    const step=Math.max(1,Math.round(n/10));let last=-1;
+    saveBlob(await buildPptx(pages,null,i=>{const pct=Math.round(i/n*10);if(pct!==last&&(i%step===0||i===n-1)){last=pct;toast(`製作投影片… ${i+1}/${n}`)}}),`${deckName()}_${n}頁.pptx`);
     toast(`已輸出 ${n} 頁 PPTX`+(withNotes?`，其中 ${withNotes} 頁有逐字稿`:''));
   }catch(e){console.error(e);toast('輸出失敗：'+e.message)}
   finally{btn.disabled=false}
@@ -3536,7 +3562,8 @@ function deckCheck(){
     const list=missPhoto.slice(0,8).map(i=>i+1).join('、')+(missPhoto.length>8?'…':'');
     issues.push({i:missPhoto[0],kind:'photo',pages:missPhoto,
       text:`${missPhoto.length} 頁需要照片（第 ${list} 頁）`,
-      hint:'到「照片」分頁選照片；也可以只補封面與章節這幾頁'});
+      hint:'到「照片」分頁選照片；封面可以直接一鍵換成純文字封面',
+      fix:missPhoto.every(i=>{const t=TPLBY[tplFor(S.pages[i].tpl)];return t&&t.cat==='cover'})?'photo':''});
   }
   issues.sort((a,b)=>a.i-b.i||a.kind.localeCompare(b.kind));
   return {issues,stats:{pages:S.pages.length,noNotes,photoPages,placeholder}};
@@ -3566,6 +3593,15 @@ function fixIssue(o){
   if(o.kind==='title'){
     const n=TPLBY[tplFor(p.tpl)]?.name||'未命名';
     p.title=n;return `第 ${o.i+1} 頁補上標題「${n}」`;
+  }
+  if(o.kind==='photo'){
+    /* 只有封面有「不需要照片」的版本；章節頁那種沒有照片就是沒辦法 */
+    const base=TPLBY[tplFor(p.tpl)];
+    if(base&&base.cat==='cover'){
+      const id=tplFor('cBig');
+      if(TPLBY[id]){p.tpl=id;if(S.cur===o.i)S.tpl=id;return `第 ${o.i+1} 頁換成純文字封面「${TPLBY[id].name}」`}
+    }
+    return '';
   }
   if(o.kind==='overflow'){
     const id=fitTplFor(p);if(!id)return '';
@@ -3784,6 +3820,7 @@ async function deckHtml(deck,opts={}){
   return {html,before:r.before,after:r.after,bytes:new Blob([html]).size};
 }
 async function exportHtml(btn,{pres=false}={}){
+  if(!askPhoto())return;
   btn.disabled=true;
   try{
     toast(pres?'產生「簡報者檢視」簡報中…':'產生 HTML 簡報中…');
@@ -4531,6 +4568,7 @@ $('mdClose').onclick=()=>$('mdDlg').close();
 
 /* 講義：每頁投影片＋逐字稿，開新視窗後直接叫出列印（可存成 PDF） */
 $('handout').onclick=async()=>{
+  if(!askPhoto())return;
   const w=window.open('','_blank');if(!w){toast('瀏覽器擋住了新視窗，請允許本頁開彈出視窗');return}
   w.document.write('<p style="font:16px sans-serif;padding:24px">準備講義中…</p>');
   try{
@@ -4700,6 +4738,21 @@ function ribState(){
   ribOverflow();
 }
 $('ribbon').onclick=ribClick;$('status').onclick=ribClick;document.querySelector('.ihd').onclick=ribClick;
+/* 狀態列的問題數：重畫後延遲算一次（29 頁約 6ms，但打字時不必每個字都算） */
+function scheduleIssues(){
+  /* 用函式屬性存 timer：這個函式會在 99-view.js 執行前就被 drawAll 呼叫，模組層的 let 還在 TDZ */
+  clearTimeout(scheduleIssues.t||0);
+  scheduleIssues.t=setTimeout(()=>{
+    try{
+      const n=deckCheck().issues.length;
+      const b=$('stIssues');if(!b)return;
+      b.hidden=n===0;$('stIssuesN').textContent=`${n} 個問題`;
+      b.title=n?`有 ${n} 個問題，點開簡報健檢`:'沒有發現問題';
+    }catch(e){}
+  },600);
+}
+if($('stIssues'))$('stIssues').onclick=()=>openCheck();
+
 /* 尺寸、頁數、外觀可能從別處改（樣式窗格、復原、開專案）：由 drawAll() 收尾呼叫 ribState() */
 setRib(rib);applyView();ribState();setTimeout(ribOverflow,0);
 

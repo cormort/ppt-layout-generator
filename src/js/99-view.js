@@ -64,6 +64,21 @@ function ribState(){
   ribOverflow();
 }
 $('ribbon').onclick=ribClick;$('status').onclick=ribClick;document.querySelector('.ihd').onclick=ribClick;
+/* 狀態列的問題數：重畫後延遲算一次（29 頁約 6ms，但打字時不必每個字都算） */
+function scheduleIssues(){
+  /* 用函式屬性存 timer：這個函式會在 99-view.js 執行前就被 drawAll 呼叫，模組層的 let 還在 TDZ */
+  clearTimeout(scheduleIssues.t||0);
+  scheduleIssues.t=setTimeout(()=>{
+    try{
+      const n=deckCheck().issues.length;
+      const b=$('stIssues');if(!b)return;
+      b.hidden=n===0;$('stIssuesN').textContent=`${n} 個問題`;
+      b.title=n?`有 ${n} 個問題，點開簡報健檢`:'沒有發現問題';
+    }catch(e){}
+  },600);
+}
+if($('stIssues'))$('stIssues').onclick=()=>openCheck();
+
 /* 尺寸、頁數、外觀可能從別處改（樣式窗格、復原、開專案）：由 drawAll() 收尾呼叫 ribState() */
 setRib(rib);applyView();ribState();setTimeout(ribOverflow,0);
 

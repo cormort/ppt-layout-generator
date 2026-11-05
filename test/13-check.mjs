@@ -103,3 +103,41 @@ test('簡報健檢：一鍵修（重複標題加「（續）」、沒有標題�
   ok(got.titles[2] && got.titles[2].length > 0, '空標題沒有補上');
   ok(got.tpls[3] !== got.before[3], '表格那一頁應該換成別的版型');
 });
+
+test('狀態列問題數：有問題才出現，點了開健檢', async ({ page }) => {
+  const got = await page.run(`(async()=>{
+    const wait=ms=>new Promise(r=>setTimeout(r,ms));
+    S.ratio='16:9';S.pages=[cleanPage({tpl:'wall',title:'照片頁',body:'',items:'',notes:''})];S.cur=0;
+    usePage(0);syncUI();drawAll();scheduleIssues();await wait(900);
+    const a={hidden:$('stIssues').hidden,text:$('stIssuesN').textContent};
+    $('stIssues').click();const opened=$('chkDlg').open;$('chkDlg').close();
+    S.pages=[cleanPage({tpl:'thanks',title:'謝謝',body:'',items:'',notes:'講稿'})];S.cur=0;
+    usePage(0);syncUI();drawAll();scheduleIssues();await wait(900);
+    const b={hidden:$('stIssues').hidden};
+    return {a,opened,b};
+  })()`);
+  eq(got.a.hidden, false, '有問題時狀態列應該顯示問題數');
+  ok(got.a.text.includes('問題'), '狀態列文字不對：' + got.a.text);
+  eq(got.opened, true, '點問題數應該開健檢');
+  eq(got.b.hidden, true, '沒有問題時不該顯示');
+});
+
+test('匯出前會提醒還沒補照片（PPTX／HTML／講義共用）', async ({ page }) => {
+  const got = await page.run(`(()=>{
+    S.ratio='16:9';
+    S.pages=[cleanPage({tpl:'wall',title:'照片頁',body:'',items:'',notes:''}),
+      cleanPage({tpl:'tList',title:'文字頁',body:'',items:'甲|說明',notes:''})];
+    S.cur=0;
+    const miss=missingPhotoPages();
+    const ok1=askPhoto();      /* 第一次：只提醒 */
+    const ok2=askPhoto();      /* 四秒內再按：直接匯出 */
+    const tips=document.querySelectorAll('.toast, #toasts div, [class*=toast]');
+    S.pages=[cleanPage({tpl:'tList',title:'純文字',body:'',items:'甲|說明',notes:''})];S.cur=0;
+    const none=missingPhotoPages();
+    return {miss,ok1,ok2,none};
+  })()`);
+  deepEq(got.miss, [0], '應該抓出第 1 頁缺照片');
+  eq(got.ok1, false, '第一次按匯出應該先提醒、不要直接匯出');
+  eq(got.ok2, true, '使用者按確定時要繼續');
+  deepEq(got.none, [], '純文字頁不該被算缺照片');
+});

@@ -15,6 +15,7 @@ $('mdClose').onclick=()=>$('mdDlg').close();
 
 /* 講義：每頁投影片＋逐字稿，開新視窗後直接叫出列印（可存成 PDF） */
 $('handout').onclick=async()=>{
+  if(!askPhoto())return;
   const w=window.open('','_blank');if(!w){toast('瀏覽器擋住了新視窗，請允許本頁開彈出視窗');return}
   w.document.write('<p style="font:16px sans-serif;padding:24px">準備講義中…</p>');
   try{
