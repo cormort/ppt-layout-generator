@@ -6,7 +6,8 @@ $('projSave').onclick=async()=>{
     const L=[...new Set(S.pages.flatMap(p=>p.sel))].map(id=>lib.find(x=>x.id===id)).filter(Boolean),at=new Map(L.map((it,i)=>[it.id,i]));
     const imgs=await Promise.all(L.map(async it=>({name:it.name,crop:it.crop,data:it.data||(it.data=await blobToData(it.blob))})));
     const state={...S,pages:S.pages.map(p=>({...p,sel:p.sel.filter(id=>at.has(id)).map(id=>at.get(id))}))};
-    const pkg={app:'ppt-layout-generator',v:2,state,images:imgs};
+    /* 自訂套裝也一起存：換電腦才不會只剩內建的 8 套 */
+    const pkg={app:'ppt-layout-generator',v:3,state,images:imgs,suites:customSuites()};
     saveBlob(new Blob([JSON.stringify(pkg)],{type:'application/json'}),`${deckName()}.pptgen.json`);
     toast(`已存檔（${S.pages.length} 頁、${imgs.length} 張圖片）`);
   }catch(e){toast('存檔失敗：'+e.message)}
@@ -33,7 +34,9 @@ $('projFile').onchange=async e=>{
     else st.pages=[];
     Object.assign(S,st);
     if(S.pages.length)usePage(S.cur);else{sel=ids.filter(Boolean);storePage()}
-    syncUI();drawLib();drawAll();save();histLater();toast(`專案已載入（${S.pages.length} 頁）`);
+    const ns=Array.isArray(pkg.suites)?mergeSuites(pkg.suites):0;
+    syncUI();drawLib();drawAll();save();histLater();
+    toast(`專案已載入（${S.pages.length} 頁${ns?`、${ns} 套自訂套裝`:''}）`);
   }catch(err){console.warn(err);toast('載入失敗：'+err.message)}
 };
 $('reset').onclick=()=>{

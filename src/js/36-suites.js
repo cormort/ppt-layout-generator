@@ -52,6 +52,17 @@ function saveCurrentAsSuite(name){
   const list=customSuites();list.push(su);writeCustom(list);
   return su;
 }
+/* 合併一批自訂套裝（匯入檔、專案檔共用）：只收合法的、同 id 不覆蓋 */
+const suiteOK=s=>s&&typeof s.id==='string'&&typeof s.name==='string'&&s.roles&&typeof s.roles==='object'
+  &&HEXRE.test(s.color)&&HEXRE.test(s.accent)
+  &&Number.isInteger(s.tf)&&s.tf>=0&&s.tf<FONTS.length&&Number.isInteger(s.bf)&&s.bf>=0&&s.bf<FONTS.length;
+function mergeSuites(list){
+  const add=(Array.isArray(list)?list:[]).filter(suiteOK);
+  const cur=customSuites(),have=new Set(cur.map(s=>s.id));let n=0;
+  for(const s of add)if(!have.has(s.id)){cur.push({...s,hint:String(s.hint||'匯入・'+s.name).slice(0,40)});have.add(s.id);n++}
+  if(n){writeCustom(cur);suitesChanged()}
+  return n;
+}
 function deleteSuite(id){
   const list=customSuites().filter(s=>s.id!==id);writeCustom(list);return list.length;
 }

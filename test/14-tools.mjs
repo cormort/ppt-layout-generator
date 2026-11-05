@@ -97,3 +97,64 @@ test('簡報者檢視：匯出的 HTML 會帶著「一互動就開第二視窗�
   eq(got.hasBtn, true, '播放器程式碼裡應該有開第二視窗的那段');
   eq(got.plain, true, '一般匯出被誤加了旗標');
 });
+
+test('多選頁面：切換版面尺寸後選取還在，批次套用會換成新尺寸能用的版型', async ({ page }) => {
+  await page.run(DECK);
+  const got = await page.run(`(()=>{
+    const card=k=>document.querySelectorAll('#pages .pg')[k];
+    const ev=(el,o)=>el.dispatchEvent(new MouseEvent('click',{bubbles:true,...o}));
+    ev(card(0),{ctrlKey:true});ev(card(1),{ctrlKey:true});
+    const before=document.querySelectorAll('#pages .pg.psel').length;
+    document.querySelector('#ratioSeg button[data-v="9:16"]').click();
+    const after=document.querySelectorAll('#pages .pg.psel').length;
+    /* 挑一個只有 16:9 的版型，會被換成這個尺寸能用的 */
+    pickTpl('mCover');
+    const tpls=S.pages.map(p=>p.tpl);
+    const legacy=tpls.filter(id=>!(TPLBY[id].ratios||['16:9']).includes(S.ratio));
+    S.ratio='16:9';usePage(0);syncUI();drawAll();
+    return {before,after,tpls,legacy,selKept:document.querySelectorAll('#pages .pg.psel').length};
+  })()`);
+  eq(got.before, 2, '一開始應該選了 2 頁');
+  eq(got.after, 2, '切換尺寸後選取不該消失（實際 ' + got.after + '）');
+  eq(got.legacy.length, 0, '批次套用後有不支援目前尺寸的版型：' + got.legacy.join(','));
+  ok(got.tpls[0] === got.tpls[1], '選取的兩頁應該變成同一個版型：' + got.tpls.join(','));
+  eq(got.selKept, 2, '回到 16:9 後選取也應該還在');
+});
+
+test('自訂套裝：專案檔會帶著走（存檔含 suites、載入會合併）', async ({ page }) => {
+  const got = await page.run(`(()=>{
+    localStorage.removeItem('lgSuites');
+    /* 存檔：確認 pkg 會包含 suites（比照 projSave 的組法） */
+    S.color='#112233';S.accent='#aabbcc';S.pages=[cleanPage({tpl:'cFrame',title:'封面',body:'',items:''})];S.cur=0;
+    const su=saveCurrentAsSuite('專案套裝');
+    const pkg={app:'ppt-layout-generator',v:3,state:{...S,pages:S.pages.map(p=>({...p}))},images:[],suites:customSuites()};
+    const json=JSON.stringify(pkg);
+    /* 載入：清掉再合併回來 */
+    localStorage.removeItem('lgSuites');
+    const back=JSON.parse(json);
+    const n=mergeSuites(back.suites);
+    return {n,names:customSuites().map(s=>s.name),v:back.v,suites:back.suites.length};
+  })()`);
+  eq(got.suites, 1, '存檔時沒有把自訂套裝放進去');
+  eq(got.n, 1, '載入時沒有合併自訂套裝');
+  deepEq(got.names, ['專案套裝'], '合併後清單不對');
+  /* 重複匯入不該長出第二份 */
+  const again = await page.run('mergeSuites(JSON.parse(localStorage.getItem("lgSuites")))');
+  eq(again, 0, '同一批套裝再合併一次不該重複加入');
+});
+
+test('講者檢視：有下一頁預覽，而且帶頁名', async ({ page }) => {
+  const got = await page.run(`(()=>{
+    const deck={title:'T',slides:[{svg:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"></svg>',notes:'a',title:'第一頁'},
+      {svg:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"></svg>',notes:'b',title:'第二頁'}],imgs:[]};
+    const html=playerHtml(deck,{title:'T'});
+    /* 講者視窗的 HTML 是包在播放器的字串裡，引號會被跳脫，所以用不會被跳脫的片段檢查 */
+    return {nxt:html.includes('nxtHd')&&html.includes('下一頁'),hd:html.includes('nxtHd'),
+      fill:html.includes("$('nxt').innerHTML"),title:html.includes('M.title(i+1)'),cap:html.includes('max-height:34vh')};
+  })()`);
+  eq(got.nxt, true, '講者視窗沒有下一頁預覽');
+  eq(got.hd, true, '沒有下一頁的標題列');
+  eq(got.fill, true, '沒有把下一頁畫進預覽');
+  eq(got.title, true, '下一頁沒有帶頁名');
+  eq(got.cap, true, '預覽沒有設高度上限（會把逐字稿擠掉）');
+});

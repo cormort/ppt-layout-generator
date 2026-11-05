@@ -80,9 +80,7 @@ $('suiteSave').onclick=()=>{
   suitesChanged();pageChanged(`已存成自訂套裝「${su.name}」`);
 };
 /* 自訂套裝匯出／匯入：讓它跟著專案或同事走，而不是只活在這台電腦 */
-const okSuite=s=>s&&typeof s.id==='string'&&typeof s.name==='string'&&s.roles&&typeof s.roles==='object'
-  &&HEXRE.test(s.color)&&HEXRE.test(s.accent)
-  &&Number.isInteger(s.tf)&&s.tf>=0&&s.tf<FONTS.length&&Number.isInteger(s.bf)&&s.bf>=0&&s.bf<FONTS.length;
+const okSuite=suiteOK;
 $('suiteOut').onclick=()=>{
   const list=customSuites();
   if(!list.length){toast('目前沒有自訂套裝（先按「把目前樣式存成套裝」）');return}
@@ -94,12 +92,9 @@ $('suiteFile').onchange=async e=>{
   const f=e.target.files[0];e.target.value='';if(!f)return;
   try{
     const d=JSON.parse(await f.text());
-    const add=(Array.isArray(d)?d:(d.suites||[])).filter(okSuite);
-    if(!add.length){toast('檔案裡沒有可用的套裝');return}
-    const list=customSuites(),have=new Set(list.map(s=>s.id));
-    for(const s of add)if(!have.has(s.id)){list.push({...s,hint:String(s.hint||'匯入・'+s.name).slice(0,40)});have.add(s.id)}
-    writeCustom(list);suitesChanged();
-    toast(`已匯入 ${add.length} 套自訂套裝`);
+    const n=mergeSuites(Array.isArray(d)?d:(d.suites||[]));
+    if(!n){toast('檔案裡沒有新的可用套裝');return}
+    toast(`已匯入 ${n} 套自訂套裝`);
   }catch(err){toast('匯入失敗：'+err.message)}
 };
 $('suites').onclick=e=>{

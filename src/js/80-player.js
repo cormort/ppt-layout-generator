@@ -71,6 +71,7 @@ function PRESENTER(){
   function render(i){
     $('cur').innerHTML=M.svgOf(i);
     $('nxt').innerHTML=i+1<M.N?M.svgOf(i+1):'<div class="end">簡報結束</div>';
+    $('nxtHd').textContent=i+1<M.N?`下一頁　${(M.title(i+1)||'').slice(0,24)}`:'下一頁';
     const n=M.notes(i);$('notes').textContent=n||'（這一頁沒有逐字稿）';$('notes').classList.toggle('none',!n);$('notes').scrollTop=0;
     $('cnt').textContent=(i+1)+' / '+M.N;$('ttl').textContent=M.title(i)||M.deck;
     if(i>0&&!running&&!acc)start();
@@ -106,7 +107,7 @@ header{grid-column:1/3;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 button{background:#33363c;color:#eee;border:1px solid #4a4e55;border-radius:8px;padding:6px 12px;font:inherit;cursor:pointer}button:hover{background:#41454c}
 #left{display:flex;flex-direction:column;gap:10px;min-height:0}#cur{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:#000;border-radius:8px;overflow:hidden}
 #cur svg,#nxt svg{width:100%;height:100%;display:block}#nav{display:flex;gap:8px;justify-content:center}
-#right{display:flex;flex-direction:column;gap:8px;min-height:0}#nxt{aspect-ratio:${W}/${H};width:min(100%,calc(42vh * ${f1(W/H)}));align-self:center;flex:none;background:#000;border-radius:8px;overflow:hidden;opacity:.9}
+#right{display:flex;flex-direction:column;gap:8px;min-height:0}#nxt{aspect-ratio:${W}/${H};width:min(100%,calc(30vh * ${f1(W/H)}));max-height:34vh;align-self:center;flex:none;background:#000;border-radius:8px;overflow:hidden;opacity:.9}
 .end{height:100%;display:grid;place-items:center;color:#888}
 #nh{display:flex;align-items:center;gap:6px}#nh span{margin-right:auto}
 #notes{flex:1;min-height:0;overflow:auto;background:#24262b;border-radius:8px;padding:14px 16px;font-size:22px;line-height:1.7;white-space:pre-wrap}#notes.none{color:#888}
@@ -114,7 +115,7 @@ button{background:#33363c;color:#eee;border:1px solid #4a4e55;border-radius:8px;
 </style></head><body><header><span id="ttl"></span><span id="blk">黑幕中</span><span><span class="lab">頁</span><span id="cnt" class="big"></span></span>
 <span><span class="lab">經過</span><span id="elapsed" class="big">00:00</span></span><button id="tPlay">開始</button><button id="tReset">歸零</button><span><span class="lab">時間</span><span id="clock" class="big"></span></span></header>
 <div id="left"><div id="cur"></div><div id="nav"><button id="prev">◀ 上一頁</button><button id="next">下一頁 ▶</button></div></div>
-<div id="right"><div class="lab">下一頁</div><div id="nxt"></div><div id="nh"><span class="lab">逐字稿</span><button id="fm" title="字小一點">A−</button><button id="fp" title="字大一點">A＋</button></div><div id="notes"></div></div>
+<div id="right"><div class="lab" id="nxtHd">下一頁</div><div id="nxt"></div><div id="nh"><span class="lab">逐字稿</span><button id="fm" title="字小一點">A−</button><button id="fp" title="字大一點">A＋</button></div><div id="notes"></div></div>
 <script>(${PRESENTER})()<\/script></body></html>`;
   return `<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="generator" content="圖片排版產生器">
 <title>${esc(title)}</title><style>
