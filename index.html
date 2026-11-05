@@ -114,6 +114,11 @@ input[type=color]{width:44px;height:36px;border:1px solid var(--line);border-rad
 .pg .ctl{display:none;gap:2px;padding:3px}
 .pg.on .ctl{display:flex}
 .pg .ctl button{border:0;background:var(--chip);color:var(--ink);border-radius:5px;font-size:12px;min-height:28px;cursor:pointer;flex:1}
+.pgbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px;padding:7px 8px;border:1px solid var(--acc);border-radius:8px;background:var(--panel);font-size:12px}
+.pgbar b{flex:1 1 100%;font-size:12px;color:var(--acc)}
+.pgbar button{flex:1 1 auto;min-height:30px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);font:inherit;font-size:12px;cursor:pointer}
+.pgbar button:hover{border-color:var(--acc)}
+.pg.psel{outline:2px solid var(--acc);outline-offset:1px}
 .pgadd{margin-left:20px;min-height:40px;border:1px dashed var(--line);border-radius:8px;background:none;color:var(--muted);font:inherit;cursor:pointer}
 .pgadd:hover{border-color:var(--acc);color:var(--acc)}
 
@@ -208,6 +213,9 @@ details.more summary{cursor:pointer;font-size:13px;padding:6px 0}
 .suites .nm{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:0 2px}
 .suites .nm i{width:10px;height:10px;border-radius:2px;flex:none}
 .suites .hint{font-size:11px;line-height:1.4;color:var(--muted);padding:0 2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lib .it.unused img{opacity:.55;filter:saturate(.6)}
+.lib .it .un{position:absolute;right:3px;top:3px;font-size:10px;line-height:1;padding:2px 4px;border-radius:4px;background:var(--chip);color:var(--muted)}
+.lib .it{position:relative}
 .scope{display:inline-block;font-size:11px;font-weight:400;background:var(--soft);color:var(--acc);border-radius:5px;padding:0 6px;margin-left:6px}
 
 dialog.dlg{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;padding:0;width:min(640px,94vw);max-height:86vh;background:var(--panel);color:var(--ink);box-shadow:0 20px 50px var(--shadow)}
@@ -569,6 +577,7 @@ dialog.chkdlg .chkl{flex:1 1 auto;min-height:0}
       <div class="rg"><div class="gi">
         <button class="rb lg" data-do="htmlOut"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 8h18"/><path class="a" d="M9 12l-2 2 2 2M15 12l2 2-2 2"/></svg>HTML<br>播放檔</button>
         <button class="rb lg" data-do="handout"><svg viewBox="0 0 24 24"><path d="M7 8V3h10v5"/><rect x="3" y="8" width="18" height="8" rx="1.5"/><path class="a" d="M7 14h10v7H7z"/></svg>講義</button>
+        <button class="rb lg" id="presOut"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="13" height="10" rx="1.5"/><rect class="a" x="17" y="8" width="5" height="12" rx="1.5"/><path d="M5 9h7M5 12h5"/></svg>簡報者<br>檢視</button>
       </div><span class="gl">分享</span></div>
       <div class="rg"><div class="gi">
         <button class="rb lg" data-view="notes"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 14h18"/><path class="a" d="M7 17.5h8"/></svg>備忘稿</button>
@@ -591,6 +600,8 @@ dialog.chkdlg .chkl{flex:1 1 auto;min-height:0}
       <div class="rg"><div class="gi">
         <div class="rcol">
           <button class="rb" data-do="mdExport"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path class="a" d="M6 15V9l3 3 3-3v6"/></svg>大綱 .md</button>
+          <button class="rb" id="notesMd"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/><path class="a" d="M15 18l2 2 3-4"/></svg>逐字稿 .md</button>
+          <button class="rb" id="notesTxt"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/><path class="a" d="M14 17h5"/></svg>逐字稿 .txt</button>
           <button class="rb" data-do="zipAll"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path class="a" d="M12 4v2M12 8v2M12 12v2"/></svg>版型 ZIP</button>
           <button class="rb" data-do="numBatch"><svg viewBox="0 0 24 24"><path class="a" d="M5 8l2-1v10M11 9a2 2 0 114 0c0 2-4 4-4 8h4"/><path d="M18 7v10"/></svg>章節連續編號</button>
         </div>
@@ -670,6 +681,7 @@ dialog.chkdlg .chkl{flex:1 1 auto;min-height:0}
       <input type="file" id="file" accept="image/*" multiple hidden>
       <div class="lib" id="lib"></div>
       <div class="row" style="margin-top:6px"><span class="empty" id="libInfo"></span><button class="btn mini fix" id="delUnsel">移除沒用到的</button><button class="btn mini fix" id="delAll">清空</button></div>
+      <label class="chk" style="margin-top:6px"><input type="checkbox" id="libUnused"> <b>只看未使用</b></label>
       <div class="sec"><span>這一頁的照片順序（可拖曳；✂ 裁切）</span></div>
       <div class="order" id="order"></div>
       <div class="crop" id="cropEd" hidden>
@@ -715,6 +727,8 @@ dialog.chkdlg .chkl{flex:1 1 auto;min-height:0}
       <label for="suites">套裝（整份簡報一次換：配色＋字型＋每頁版型）</label>
       <div class="suites" id="suites"></div>
       <div class="row" style="margin-top:6px"><button class="btn" id="suiteSave">＋ 把目前樣式存成套裝</button></div>
+      <div class="row" style="margin-top:6px"><button class="btn" id="suiteOut">匯出自訂套裝</button><button class="btn" id="suiteIn">匯入套裝</button></div>
+      <input type="file" id="suiteFile" accept="application/json,.json" hidden>
       <p class="hintline">套裝只換版型與樣式，標題、項目、照片都不動；可按復原。自訂套裝存在這台電腦，換瀏覽器不會跟著走。</p>
       <label for="biz">配色組（主色＋輔色）</label>
       <div class="biz" id="biz"></div>
@@ -2971,12 +2985,23 @@ function overflowNote(svg){
 /* ---------- UI ---------- */
 /* 只有滑鼠才用拖曳排序；觸控螢幕上拖曳屬性會吃掉捲動手勢，改用 ◀ ▶ 按鈕 */
 const FINE=matchMedia('(pointer:fine)');
+/* 圖庫整理：哪些照片整份簡報都沒用到、每張多大、可以改名 */
+let libOnlyUnused=false;
+const usedIds=()=>{const s=new Set();for(const p of S.pages)for(const id of p.sel)s.add(id);return s};
+const fmtSize=b=>b>=1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB';
 function drawLib(){
-  $('lib').innerHTML=lib.map(it=>{const n=sel.indexOf(it.id);return`<div class="it ${n>=0?'on':''}${it.cutout?' cut':''}" data-id="${it.id}" data-n="${n+1}" title="${esc(it.name)}" role="button" tabindex="0" aria-pressed="${n>=0}" aria-label="${esc(it.name)}"><img src="${it.thumb}" alt="" draggable="false"></div>`}).join('');
-  $('libInfo').textContent=lib.length?`共 ${lib.length} 張，這一頁用了 ${sel.length} 張`:'';
+  const used=usedIds(),unusedN=lib.filter(it=>!used.has(it.id)).length;
+  const shown=libOnlyUnused?lib.filter(it=>!used.has(it.id)):lib;
+  $('lib').innerHTML=shown.map(it=>{const n=sel.indexOf(it.id),un=!used.has(it.id);
+    const tip=`${it.name}${it.blob?'・'+fmtSize(it.blob.size):''}${un?'・未使用':''}（雙擊改名）`;
+    return`<div class="it ${n>=0?'on':''}${it.cutout?' cut':''}${un?' unused':''}" data-id="${it.id}" data-n="${n+1}" title="${esc(tip)}" role="button" tabindex="0" aria-pressed="${n>=0}" aria-label="${esc(it.name)}"><img src="${it.thumb}" alt="" draggable="false">${un?'<span class="un">未用</span>':''}</div>`}).join('')
+    ||`<span class="empty">${lib.length?'沒有未使用的照片':'還沒有照片，把圖片拖進來或按上面「選擇照片」'}</span>`;
+  const bytes=lib.reduce((a,it)=>a+(it.blob?it.blob.size:0),0);
+  $('libInfo').textContent=lib.length?`共 ${lib.length} 張（${fmtSize(bytes)}）${unusedN?`・${unusedN} 張未使用`:''}，這一頁用了 ${sel.length} 張`:'';
   $('order').innerHTML=sel.length?sel.map((id,i)=>{const it=lib.find(x=>x.id===id);return`<div class="o${it.crop?' cut':''}${id===cropId?' edit':''}" draggable="${FINE.matches}" data-i="${i}"><img src="${it.thumb}" alt="" draggable="false"><span class="b">${i+1}</span><div class="ctl"><button data-a="l" aria-label="往前移">◀</button><button data-a="c" aria-label="裁切" title="放大／裁切">✂</button><button data-a="x" aria-label="移除">✕</button><button data-a="r" aria-label="往後移">▶</button></div></div>`}).join(''):'<span class="empty">尚未選擇（預覽暫用示意圖）</span>';
   if(cropId&&!sel.includes(cropId))closeCrop();
-  $('delUnsel').disabled=!lib.length;$('delAll').disabled=!lib.length;
+  $('delUnsel').disabled=!unusedN;$('delAll').disabled=!lib.length;
+  const fl=$('libUnused');if(fl){fl.checked=libOnlyUnused;fl.parentElement.querySelector('b').textContent=unusedN?`只看未使用（${unusedN}）`:'只看未使用'}
 }
 function toggleSel(id){const i=sel.indexOf(id);i>=0?sel.splice(i,1):sel.push(id);drawLib();refresh()}
 $('lib').onclick=e=>{const d=e.target.closest('.it');if(!d)return;toggleSel(+d.dataset.id)};
@@ -3065,6 +3090,29 @@ $('suiteSave').onclick=()=>{
   const su=saveCurrentAsSuite(name);
   if(!su){toast('名稱空白，沒有存');return}
   suitesChanged();pageChanged(`已存成自訂套裝「${su.name}」`);
+};
+/* 自訂套裝匯出／匯入：讓它跟著專案或同事走，而不是只活在這台電腦 */
+const okSuite=s=>s&&typeof s.id==='string'&&typeof s.name==='string'&&s.roles&&typeof s.roles==='object'
+  &&HEXRE.test(s.color)&&HEXRE.test(s.accent)
+  &&Number.isInteger(s.tf)&&s.tf>=0&&s.tf<FONTS.length&&Number.isInteger(s.bf)&&s.bf>=0&&s.bf<FONTS.length;
+$('suiteOut').onclick=()=>{
+  const list=customSuites();
+  if(!list.length){toast('目前沒有自訂套裝（先按「把目前樣式存成套裝」）');return}
+  saveBlob(new Blob([JSON.stringify({v:1,suites:list},null,1)],{type:'application/json'}),`${deckName()}_套裝.json`);
+  toast(`已匯出 ${list.length} 套自訂套裝`);
+};
+$('suiteIn').onclick=()=>$('suiteFile').click();
+$('suiteFile').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{
+    const d=JSON.parse(await f.text());
+    const add=(Array.isArray(d)?d:(d.suites||[])).filter(okSuite);
+    if(!add.length){toast('檔案裡沒有可用的套裝');return}
+    const list=customSuites(),have=new Set(list.map(s=>s.id));
+    for(const s of add)if(!have.has(s.id)){list.push({...s,hint:String(s.hint||'匯入・'+s.name).slice(0,40)});have.add(s.id)}
+    writeCustom(list);suitesChanged();
+    toast(`已匯入 ${add.length} 套自訂套裝`);
+  }catch(err){toast('匯入失敗：'+err.message)}
 };
 $('suites').onclick=e=>{
   const del=e.target.closest('[data-del]');
@@ -3251,6 +3299,13 @@ function drawGallery(force){
 }
 function drawAll(){drawStage();drawGallery(true);drawPages();if(typeof ribState==='function')ribState()}
 function pickTpl(id){
+  /* 左側有選取多頁時：套到那些頁（批次換版型） */
+  if(typeof pageSel!=='undefined'&&pageSel.size>1){
+    storePage();const t=tplFor(id);
+    for(const i of pageSel)if(S.pages[i])S.pages[i].tpl=t;
+    S.tpl=t;save();drawStage();drawGallery();drawPages();histLater();
+    toast(`已把「${TPLBY[t]?.name||''}」套用到選取的 ${pageSel.size} 頁`);return;
+  }
   /* 章節頁換成另一個章節版型時，其他章節頁一起換（同一張照片） */
   const wasSec=TPLBY[S.tpl]?.cat==='sec';
   S.tpl=id;storePage();const n=wasSec?syncSections({tpl:true,photo:true}):0;
@@ -3300,20 +3355,54 @@ function pageSVG(p,i){
   const svg=withState({...ovOf(p),pageNo:i},()=>renderSVG(TPLBY[tplFor(p.tpl)],imgsOf(ids,'thumb'),'pg'+i+'_'));
   pgCache.set(i,{sig,svg});return svg;
 }
+/* 多選頁面：Ctrl/⌘ 點切換、Shift 點選一段；選了兩頁以上就能批次套版型或刪除 */
+let pageSel=new Set();
+const selPages=()=>[...pageSel].sort((a,b)=>a-b);
+function pgBar(){
+  if(!pageSel.size)return '';
+  return `<div class="pgbar" id="pgBar"><b>已選 ${pageSel.size} 頁</b>`+
+    `<button data-batch="tpl" title="把目前這一頁的版型套到選取的頁">套用這一頁的版型</button>`+
+    `<button data-batch="del">刪除</button><button data-batch="clear">取消</button></div>`;
+}
 function drawPages(){
   storePage();
   $('pgCount').textContent=S.pages.length;
   $('docTitle').textContent=deckName();$('docStat').textContent=`${S.pages.length} 頁・${S.ratio}・自動存在這台電腦`;$('expDeckHd').textContent=`整份簡報（${S.pages.length} 頁）`;
-  $('pages').innerHTML=S.pages.map((p,i)=>`<div class="pg${i===S.cur?' on':''}" data-i="${i}" draggable="${FINE.matches}" role="button" tabindex="0" aria-current="${i===S.cur}" aria-label="第 ${i+1} 頁：${esc(p.title||TPLBY[p.tpl]?.name)}">${pageSVG(p,i)}<span class="b">${i+1}</span>${p.notes.trim()?'<span class="nt" title="這一頁有逐字稿">稿</span>':''}`+
+  $('pages').innerHTML=pgBar()+S.pages.map((p,i)=>`<div class="pg${i===S.cur?' on':''}${pageSel.has(i)?' psel':''}" data-i="${i}" draggable="${FINE.matches}" role="button" tabindex="0" aria-current="${i===S.cur}" aria-label="第 ${i+1} 頁：${esc(p.title||TPLBY[p.tpl]?.name)}">${pageSVG(p,i)}<span class="b">${i+1}</span>${p.notes.trim()?'<span class="nt" title="這一頁有逐字稿">稿</span>':''}`+
     `<div class="ctl"><button data-a="l" aria-label="往前移" title="往前移">↑</button><button data-a="d" aria-label="複製這一頁" title="複製這一頁">⧉</button><button data-a="x" aria-label="刪除這一頁" title="刪除這一頁">✕</button><button data-a="r" aria-label="往後移" title="往後移">↓</button></div></div>`).join('')+
     '<button class="pgadd" id="pgAdd" title="在目前這一頁後面新增">＋<br>新增頁</button>';
   for(const k of[...pgCache.keys()])if(k>=S.pages.length)pgCache.delete(k);
   drawSuites();
 }
 $('pages').onclick=e=>{
+  const bar=e.target.closest('[data-batch]');
+  if(bar){
+    const what=bar.dataset.batch;
+    if(what==='clear'){pageSel.clear();drawPages();return}
+    if(what==='tpl'){
+      storePage();const id=tplFor(S.tpl),n=pageSel.size;
+      for(const i of pageSel)if(S.pages[i])S.pages[i].tpl=id;
+      S.tpl=id;save();drawStage();drawPages();histLater();
+      toast(`已把「${TPLBY[id]?.name||''}」套用到 ${n} 頁`);return;
+    }
+    if(what==='del'){
+      const list=selPages();
+      if(S.pages.length-list.length<1){toast('至少要留一頁');return}
+      if(!confirm(`刪除選取的 ${list.length} 頁？（可按復原）`))return;
+      for(const i of list.slice().reverse())S.pages.splice(i,1);
+      pageSel.clear();S.cur=Math.min(S.cur,S.pages.length-1);usePage(S.cur);
+      pageChanged(`已刪除 ${list.length} 頁`);return;
+    }
+  }
   if(e.target.closest('#pgAdd')){addPage(false);return}
   const d=e.target.closest('.pg');if(!d)return;const i=+d.dataset.i,b=e.target.closest('button');
-  if(!b){goPage(i);return}
+  /* 多選：Ctrl/⌘ 逐頁切換、Shift 選一段 */
+  if(!b&&(e.ctrlKey||e.metaKey||e.shiftKey)){
+    if(e.shiftKey){for(let k=Math.min(S.cur,i);k<=Math.max(S.cur,i);k++)pageSel.add(k)}
+    else if(pageSel.has(i))pageSel.delete(i);else pageSel.add(i);
+    storePage();drawPages();return;
+  }
+  if(!b){pageSel.clear();goPage(i);return}
   const a=b.dataset.a;
   if(a==='d'){goPage(i);addPage(true)}else if(a==='x')delPage(i);else movePage(i,a==='l'?i-1:i+1);
 };
@@ -3431,6 +3520,14 @@ function PLAYER(){
   }
   window.__P={N,svgOf,go,next,prev,black,key,cur:()=>cur,notes:i=>D.slides[i].notes||'',title:i=>D.slides[i].title||'',deck:D.title};
   document.addEventListener('keydown',key);
+  /* 匯出的「簡報者檢視」版：第一次點擊或按鍵就開第二視窗（彈出視窗需要使用者手勢才不會被擋） */
+  if(D.pres){
+    const arm=()=>{document.removeEventListener('click',arm);document.removeEventListener('keydown',arm);presenter()};
+    document.addEventListener('click',arm,{once:true});
+    document.addEventListener('keydown',arm,{once:true});
+    /* 用播放器自己的說明列提示（不另外加元素） */
+    help(true);setTimeout(()=>help(false),3200);
+  }
   /* 滑鼠移動才顯示控制列與游標 */
   const wake=()=>{$('bar').classList.add('show');document.body.classList.remove('idle');clearTimeout(hideT);hideT=setTimeout(()=>{$('bar').classList.remove('show');document.body.classList.add('idle')},2500)};
   document.addEventListener('mousemove',wake);
@@ -3485,7 +3582,7 @@ async function deckSlides(){
   return{slides,imgs};
 }
 const PLAYER_FONT="'Microsoft JhengHei','PingFang TC','Noto Sans TC',system-ui,sans-serif";
-function playerHtml(deck,{title='簡報',start=0}={}){
+function playerHtml(deck,{title='簡報',start=0,pres=false}={}){
   const presenterHtml=`<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><title>簡報者檢視・${esc(title)}</title><style>
 *{box-sizing:border-box}body{margin:0;height:100vh;background:#1b1c1f;color:#e9e9e9;font:15px/1.5 ${PLAYER_FONT};display:grid;grid-template-columns:1.55fr 1fr;grid-template-rows:auto 1fr;gap:14px;padding:14px}
 header{grid-column:1/3;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
@@ -3520,7 +3617,7 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:${PLA
 <div id="bar"><button data-a="prev" title="上一頁（←）">◀</button><span id="num"></span><button data-a="next" title="下一頁（→）">▶</button><button data-a="full" title="全螢幕（F）">全螢幕</button><button data-a="pres" title="簡報者檢視（P）">簡報者檢視</button><button data-a="black" title="黑幕（B）">黑幕</button><button data-a="help" title="快捷鍵（?）">?</button></div>
 <div id="hint">← → 翻頁　F 全螢幕　P 簡報者檢視（逐字稿＋計時）　B 黑幕　? 說明</div>
 <div id="help" hidden><div><b>→ ↓ 空白 PgDn</b>下一頁<br><b>← ↑ PgUp</b>上一頁<br><b>數字＋Enter</b>跳到第幾頁<br><b>Home／End</b>第一頁／最後一頁<br><b>F</b>全螢幕<br><b>P</b>簡報者檢視：逐字稿、下一頁、計時<br><b>B 或 .</b>黑幕<br><b>點畫面</b>左側上一頁、其他下一頁（手機可左右滑）</div></div>
-<script>window.__DECK=${jsSafe({title,start,slides:deck.slides,imgs:deck.imgs,presenterHtml})}<\/script>
+<script>window.__DECK=${jsSafe({title,start,pres,slides:deck.slides,imgs:deck.imgs,presenterHtml})}<\/script>
 <script>(${PLAYER})()<\/script></body></html>`;
 }
 async function play(start){
@@ -3531,14 +3628,20 @@ async function play(start){
   catch(e){console.error(e);w.close();toast('播放失敗：'+e.message)}
 }
 $('playBtn').onclick=()=>play(S.cur);
-$('htmlOut').onclick=async()=>{
-  const btn=$('htmlOut');btn.disabled=true;
-  try{toast('產生 HTML 簡報中…');const deck=await deckSlides(),html=playerHtml(deck,{title:deckName()});
-    saveBlob(new Blob([html],{type:'text/html;charset=utf-8'}),`${deckName()}_${deck.slides.length}頁.html`);
+async function exportHtml(btn,{pres=false}={}){
+  btn.disabled=true;
+  try{
+    toast(pres?'產生「簡報者檢視」簡報中…':'產生 HTML 簡報中…');
+    const deck=await deckSlides(),html=playerHtml(deck,{title:deckName(),pres});
+    const name=pres?`${deckName()}_簡報者檢視.html`:`${deckName()}_${deck.slides.length}頁.html`;
+    saveBlob(new Blob([html],{type:'text/html;charset=utf-8'}),name);
     const kb=new Blob([html]).size/1024,size=kb<1024?Math.max(1,Math.round(kb))+' KB':(kb/1024).toFixed(1)+' MB';
-    toast(`已匯出 HTML 簡報（${deck.slides.length} 頁，${size}）：用瀏覽器開啟即可播放`)}
-  catch(e){console.error(e);toast('匯出失敗：'+e.message)}finally{btn.disabled=false}
-};
+    toast(pres?`已匯出簡報者檢視（${deck.slides.length} 頁，${size}）：開啟後點一下畫面就會多開一個講者視窗`
+      :`已匯出 HTML 簡報（${deck.slides.length} 頁，${size}）：用瀏覽器開啟即可播放`);
+  }catch(e){console.error(e);toast('匯出失敗：'+e.message)}finally{btn.disabled=false}
+}
+$('htmlOut').onclick=()=>exportHtml($('htmlOut'));
+$('presOut').onclick=()=>exportHtml($('presOut'),{pres:true});
 
 /* ---------- Markdown 大綱：匯入成頁面、把頁面匯出成大綱 ---------- */
 const TPL_ALIAS={封面:'split',章節:'bignum',條列:'tList',方格:'tGrid',表格:'tTable',段落:'tText',內文:'tText',引言:'tQuote',金句:'tQuote',大標題:'ocean',
@@ -3633,6 +3736,33 @@ $('mdFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f
   try{$('mdIn').value=await f.text();toast(`已讀入 ${f.name}，按「取代全部頁面」或「加在後面」`)}catch(err){toast('讀取失敗：'+err.message)}};
 $('mdExport').onclick=()=>{storePage();saveBlob(new Blob([outlineOf(S.pages)],{type:'text/markdown;charset=utf-8'}),`${deckName()}_大綱.md`);toast(`已匯出 ${S.pages.length} 頁大綱`)};
 
+/* ---------- 逐字稿匯出：整份簡報的講稿（含頁碼、版型、字數與預估時間），可列印或丟給別人 ---------- */
+const notesChars=s=>String(s||'').replace(/\s/g,'').length;
+const notesSec=n=>Math.max(1,Math.round(n/250*60));
+const durText=s=>s>=60?`${Math.floor(s/60)} 分 ${String(s%60).padStart(2,'0')} 秒`:`${s} 秒`;
+function scriptOf(fmt){
+  storePage();
+  const total=S.pages.reduce((a,p)=>a+notesChars(p.notes),0);
+  const head=fmt==='txt'
+    ? `${deckName()}\n${S.pages.length} 頁 · 逐字稿 ${total} 字 · 預估 ${durText(notesSec(total))}\n${'='.repeat(46)}\n`
+    : `# ${deckName()}　逐字稿\n\n> ${S.pages.length} 頁 · 共 ${total} 字 · 預估 ${durText(notesSec(total))}\n`;
+  const body=S.pages.map((p,i)=>{
+    const t=String(p.notes||'').trim(),n=notesChars(t);
+    const name=TPLBY[tplFor(p.tpl)]?.name||'';
+    if(fmt==='txt'){
+      return `\n── 第 ${i+1} 頁｜${p.title||'（無標題）'}｜${name}｜${n} 字 · ${durText(notesSec(n))}\n\n${t||'（這一頁沒有逐字稿）'}\n`;
+    }
+    return `\n## 第 ${i+1} 頁　${p.title||'（無標題）'}\n\n*${name} · ${n} 字 · ${durText(notesSec(n))}*\n\n${(t||'（這一頁沒有逐字稿）').split('\n').join('\n\n')}\n`;
+  }).join('');
+  return head+body;
+}
+const saveScript=fmt=>{
+  saveBlob(new Blob([scriptOf(fmt)],{type:fmt==='txt'?'text/plain;charset=utf-8':'text/markdown;charset=utf-8'}),`${deckName()}_逐字稿.${fmt==='txt'?'txt':'md'}`);
+  const empty=S.pages.filter(p=>!String(p.notes||'').trim()).length;
+  toast(`已匯出逐字稿 ${S.pages.length} 頁`+(empty?`（其中 ${empty} 頁空白）`:''));
+};
+$('notesMd').onclick=()=>saveScript('md');
+$('notesTxt').onclick=()=>saveScript('txt');
 /* ---------- 匯入既有 PPTX：解壓 → 讀每張投影片的文字框／表格／照片／備忘稿 → 判讀成頁面欄位 ---------- */
 async function unzipBytes(u8){
   const dv=new DataView(u8.buffer,u8.byteOffset,u8.byteLength),dec=new TextDecoder();

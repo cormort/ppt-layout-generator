@@ -37,20 +37,54 @@ function pageSVG(p,i){
   const svg=withState({...ovOf(p),pageNo:i},()=>renderSVG(TPLBY[tplFor(p.tpl)],imgsOf(ids,'thumb'),'pg'+i+'_'));
   pgCache.set(i,{sig,svg});return svg;
 }
+/* 多選頁面：Ctrl/⌘ 點切換、Shift 點選一段；選了兩頁以上就能批次套版型或刪除 */
+let pageSel=new Set();
+const selPages=()=>[...pageSel].sort((a,b)=>a-b);
+function pgBar(){
+  if(!pageSel.size)return '';
+  return `<div class="pgbar" id="pgBar"><b>已選 ${pageSel.size} 頁</b>`+
+    `<button data-batch="tpl" title="把目前這一頁的版型套到選取的頁">套用這一頁的版型</button>`+
+    `<button data-batch="del">刪除</button><button data-batch="clear">取消</button></div>`;
+}
 function drawPages(){
   storePage();
   $('pgCount').textContent=S.pages.length;
   $('docTitle').textContent=deckName();$('docStat').textContent=`${S.pages.length} 頁・${S.ratio}・自動存在這台電腦`;$('expDeckHd').textContent=`整份簡報（${S.pages.length} 頁）`;
-  $('pages').innerHTML=S.pages.map((p,i)=>`<div class="pg${i===S.cur?' on':''}" data-i="${i}" draggable="${FINE.matches}" role="button" tabindex="0" aria-current="${i===S.cur}" aria-label="第 ${i+1} 頁：${esc(p.title||TPLBY[p.tpl]?.name)}">${pageSVG(p,i)}<span class="b">${i+1}</span>${p.notes.trim()?'<span class="nt" title="這一頁有逐字稿">稿</span>':''}`+
+  $('pages').innerHTML=pgBar()+S.pages.map((p,i)=>`<div class="pg${i===S.cur?' on':''}${pageSel.has(i)?' psel':''}" data-i="${i}" draggable="${FINE.matches}" role="button" tabindex="0" aria-current="${i===S.cur}" aria-label="第 ${i+1} 頁：${esc(p.title||TPLBY[p.tpl]?.name)}">${pageSVG(p,i)}<span class="b">${i+1}</span>${p.notes.trim()?'<span class="nt" title="這一頁有逐字稿">稿</span>':''}`+
     `<div class="ctl"><button data-a="l" aria-label="往前移" title="往前移">↑</button><button data-a="d" aria-label="複製這一頁" title="複製這一頁">⧉</button><button data-a="x" aria-label="刪除這一頁" title="刪除這一頁">✕</button><button data-a="r" aria-label="往後移" title="往後移">↓</button></div></div>`).join('')+
     '<button class="pgadd" id="pgAdd" title="在目前這一頁後面新增">＋<br>新增頁</button>';
   for(const k of[...pgCache.keys()])if(k>=S.pages.length)pgCache.delete(k);
   drawSuites();
 }
 $('pages').onclick=e=>{
+  const bar=e.target.closest('[data-batch]');
+  if(bar){
+    const what=bar.dataset.batch;
+    if(what==='clear'){pageSel.clear();drawPages();return}
+    if(what==='tpl'){
+      storePage();const id=tplFor(S.tpl),n=pageSel.size;
+      for(const i of pageSel)if(S.pages[i])S.pages[i].tpl=id;
+      S.tpl=id;save();drawStage();drawPages();histLater();
+      toast(`已把「${TPLBY[id]?.name||''}」套用到 ${n} 頁`);return;
+    }
+    if(what==='del'){
+      const list=selPages();
+      if(S.pages.length-list.length<1){toast('至少要留一頁');return}
+      if(!confirm(`刪除選取的 ${list.length} 頁？（可按復原）`))return;
+      for(const i of list.slice().reverse())S.pages.splice(i,1);
+      pageSel.clear();S.cur=Math.min(S.cur,S.pages.length-1);usePage(S.cur);
+      pageChanged(`已刪除 ${list.length} 頁`);return;
+    }
+  }
   if(e.target.closest('#pgAdd')){addPage(false);return}
   const d=e.target.closest('.pg');if(!d)return;const i=+d.dataset.i,b=e.target.closest('button');
-  if(!b){goPage(i);return}
+  /* 多選：Ctrl/⌘ 逐頁切換、Shift 選一段 */
+  if(!b&&(e.ctrlKey||e.metaKey||e.shiftKey)){
+    if(e.shiftKey){for(let k=Math.min(S.cur,i);k<=Math.max(S.cur,i);k++)pageSel.add(k)}
+    else if(pageSel.has(i))pageSel.delete(i);else pageSel.add(i);
+    storePage();drawPages();return;
+  }
+  if(!b){pageSel.clear();goPage(i);return}
   const a=b.dataset.a;
   if(a==='d'){goPage(i);addPage(true)}else if(a==='x')delPage(i);else movePage(i,a==='l'?i-1:i+1);
 };

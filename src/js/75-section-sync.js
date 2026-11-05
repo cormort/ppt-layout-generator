@@ -80,6 +80,13 @@ function drawGallery(force){
 }
 function drawAll(){drawStage();drawGallery(true);drawPages();if(typeof ribState==='function')ribState()}
 function pickTpl(id){
+  /* 左側有選取多頁時：套到那些頁（批次換版型） */
+  if(typeof pageSel!=='undefined'&&pageSel.size>1){
+    storePage();const t=tplFor(id);
+    for(const i of pageSel)if(S.pages[i])S.pages[i].tpl=t;
+    S.tpl=t;save();drawStage();drawGallery();drawPages();histLater();
+    toast(`已把「${TPLBY[t]?.name||''}」套用到選取的 ${pageSel.size} 頁`);return;
+  }
   /* 章節頁換成另一個章節版型時，其他章節頁一起換（同一張照片） */
   const wasSec=TPLBY[S.tpl]?.cat==='sec';
   S.tpl=id;storePage();const n=wasSec?syncSections({tpl:true,photo:true}):0;

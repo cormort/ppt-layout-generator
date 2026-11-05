@@ -35,6 +35,14 @@ function PLAYER(){
   }
   window.__P={N,svgOf,go,next,prev,black,key,cur:()=>cur,notes:i=>D.slides[i].notes||'',title:i=>D.slides[i].title||'',deck:D.title};
   document.addEventListener('keydown',key);
+  /* 匯出的「簡報者檢視」版：第一次點擊或按鍵就開第二視窗（彈出視窗需要使用者手勢才不會被擋） */
+  if(D.pres){
+    const arm=()=>{document.removeEventListener('click',arm);document.removeEventListener('keydown',arm);presenter()};
+    document.addEventListener('click',arm,{once:true});
+    document.addEventListener('keydown',arm,{once:true});
+    /* 用播放器自己的說明列提示（不另外加元素） */
+    help(true);setTimeout(()=>help(false),3200);
+  }
   /* 滑鼠移動才顯示控制列與游標 */
   const wake=()=>{$('bar').classList.add('show');document.body.classList.remove('idle');clearTimeout(hideT);hideT=setTimeout(()=>{$('bar').classList.remove('show');document.body.classList.add('idle')},2500)};
   document.addEventListener('mousemove',wake);
@@ -89,7 +97,7 @@ async function deckSlides(){
   return{slides,imgs};
 }
 const PLAYER_FONT="'Microsoft JhengHei','PingFang TC','Noto Sans TC',system-ui,sans-serif";
-function playerHtml(deck,{title='簡報',start=0}={}){
+function playerHtml(deck,{title='簡報',start=0,pres=false}={}){
   const presenterHtml=`<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><title>簡報者檢視・${esc(title)}</title><style>
 *{box-sizing:border-box}body{margin:0;height:100vh;background:#1b1c1f;color:#e9e9e9;font:15px/1.5 ${PLAYER_FONT};display:grid;grid-template-columns:1.55fr 1fr;grid-template-rows:auto 1fr;gap:14px;padding:14px}
 header{grid-column:1/3;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
@@ -124,7 +132,7 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:${PLA
 <div id="bar"><button data-a="prev" title="上一頁（←）">◀</button><span id="num"></span><button data-a="next" title="下一頁（→）">▶</button><button data-a="full" title="全螢幕（F）">全螢幕</button><button data-a="pres" title="簡報者檢視（P）">簡報者檢視</button><button data-a="black" title="黑幕（B）">黑幕</button><button data-a="help" title="快捷鍵（?）">?</button></div>
 <div id="hint">← → 翻頁　F 全螢幕　P 簡報者檢視（逐字稿＋計時）　B 黑幕　? 說明</div>
 <div id="help" hidden><div><b>→ ↓ 空白 PgDn</b>下一頁<br><b>← ↑ PgUp</b>上一頁<br><b>數字＋Enter</b>跳到第幾頁<br><b>Home／End</b>第一頁／最後一頁<br><b>F</b>全螢幕<br><b>P</b>簡報者檢視：逐字稿、下一頁、計時<br><b>B 或 .</b>黑幕<br><b>點畫面</b>左側上一頁、其他下一頁（手機可左右滑）</div></div>
-<script>window.__DECK=${jsSafe({title,start,slides:deck.slides,imgs:deck.imgs,presenterHtml})}<\/script>
+<script>window.__DECK=${jsSafe({title,start,pres,slides:deck.slides,imgs:deck.imgs,presenterHtml})}<\/script>
 <script>(${PLAYER})()<\/script></body></html>`;
 }
 async function play(start){
@@ -135,12 +143,18 @@ async function play(start){
   catch(e){console.error(e);w.close();toast('播放失敗：'+e.message)}
 }
 $('playBtn').onclick=()=>play(S.cur);
-$('htmlOut').onclick=async()=>{
-  const btn=$('htmlOut');btn.disabled=true;
-  try{toast('產生 HTML 簡報中…');const deck=await deckSlides(),html=playerHtml(deck,{title:deckName()});
-    saveBlob(new Blob([html],{type:'text/html;charset=utf-8'}),`${deckName()}_${deck.slides.length}頁.html`);
+async function exportHtml(btn,{pres=false}={}){
+  btn.disabled=true;
+  try{
+    toast(pres?'產生「簡報者檢視」簡報中…':'產生 HTML 簡報中…');
+    const deck=await deckSlides(),html=playerHtml(deck,{title:deckName(),pres});
+    const name=pres?`${deckName()}_簡報者檢視.html`:`${deckName()}_${deck.slides.length}頁.html`;
+    saveBlob(new Blob([html],{type:'text/html;charset=utf-8'}),name);
     const kb=new Blob([html]).size/1024,size=kb<1024?Math.max(1,Math.round(kb))+' KB':(kb/1024).toFixed(1)+' MB';
-    toast(`已匯出 HTML 簡報（${deck.slides.length} 頁，${size}）：用瀏覽器開啟即可播放`)}
-  catch(e){console.error(e);toast('匯出失敗：'+e.message)}finally{btn.disabled=false}
-};
+    toast(pres?`已匯出簡報者檢視（${deck.slides.length} 頁，${size}）：開啟後點一下畫面就會多開一個講者視窗`
+      :`已匯出 HTML 簡報（${deck.slides.length} 頁，${size}）：用瀏覽器開啟即可播放`);
+  }catch(e){console.error(e);toast('匯出失敗：'+e.message)}finally{btn.disabled=false}
+}
+$('htmlOut').onclick=()=>exportHtml($('htmlOut'));
+$('presOut').onclick=()=>exportHtml($('presOut'),{pres:true});
 
