@@ -2,7 +2,7 @@
    單頁看縮圖很難發現問題（十幾頁之後更是如此），所以做成一份可以點進去改的清單。
    逐字稿缺漏只算總數，不逐頁列 —— 三十頁沒逐字稿會變成一張三十列的清單，反而沒人看。 */
 function deckCheck(){
-  const issues=[],seen=new Map();
+  const issues=[],seen=new Map(),missPhoto=[];
   let noNotes=0,photoPages=0,placeholder=0;
   S.pages.forEach((p,i)=>{
     const tpl=TPLBY[tplFor(p.tpl)]||TPLBY[p.tpl];
@@ -22,7 +22,7 @@ function deckCheck(){
       hint:'縮短文字、拆成兩頁，或到「版型」換一個放得下的',fix:'tpl'});
     const needPhoto=usesPhoto(tpl);
     if(needPhoto)photoPages++;
-    if(needPhoto&&!p.sel.length){placeholder++;issues.push({i,kind:'photo',text:'這個版型需要照片，目前用示意圖',hint:'到「照片」分頁選照片'})}
+    if(needPhoto&&!p.sel.length){placeholder++;missPhoto.push(i)}
     const title=String(p.title||'').trim();
     if(!title)issues.push({i,kind:'title',text:'沒有標題',hint:'在「內容」分頁補上標題',fix:'title'});
     else if(seen.has(title))issues.push({i,kind:'dupe',text:'標題與第 '+(seen.get(title)+1)+' 頁重複：'+title,
@@ -30,6 +30,13 @@ function deckCheck(){
     else seen.set(title,i);
     if(!String(p.notes||'').trim())noNotes++;
   });
+  /* 缺照片常常是一口氣十幾頁（封面、章節頁都要照片），合成一列才不會把清單淹掉 */
+  if(missPhoto.length){
+    const list=missPhoto.slice(0,8).map(i=>i+1).join('、')+(missPhoto.length>8?'…':'');
+    issues.push({i:missPhoto[0],kind:'photo',pages:missPhoto,
+      text:`${missPhoto.length} 頁需要照片（第 ${list} 頁）`,
+      hint:'到「照片」分頁選照片；也可以只補封面與章節這幾頁'});
+  }
   issues.sort((a,b)=>a.i-b.i||a.kind.localeCompare(b.kind));
   return {issues,stats:{pages:S.pages.length,noNotes,photoPages,placeholder}};
 }

@@ -31,6 +31,20 @@ const SUITES=[
    roles:{cover:'cMarker',sec:'secStrip',toc:'glass',text:'tList',quote:'tQuote',table:'tTable',photo:'waveBand',wall:'posterWall',closing:'thanks'}},
 ];
 const SUITEBY=Object.fromEntries(SUITES.map(s=>[s.id,s]));
+/* 上一次套用套裝之後，有幾頁的內容對新版型來說太多（套裝只換版型，不知道你的內容有多長） */
+let LAST_SUITE_FIT=0;
+function countOverflow(only){
+  if(!only)return 0;
+  let bad=0;
+  for(const p of S.pages){
+    const tpl=TPLBY[tplFor(p.tpl)];if(!tpl)continue;
+    try{
+      const over=withState({...ovOf(p),pageNo:S.cur},()=>overflowNote(renderSVG(tpl,imgsOf(p.sel,'thumb'),'sf'+p.tpl+'_')));
+      if(over)bad++;
+    }catch(e){}
+  }
+  return bad;
+}
 /* 自訂套裝：把目前的配色＋字型＋「這一頁角色用哪個版型」存成一套，存在這台電腦 */
 const CUSTOM_KEY='lgSuites';
 function customSuites(){
@@ -109,6 +123,8 @@ function applySuite(id,{colors=true}={}){
   }
   /* 目前這一頁的版型也要同步，否則接下來 storePage() 會把舊版型寫回去 */
   if(S.pages[S.cur])S.tpl=S.pages[S.cur].tpl;
+  /* 換過版型的頁面順手檢查一次容量：套裝的版型比原本的窄時，內容會默默被截掉 */
+  LAST_SUITE_FIT=countOverflow(n);
   return n;
 }
 /* 樣式窗格的套裝按鈕：用第 1 頁的內容、套裝的配色字型畫出它的封面，先看再套；目前樣式符合的那套標成選取。

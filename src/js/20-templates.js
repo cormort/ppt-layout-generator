@@ -226,16 +226,16 @@ def({id:'ring',cat:'toc',name:'目錄・圓環',hint:'1 張',render(c){
 
 /* 大字編號目錄：1 2 3 4 當視覺主角，章名接在數字下面；16:9 排一列，直式排 2×N */
 def({id:'tocNum',cat:'toc',name:'目錄・大字編號',hint:'不用照片；項目每行一章，數字自動 1 2 3 4',ratios:ALLR,render(c){
-  const h=hdr(c,{tMax:64}),k=FS,P=PAD(),it=items(c).slice(0,4),n=Math.max(1,it.length),wide=W>H;
-  /* 直式：1–2 章排一欄（數字才夠大），3 章以上排 2 欄 */
-  const nc=wide?n:(n<=2?1:2),rows=Math.max(1,Math.ceil(n/nc));
-  const gapC=wide?44:32,rowH=(H-h.y-P)/rows,colW=(W-2*P-(nc-1)*gapC)/nc;
-  const num=Math.min(wide?292:200,Math.round(colW*.95));
+  const h=hdr(c,{tMax:64}),k=FS,P=PAD(),it=items(c).slice(0,8),n=Math.max(1,it.length),wide=W>H;
+  /* 寬版面：1–4 章排一列，5 章以上排成 2 列；直式：1–2 章一欄，其餘 2 欄 */
+  const nc=wide?Math.min(4,Math.max(1,Math.ceil(n/2))):(n<=2?1:2),rows=Math.max(1,Math.ceil(n/nc));
+  const gapC=wide?44:32,gapR=Math.round(H*.03),rowH=(H-h.y-P-(rows-1)*gapR)/rows,colW=(W-2*P-(nc-1)*gapC)/nc;
+  const num=Math.min(wide?(rows>1?190:292):200,Math.round(colW*.95));
   const cellH=num*k+44+40*k*1.25+2*24*k*1.5;
   let s=bg(c.col.paper||'#fff')+h.s;
   it.forEach((o,i)=>{
     const ci=i%nc,ri=Math.floor(i/nc),x=P+ci*(colW+gapC);
-    const y0=h.y+ri*rowH+Math.max(0,(rowH-cellH)/2);
+    const y0=h.y+ri*(rowH+gapR)+Math.max(0,(rowH-cellH)/2);
     const bl=wrap(o.b||'',colW,24,c.bf).slice(0,2),al=wrap(o.a||'',colW,40,c.tf,700).slice(0,1);
     s+=`<text x="${f1(x)}" y="${f1(y0+num*k*.82)}" font-size="${f1(num*k)}" font-family="${esc(c.tf)}" font-weight="800" fill="${c.col.acc}" opacity=".92" letter-spacing="-2">${pad2(i)}</text>`
       +`<rect x="${f1(x)}" y="${f1(y0+num*k+18)}" width="${f1(Math.min(colW,84))}" height="5" rx="2.5" fill="${c.col.main}"/>`

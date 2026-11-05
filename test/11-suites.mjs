@@ -93,3 +93,19 @@ test('中文名稱也認得（命令列打「年度報告」）', async ({ page 
   })()`);
   deepEq(got, { a: 'annual', b: 'annual', c: 'brand', d: true }, '套裝名稱比對');
 });
+
+test('套裝：套用後會知道有幾頁「內容對新版型太多」', async ({ page }) => {
+  const got = await page.run(`(()=>{
+    S.ratio='16:9';S.color='#333333';S.accent='#999999';
+    /* 9 個項目的目錄：tocNum 上限 8 個 → 套年度報告（目錄→tocNum）應該被算出「放不下」 */
+    S.pages=[
+      cleanPage({tpl:'mIndex',title:'大綱',body:'',items:'一|a\\n二|b\\n三|c\\n四|d\\n五|e\\n六|f\\n七|g\\n八|h\\n九|i'}),
+      cleanPage({tpl:'thanks',title:'謝謝',body:'',items:''}),
+    ];
+    S.cur=0;
+    const n=applySuite('annual');
+    return {n,fit:LAST_SUITE_FIT,tpl:S.pages[0].tpl};
+  })()`);
+  eq(got.tpl, 'tocNum', '目錄應該被換成 tocNum');
+  ok(got.fit >= 1, '9 個項目的目錄換成 tocNum 之後應該被算出「放不下」（實際 ' + got.fit + '）');
+});

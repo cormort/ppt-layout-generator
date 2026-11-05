@@ -25,7 +25,7 @@ function ribClick(e){
   else if(d.tab)openPane(d.tab);
   else if(d.focus){openPane('style');const el=$(d.focus);el.scrollIntoView({block:'center',behavior:'smooth'});el.focus({preventScroll:true})}
   else if(d.theme){$('theme').querySelector(`[data-v="${d.theme}"]`).click();ribState()}
-  else if(d.suite){$('suites').querySelector(`[data-suite="${d.suite}"]`).click();ribState()}
+  else if(d.suite){suitesChanged&&0;$('suites').querySelector(`[data-suite="${d.suite}"]`).click();ribState()}
 }
 let rib='home';try{rib=sessionStorage.getItem('lgRib')||'home'}catch(e){}
 function setRib(t){

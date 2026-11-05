@@ -27,12 +27,13 @@ test('簡報健檢：四種問題都抓得到', async ({ page }) => {
     return {kinds,stats:r.stats,sum:$('chkSum').textContent};
   })()`);
   ok(got.kinds.includes('1:overflow'), '沒抓到第 2 頁被截掉：' + got.kinds.join(', '));
-  ok(got.kinds.includes('2:photo'), '沒抓到第 3 頁缺照片');
+  ok(got.kinds.includes('0:photo'), '缺照片應該合成一列（從第 1 頁開始）：' + got.kinds.join(', '));
   ok(got.kinds.includes('3:title'), '沒抓到第 4 頁沒標題');
   ok(got.kinds.includes('4:dupe'), '沒抓到第 5 頁標題重複');
   eq(got.stats.pages, 5, '頁數');
   eq(got.stats.noNotes, 3, '沒有逐字稿的頁數（第 3、4、5 頁）');
   eq(got.stats.placeholder, 2, '用示意圖的照片頁數（第 1 頁 split 與第 3 頁 wall 都需要照片）');
+  eq(got.kinds.filter(k=>k.endsWith(':photo')).length, 1, '缺照片只該有一列');
 });
 
 test('簡報健檢：清單可以點，點了跳到那一頁', async ({ page }) => {
@@ -42,16 +43,16 @@ test('簡報健檢：清單可以點，點了跳到那一頁', async ({ page }) 
     const dlg=$('chkDlg');
     const rows=[...$('chkList').querySelectorAll('[data-go]')].map(b=>b.dataset.go);
     const open=dlg.open;
-    /* 點「第 3 頁」那一列 */
-    const b=[...$('chkList').querySelectorAll('[data-go]')].find(x=>x.dataset.go==='2');
+    /* 點「第 2 頁」（被截掉的表格）那一列 */
+    const b=[...$('chkList').querySelectorAll('[data-go]')].find(x=>x.dataset.go==='1');
     b.click();
     return {open,closed:!dlg.open,rows,cur:S.cur,title:S.title,sum:$('chkSum').textContent};
   })()`);
   eq(got.open, true, '對話框沒有打開');
-  ok(got.rows.length >= 4, '清單列太少：' + got.rows.length);
+  ok(got.rows.length >= 3, '清單列太少：' + got.rows.length);
   eq(got.closed, true, '點了之後對話框沒關');
-  eq(got.cur, 2, '沒有跳到第 3 頁（S.cur=' + got.cur + '）');
-  eq(got.title, '會場紀錄', '跳過去之後這一頁的內容不對：' + got.title);
+  eq(got.cur, 1, '沒有跳到第 2 頁（S.cur=' + got.cur + '）');
+  eq(got.title, '各縣市執行率', '跳過去之後這一頁的內容不對：' + got.title);
 });
 
 test('簡報健檢：乾淨的簡報要說「沒發現問題」，不要亂報', async ({ page }) => {

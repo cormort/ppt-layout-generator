@@ -129,3 +129,16 @@ test('混色與不透明度會寫進畫面，並在轉點陣後保留', async ({
   ok(Math.abs(got.mul[0] - 204) <= 2 && Math.abs(got.mul[1] - 177) <= 2 && got.mul[2] <= 2,
     '色彩增值結果不對：' + got.mul.join(','));
 });
+
+test('大綱：一行裡有「|」就當項目（圖表／表格資料不必加前導符號）', async ({ page }) => {
+  const got = await page.run(`(()=>{
+    window.confirm=()=>true;
+    const md='# 各季執行率\\n第一季|92.4\\n第二季|95.1\\n\\n---\\n\\n# 局處排名\\n局處|預算|執行\\n工務處|28.4|27.9';
+    importOutline(md,'replace');
+    return S.pages.map(p=>({tpl:p.tpl,items:p.items,body:p.body}));
+  })()`);
+  eq(got.length, 2, '頁數');
+  ok(got[0].items.includes('第一季|92.4'), '類別|數值 沒有變成項目：' + JSON.stringify(got[0].items));
+  eq(got[0].body.trim(), '', '資料列不該留在內文');
+  ok(got[1].items.split('\n').length === 2, '表格兩列都要是項目：' + JSON.stringify(got[1].items));
+});

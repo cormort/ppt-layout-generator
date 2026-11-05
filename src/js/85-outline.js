@@ -53,7 +53,11 @@ function parseOutline(src){
     if((m=line.match(/^\s*\|(.*)\|\s*$/))){content();if(!/^[\s|:-]+$/.test(m[1])){items.push(m[1].split('|').map(mdPlain).join('|'));table=true}continue}
     if((m=line.match(/^\s*(?:[-*+]|\d+[.)、])\s+(.*)/))){content();items.push(mdPlain(m[1]));continue}
     if(!line.trim()){if(body.length&&body[body.length-1]!=='')body.push('');continue}
-    content();body.push(mdPlain(line));
+    content();
+    /* 一行裡有「|」就當成項目（類別|數值、欄位|欄位…）：很多人會這樣寫表格與圖表資料，
+       當成內文的話圖表會沒有資料、健檢還會誤報「內文放不下」 */
+    if(/[|｜]/.test(line))items.push(mdPlain(line))
+    else body.push(mdPlain(line));
   }
   flush();
   return pages;

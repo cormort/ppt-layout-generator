@@ -1193,16 +1193,16 @@ def({id:'ring',cat:'toc',name:'目錄・圓環',hint:'1 張',render(c){
 
 /* 大字編號目錄：1 2 3 4 當視覺主角，章名接在數字下面；16:9 排一列，直式排 2×N */
 def({id:'tocNum',cat:'toc',name:'目錄・大字編號',hint:'不用照片；項目每行一章，數字自動 1 2 3 4',ratios:ALLR,render(c){
-  const h=hdr(c,{tMax:64}),k=FS,P=PAD(),it=items(c).slice(0,4),n=Math.max(1,it.length),wide=W>H;
-  /* 直式：1–2 章排一欄（數字才夠大），3 章以上排 2 欄 */
-  const nc=wide?n:(n<=2?1:2),rows=Math.max(1,Math.ceil(n/nc));
-  const gapC=wide?44:32,rowH=(H-h.y-P)/rows,colW=(W-2*P-(nc-1)*gapC)/nc;
-  const num=Math.min(wide?292:200,Math.round(colW*.95));
+  const h=hdr(c,{tMax:64}),k=FS,P=PAD(),it=items(c).slice(0,8),n=Math.max(1,it.length),wide=W>H;
+  /* 寬版面：1–4 章排一列，5 章以上排成 2 列；直式：1–2 章一欄，其餘 2 欄 */
+  const nc=wide?Math.min(4,Math.max(1,Math.ceil(n/2))):(n<=2?1:2),rows=Math.max(1,Math.ceil(n/nc));
+  const gapC=wide?44:32,gapR=Math.round(H*.03),rowH=(H-h.y-P-(rows-1)*gapR)/rows,colW=(W-2*P-(nc-1)*gapC)/nc;
+  const num=Math.min(wide?(rows>1?190:292):200,Math.round(colW*.95));
   const cellH=num*k+44+40*k*1.25+2*24*k*1.5;
   let s=bg(c.col.paper||'#fff')+h.s;
   it.forEach((o,i)=>{
     const ci=i%nc,ri=Math.floor(i/nc),x=P+ci*(colW+gapC);
-    const y0=h.y+ri*rowH+Math.max(0,(rowH-cellH)/2);
+    const y0=h.y+ri*(rowH+gapR)+Math.max(0,(rowH-cellH)/2);
     const bl=wrap(o.b||'',colW,24,c.bf).slice(0,2),al=wrap(o.a||'',colW,40,c.tf,700).slice(0,1);
     s+=`<text x="${f1(x)}" y="${f1(y0+num*k*.82)}" font-size="${f1(num*k)}" font-family="${esc(c.tf)}" font-weight="800" fill="${c.col.acc}" opacity=".92" letter-spacing="-2">${pad2(i)}</text>`
       +`<rect x="${f1(x)}" y="${f1(y0+num*k+18)}" width="${f1(Math.min(colW,84))}" height="5" rx="2.5" fill="${c.col.main}"/>`
@@ -1882,6 +1882,20 @@ const SUITES=[
    roles:{cover:'cMarker',sec:'secStrip',toc:'glass',text:'tList',quote:'tQuote',table:'tTable',photo:'waveBand',wall:'posterWall',closing:'thanks'}},
 ];
 const SUITEBY=Object.fromEntries(SUITES.map(s=>[s.id,s]));
+/* 上一次套用套裝之後，有幾頁的內容對新版型來說太多（套裝只換版型，不知道你的內容有多長） */
+let LAST_SUITE_FIT=0;
+function countOverflow(only){
+  if(!only)return 0;
+  let bad=0;
+  for(const p of S.pages){
+    const tpl=TPLBY[tplFor(p.tpl)];if(!tpl)continue;
+    try{
+      const over=withState({...ovOf(p),pageNo:S.cur},()=>overflowNote(renderSVG(tpl,imgsOf(p.sel,'thumb'),'sf'+p.tpl+'_')));
+      if(over)bad++;
+    }catch(e){}
+  }
+  return bad;
+}
 /* 自訂套裝：把目前的配色＋字型＋「這一頁角色用哪個版型」存成一套，存在這台電腦 */
 const CUSTOM_KEY='lgSuites';
 function customSuites(){
@@ -1960,6 +1974,8 @@ function applySuite(id,{colors=true}={}){
   }
   /* 目前這一頁的版型也要同步，否則接下來 storePage() 會把舊版型寫回去 */
   if(S.pages[S.cur])S.tpl=S.pages[S.cur].tpl;
+  /* 換過版型的頁面順手檢查一次容量：套裝的版型比原本的窄時，內容會默默被截掉 */
+  LAST_SUITE_FIT=countOverflow(n);
   return n;
 }
 /* 樣式窗格的套裝按鈕：用第 1 頁的內容、套裝的配色字型畫出它的封面，先看再套；目前樣式符合的那套標成選取。
@@ -3140,7 +3156,9 @@ $('suites').onclick=e=>{
   const su=suiteFrom(b.dataset.suite);if(!su)return;
   const n=applySuite(su.id);
   $('color').value=S.color;$('accent').value=S.accent;$('tf').value=S.tf;$('bf').value=S.bf;
-  pageChanged(n?`${su.name}套裝：換了 ${n} 頁`:`${su.name}套裝：每一頁都已經是這個版型`);};
+  pageChanged(n?`${su.name}套裝：換了 ${n} 頁`
+    +(LAST_SUITE_FIT?`，其中 ${LAST_SUITE_FIT} 頁內容對新版型太多（可開「檢視 → 簡報健檢」一鍵修）`:'')
+    :`${su.name}套裝：每一頁都已經是這個版型`);};
 $('biz').innerHTML=BIZ.map(([n,m,a],i)=>`<button data-i="${i}" title="套用 ${n}"><i style="background:${m}"></i><i style="background:${a}"></i>${n}</button>`).join('');
 $('biz').onclick=e=>{const b=e.target.closest('button');if(!b)return;const[,m,a]=BIZ[+b.dataset.i];S.color=m;S.accent=a;$('color').value=m;$('accent').value=a;save();refresh()};
 $('bg').value=S.bg;$('bg').oninput=()=>{S.bg=$('bg').value;S.bgOn=true;$('bgOn').checked=true;save();refresh()};
@@ -3485,7 +3503,7 @@ $('deckOut').onclick=async()=>{
    單頁看縮圖很難發現問題（十幾頁之後更是如此），所以做成一份可以點進去改的清單。
    逐字稿缺漏只算總數，不逐頁列 —— 三十頁沒逐字稿會變成一張三十列的清單，反而沒人看。 */
 function deckCheck(){
-  const issues=[],seen=new Map();
+  const issues=[],seen=new Map(),missPhoto=[];
   let noNotes=0,photoPages=0,placeholder=0;
   S.pages.forEach((p,i)=>{
     const tpl=TPLBY[tplFor(p.tpl)]||TPLBY[p.tpl];
@@ -3505,7 +3523,7 @@ function deckCheck(){
       hint:'縮短文字、拆成兩頁，或到「版型」換一個放得下的',fix:'tpl'});
     const needPhoto=usesPhoto(tpl);
     if(needPhoto)photoPages++;
-    if(needPhoto&&!p.sel.length){placeholder++;issues.push({i,kind:'photo',text:'這個版型需要照片，目前用示意圖',hint:'到「照片」分頁選照片'})}
+    if(needPhoto&&!p.sel.length){placeholder++;missPhoto.push(i)}
     const title=String(p.title||'').trim();
     if(!title)issues.push({i,kind:'title',text:'沒有標題',hint:'在「內容」分頁補上標題',fix:'title'});
     else if(seen.has(title))issues.push({i,kind:'dupe',text:'標題與第 '+(seen.get(title)+1)+' 頁重複：'+title,
@@ -3513,6 +3531,13 @@ function deckCheck(){
     else seen.set(title,i);
     if(!String(p.notes||'').trim())noNotes++;
   });
+  /* 缺照片常常是一口氣十幾頁（封面、章節頁都要照片），合成一列才不會把清單淹掉 */
+  if(missPhoto.length){
+    const list=missPhoto.slice(0,8).map(i=>i+1).join('、')+(missPhoto.length>8?'…':'');
+    issues.push({i:missPhoto[0],kind:'photo',pages:missPhoto,
+      text:`${missPhoto.length} 頁需要照片（第 ${list} 頁）`,
+      hint:'到「照片」分頁選照片；也可以只補封面與章節這幾頁'});
+  }
   issues.sort((a,b)=>a.i-b.i||a.kind.localeCompare(b.kind));
   return {issues,stats:{pages:S.pages.length,noNotes,photoPages,placeholder}};
 }
@@ -3830,7 +3855,11 @@ function parseOutline(src){
     if((m=line.match(/^\s*\|(.*)\|\s*$/))){content();if(!/^[\s|:-]+$/.test(m[1])){items.push(m[1].split('|').map(mdPlain).join('|'));table=true}continue}
     if((m=line.match(/^\s*(?:[-*+]|\d+[.)、])\s+(.*)/))){content();items.push(mdPlain(m[1]));continue}
     if(!line.trim()){if(body.length&&body[body.length-1]!=='')body.push('');continue}
-    content();body.push(mdPlain(line));
+    content();
+    /* 一行裡有「|」就當成項目（類別|數值、欄位|欄位…）：很多人會這樣寫表格與圖表資料，
+       當成內文的話圖表會沒有資料、健檢還會誤報「內文放不下」 */
+    if(/[|｜]/.test(line))items.push(mdPlain(line))
+    else body.push(mdPlain(line));
   }
   flush();
   return pages;
@@ -4632,7 +4661,7 @@ function ribClick(e){
   else if(d.tab)openPane(d.tab);
   else if(d.focus){openPane('style');const el=$(d.focus);el.scrollIntoView({block:'center',behavior:'smooth'});el.focus({preventScroll:true})}
   else if(d.theme){$('theme').querySelector(`[data-v="${d.theme}"]`).click();ribState()}
-  else if(d.suite){$('suites').querySelector(`[data-suite="${d.suite}"]`).click();ribState()}
+  else if(d.suite){suitesChanged&&0;$('suites').querySelector(`[data-suite="${d.suite}"]`).click();ribState()}
 }
 let rib='home';try{rib=sessionStorage.getItem('lgRib')||'home'}catch(e){}
 function setRib(t){
