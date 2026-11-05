@@ -141,3 +141,23 @@ test('匯出前會提醒還沒補照片（PPTX／HTML／講義共用）', async 
   eq(got.ok2, true, '使用者按確定時要繼續');
   deepEq(got.none, [], '純文字頁不該被算缺照片');
 });
+
+test('缺照片一鍵修：封面換成純文字封面（章節頁不亂動）', async ({ page }) => {
+  const got = await page.run(`(()=>{
+    S.ratio='16:9';
+    S.pages=[cleanPage({tpl:'split',title:'封面',body:'',items:'',notes:'a'}),
+      cleanPage({tpl:'tList',title:'文字頁',body:'',items:'甲|說',notes:'b'})];
+    S.cur=0;
+    const r=deckCheck(),ph=r.issues.find(o=>o.kind==='photo');
+    const fixed=ph&&ph.fix?fixIssue(ph):'';
+    const coverTpl=S.pages[0].tpl;
+    /* 章節頁沒有替代方案，不該提供「修」 */
+    S.pages=[cleanPage({tpl:'secStrip',title:'章節',number:'01',body:'',items:'',notes:'c'})];S.cur=0;
+    const r2=deckCheck(),ph2=r2.issues.find(o=>o.kind==='photo');
+    return {fixable:!!(ph&&ph.fix),fixed,tpl:coverTpl,secFixable:!!(ph2&&ph2.fix)};
+  })()`);
+  eq(got.fixable, true, '封面缺照片應該可以一鍵修');
+  ok(got.fixed.includes('純文字封面'), '修法說明不對：' + got.fixed);
+  eq(got.tpl, 'cBig', '封面沒有換成純文字封面');
+  eq(got.secFixable, false, '章節頁缺照片不該提供一鍵修');
+});

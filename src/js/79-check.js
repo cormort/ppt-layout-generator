@@ -36,7 +36,7 @@ function deckCheck(){
     issues.push({i:missPhoto[0],kind:'photo',pages:missPhoto,
       text:`${missPhoto.length} 頁需要照片（第 ${list} 頁）`,
       hint:'到「照片」分頁選照片；封面可以直接一鍵換成純文字封面',
-      fix:missPhoto.every(i=>{const t=TPLBY[tplFor(S.pages[i].tpl)];return t&&t.cat==='cover'})?'photo':''});
+      fix:missPhoto.every(i=>typeof roleOf==='function'&&roleOf(S.pages[i])==='cover')?'photo':''});
   }
   issues.sort((a,b)=>a.i-b.i||a.kind.localeCompare(b.kind));
   return {issues,stats:{pages:S.pages.length,noNotes,photoPages,placeholder}};
@@ -69,8 +69,7 @@ function fixIssue(o){
   }
   if(o.kind==='photo'){
     /* 只有封面有「不需要照片」的版本；章節頁那種沒有照片就是沒辦法 */
-    const base=TPLBY[tplFor(p.tpl)];
-    if(base&&base.cat==='cover'){
+    if(typeof roleOf==='function'&&roleOf(p)==='cover'){
       const id=tplFor('cBig');
       if(TPLBY[id]){p.tpl=id;if(S.cur===o.i)S.tpl=id;return `第 ${o.i+1} 頁換成純文字封面「${TPLBY[id].name}」`}
     }
