@@ -78,7 +78,7 @@ function drawGallery(force){
   $('gal').innerHTML=tplList().map(t=>{const svg=renderSVG(t,th,'g'+t.id+'_'),ov=!!overflowNote(svg);
     return`<div class="card ${t.id===tpl.id?'on':''}" data-id="${t.id}" role="button" tabindex="0" aria-label="${esc(t.name)}${ov?'（文字放不下）':''}">${svg}${ov?'<span class="ov">放不下</span>':''}<div class="meta"><div class="nm">${esc(t.name)}</div><div class="hint">${esc(t.hint)}</div></div></div>`}).join('');
 }
-function drawAll(){drawStage();drawGallery(true);drawPages()}
+function drawAll(){drawStage();drawGallery(true);drawPages();if(typeof ribState==='function')ribState()}
 function pickTpl(id){
   /* 章節頁換成另一個章節版型時，其他章節頁一起換（同一張照片） */
   const wasSec=TPLBY[S.tpl]?.cat==='sec';

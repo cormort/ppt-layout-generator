@@ -68,7 +68,8 @@ test('功能區：桌面才有、手機不會擠壞（手機維持原本的分�
 });
 
 test('功能區：視窗變窄時會提示「還有更多」，並能捲過去', async ({ page }) => {
-  await page.viewport(1200, 860, false);
+  /* 1100px 以下「常用」還會溢出；1200 以上收緊後就放得下了（下一條測試驗這件事） */
+  await page.viewport(920, 860, false);
   await page.run('new Promise(r=>setTimeout(r,150))');
   const got = await page.run(`(async()=>{
     const rb=document.getElementById('rbody'),more=document.getElementById('ribMore'),rib=document.getElementById('ribbon');
@@ -78,10 +79,10 @@ test('功能區：視窗變窄時會提示「還有更多」，並能捲過去',
     const afterScroll={left:Math.round(rb.scrollLeft),over:rib.classList.contains('over')};
     return {narrow,afterScroll};
   })()`);
-  ok(got.narrow.canScroll, '1200px 下功能區應該需要橫向捲動（若已能放下，這條測試要改成更窄的視窗）');
+  ok(got.narrow.canScroll, '920px 下功能區應該需要橫向捲動');
   eq(got.narrow.moreHidden, false, '有溢出時「»」按鈕要出現');
   eq(got.narrow.over, true, '有溢出時要顯示右側渐層');
-  ok(got.afterScroll.left > got.narrow.left + 100, '按「»」要真的捲過去：' + got.afterScroll.left);
+  ok(got.afterScroll.left > got.narrow.left + 80, '按「»」要真的捲過去：' + got.afterScroll.left);
 
   /* 夠寬時不該有提示 */
   await page.viewport(2200, 1200, false);
@@ -92,4 +93,71 @@ test('功能區：視窗變窄時會提示「還有更多」，並能捲過去',
   eq(wide.moreHidden, true, '夠寬時不該出現「»」按鈕');
   eq(wide.over, false, '夠寬時不該有渐層');
   await page.viewport(1720, 1200, false);
+});
+
+test('功能區：1200px 收緊後「常用」不需要橫向捲動', async ({ page }) => {
+  await page.viewport(1200, 860, false);
+  await page.run('new Promise(r=>setTimeout(r,200))');
+  const got = await page.run(`(()=>{
+    const rb=document.getElementById('rbody');
+    document.getElementById('rtabs').querySelector('[data-rt="home"]').click();
+    const home=rb.scrollWidth-rb.clientWidth;
+    document.getElementById('rtabs').querySelector('[data-rt="insert"]').click();
+    const insert=rb.scrollWidth-rb.clientWidth;
+    document.getElementById('rtabs').querySelector('[data-rt="home"]').click();
+    return {home,insert,font:getComputedStyle(rb.querySelector('.rb')).fontSize};
+  })()`);
+  ok(got.home <= 2, '「常用」在 1200px 還需要捲動 ' + got.home + 'px');
+  ok(got.insert <= 2, '「插入」在 1200px 還需要捲動 ' + got.insert + 'px');
+  eq(got.font, '12px', '窄桌面應該把功能區字級收到 12px（實際 ' + got.font + '）');
+  await page.viewport(1720, 1200, false);
+});
+
+test('功能區：Alt+數字與 ←/→ 可以切分頁', async ({ page }) => {
+  const got = await page.run(`(()=>{
+    const key=(k,o={})=>document.dispatchEvent(new KeyboardEvent('keydown',{key:k,bubbles:true,...o}));
+    const cur=()=>[...document.getElementById('rtabs').children].find(b=>b.classList.contains('on')).dataset.rt;
+    key('3',{altKey:true});const a=cur();
+    key('5',{altKey:true});const b=cur();
+    /* 分頁列有焦點時用方向鍵 */
+    const list=[...document.getElementById('rtabs').children];
+    list[4].focus();
+    list[4].dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));
+    const c=cur();
+    list[5].dispatchEvent(new KeyboardEvent('keydown',{key:'Home',bubbles:true}));
+    const d=cur();
+    const tabindex=list.map(b=>b.getAttribute('tabindex')).join('');
+    return {a,b,c,d,tabindex};
+  })()`);
+  eq(got.a, 'design', 'Alt+3 沒切到「設計」');
+  eq(got.b, 'export', 'Alt+5 沒切到「匯出」');
+  eq(got.c, 'view', '→ 沒往後一格（從「匯出」到「檢視」）');
+  eq(got.d, 'home', 'Home 沒回到第一個');
+  ok(/^(-1)+(0)(-1)*$/.test(got.tabindex) || got.tabindex.split('').filter(x => x === '0').length === 1, '分頁應該只有一個 tabindex=0（roving）：' + got.tabindex);
+});
+
+test('自訂套裝：存起來、列得出來、套得上去、刪得掉', async ({ page }) => {
+  const got = await page.run(`(()=>{
+    localStorage.removeItem('lgSuites');
+    S.ratio='16:9';
+    S.pages=[cleanPage({tpl:'cFrame',title:'封面',body:'',items:''}),
+      cleanPage({tpl:'bignum',title:'章',number:'01',body:'',items:''}),
+      cleanPage({tpl:'tList',title:'重點',body:'',items:'甲|說明'}),
+      cleanPage({tpl:'thanks',title:'謝謝',body:'',items:''})];
+    S.cur=0;S.color='#123456';S.accent='#fedcba';S.tf=3;S.bf=2;
+    const su=saveCurrentAsSuite('我的測試');
+    const listed=allSuites().map(s=>s.id).includes(su.id);
+    const found=suiteFrom('我的測試');
+    /* 改掉樣式再套回來 */
+    S.color='#000000';S.accent='#111111';
+    const n=applySuite(su.id);
+    const applied={color:S.color,accent:S.accent,tf:S.tf,bf:S.bf,tpls:S.pages.map(p=>p.tpl)};
+    const del=deleteSuite(su.id);
+    return {id:su.id,listed,found:found&&found.id,applied,n,left:allSuites().filter(s=>s.id===su.id).length,afterDel:del};
+  })()`);
+  ok(got.listed, '存完之後清單裡沒有它');
+  eq(got.found, got.id, '用中文名找不到自訂套裝');
+  deepEq([got.applied.color, got.applied.accent, got.applied.tf, got.applied.bf], ['#123456', '#fedcba', 3, 2], '自訂套裝的配色字型不對');
+  deepEq(got.applied.tpls, ['cFrame', 'bignum', 'tList', 'thanks'], '自訂套裝應該保留存檔當下的版型');
+  eq(got.left, 0, '刪不掉自訂套裝');
 });

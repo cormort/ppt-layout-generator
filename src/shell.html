@@ -216,6 +216,9 @@
         <button class="rb lg" data-view="notes"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 14h18"/><path class="a" d="M7 17.5h8"/></svg>備忘稿</button>
         <button class="rb lg" data-view="insp"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path class="a" d="M15 4v16M17 8h2M17 12h2"/></svg>格式<br>窗格</button>
       </div><span class="gl">顯示</span></div>
+      <div class="rg"><div class="gi">
+        <button class="rb lg" id="chkRun"><svg viewBox="0 0 24 24"><path class="a" d="M5 13l4 4L19 7"/><rect x="3" y="3" width="18" height="18" rx="3"/></svg>簡報<br>健檢</button>
+      </div><span class="gl">檢查</span></div>
       <div class="rg"><div class="gi" id="rTheme"></div><span class="gl">介面外觀</span></div>
     </div>
   </div>
@@ -320,7 +323,8 @@
       <div class="row"><input type="color" id="accent" aria-label="輔色"><span class="empty">數字、線條、色塊點綴</span></div>
       <label for="suites">套裝（整份簡報一次換：配色＋字型＋每頁版型）</label>
       <div class="suites" id="suites"></div>
-      <p class="hintline">套裝只換版型與樣式，標題、項目、照片都不動；可按復原。</p>
+      <div class="row" style="margin-top:6px"><button class="btn" id="suiteSave">＋ 把目前樣式存成套裝</button></div>
+      <p class="hintline">套裝只換版型與樣式，標題、項目、照片都不動；可按復原。自訂套裝存在這台電腦，換瀏覽器不會跟著走。</p>
       <label for="biz">配色組（主色＋輔色）</label>
       <div class="biz" id="biz"></div>
       <label class="chk"><input type="checkbox" id="bgOn"> 自訂底色（不勾選＝各版型預設的淡色底）</label>
@@ -350,6 +354,13 @@
   <button class="rb" data-view="insp"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M15 4v16"/></svg>格式窗格</button>
   <button class="rb" data-do="playBtn" title="從目前這一頁播放"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8M10 7.5l5 2.5-5 2.5z"/></svg>播放</button>
 </footer>
+
+<dialog class="dlg chkdlg" id="chkDlg" aria-labelledby="chkT">
+  <div class="dh"><b id="chkT">簡報健檢</b><button class="btn ico" id="chkClose" aria-label="關閉"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <p class="chks" id="chkSum"></p>
+  <ul class="chkl" id="chkList"></ul>
+  <p class="hintline">點任何一列直接跳到那一頁。健檢只讀不寫，不會動到內容。</p>
+</dialog>
 
 <dialog class="dlg" id="mdDlg" aria-labelledby="mdDlgT">
   <div class="dh"><b id="mdDlgT">大綱（Markdown）</b><button class="btn ico" id="mdClose" aria-label="關閉"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>

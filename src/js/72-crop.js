@@ -72,8 +72,20 @@ $('color').value=S.color;$('color').oninput=()=>{S.color=$('color').value;save()
 $('sw').innerHTML=SWATCH.map(c=>`<button style="background:${c}" data-c="${c}" title="${c}" aria-label="套用 ${c}"></button>`).join('');
 $('sw').onclick=e=>{const c=e.target.dataset.c;if(!c)return;S.color=c;$('color').value=c;save();refresh()};
 $('accent').value=S.accent;$('accent').oninput=()=>{S.accent=$('accent').value;save();refresh()};
-$('suites').onclick=e=>{const b=e.target.closest('button');if(!b)return;
-  const su=SUITEBY[b.dataset.suite];if(!su)return;
+$('suiteSave').onclick=()=>{
+  const name=prompt('把目前的配色、字型與版型存成套裝，取個名字（12 字以內）：','我的套裝');
+  if(name===null)return;
+  const su=saveCurrentAsSuite(name);
+  if(!su){toast('名稱空白，沒有存');return}
+  suitesChanged();pageChanged(`已存成自訂套裝「${su.name}」`);
+};
+$('suites').onclick=e=>{
+  const del=e.target.closest('[data-del]');
+  if(del){const id=del.dataset.del,su=suiteFrom(id);
+    if(su&&confirm(`刪除自訂套裝「${su.name}」？`)){deleteSuite(id);suitesChanged();toast('已刪除');}
+    return}
+  const b=e.target.closest('button');if(!b)return;
+  const su=suiteFrom(b.dataset.suite);if(!su)return;
   const n=applySuite(su.id);
   $('color').value=S.color;$('accent').value=S.accent;$('tf').value=S.tf;$('bf').value=S.bf;
   pageChanged(n?`${su.name}套裝：換了 ${n} 頁`:`${su.name}套裝：每一頁都已經是這個版型`);};
