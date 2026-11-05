@@ -72,3 +72,38 @@ test('兩個新封面都支援任何尺寸（ALLR），換尺寸不會被踢掉'
   })()`);
   deepEq(got, { cBand_tall: 'cBand', cBand_wide: 'cBand', cLockup_tall: 'cLockup', cLockup_wide: 'cLockup' }, '換尺寸後應保留原版型');
 });
+
+/* 沒有照片的章節頁：任何尺寸都能用、健檢不會把它算成「缺照片」 */
+test('章節頁・大數字色塊：不用照片、任何尺寸都畫得出來', async ({ page }) => {
+  const got = await page.run(`(()=>{
+    const out=[];
+    for(const ratio of Object.keys(RATIOS)){
+      S.ratio=ratio;
+      S.title='預算執行情形';S.subtitle='第一章';S.body='一句說明。';S.number='03';
+      const svg=renderSVG(TPLBY.secPlain,[],'sp'+ratio.replace(':','')+'_');
+      out.push({ratio,nan:/NaN|Infinity/.test(svg),hasNum:svg.includes('03'),hasTitle:svg.includes('預算執行情形')});
+    }
+    S.ratio='16:9';
+    S.pages=[cleanPage({tpl:'secPlain',title:'章節',number:'01',body:'',items:'',notes:''})];S.cur=0;
+    const chk=deckCheck();
+    return {out,photo:usesPhoto(TPLBY.secPlain),flagged:chk.issues.some(o=>o.kind==='photo')};
+  })()`);
+  for (const r of got.out) {
+    eq(r.nan, false, r.ratio + ' 出現 NaN');
+    ok(r.hasNum && r.hasTitle, r.ratio + ' 文字沒畫出來');
+  }
+  eq(got.photo, false, '這個版型不該被算成需要照片');
+  eq(got.flagged, false, '健檢不該把純文字章節頁算成缺照片');
+});
+
+/* 套裝遇到沒照片的章節頁，會改用這個版型而不是示意風景圖 */
+test('套裝：沒照片的章節頁改用「大數字色塊」', async ({ page }) => {
+  const got = await page.run(`(()=>{
+    S.ratio='16:9';S.color='#333';S.accent='#999';
+    S.pages=[cleanPage({tpl:'secStrip',title:'第一章',number:'01',body:'',items:''}),
+      cleanPage({tpl:'thanks',title:'謝謝',body:'',items:''})];
+    S.cur=0;applySuite('annual');
+    return {tpl:S.pages[0].tpl};
+  })()`);
+  eq(got.tpl, 'secPlain', '沒照片的章節頁應該換成不需要照片的版本');
+});

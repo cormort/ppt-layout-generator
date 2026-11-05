@@ -122,6 +122,8 @@ function applySuite(id,{colors=true}={}){
       const cnt=String(p.items||'').split('\n').filter(x=>x.trim()).length;
       if(cnt>8)want='mIndex';
     }
+    /* 章節頁若沒有照片，改用不需要照片的章節版型（不然會變成一張示意風景圖） */
+    if(role==='sec'&&want&&!p.sel.length)want='secPlain';
     if(!want||!TPLBY[want])continue;
     const next=tplFor(want);           /* 目前尺寸不支援時會換成相近的版型 */
     if(next!==p.tpl)n++;

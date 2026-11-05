@@ -158,6 +158,7 @@ test('自訂套裝：存起來、列得出來、套得上去、刪得掉', async
   ok(got.listed, '存完之後清單裡沒有它');
   eq(got.found, got.id, '用中文名找不到自訂套裝');
   deepEq([got.applied.color, got.applied.accent, got.applied.tf, got.applied.bf], ['#123456', '#fedcba', 3, 2], '自訂套裝的配色字型不對');
-  deepEq(got.applied.tpls, ['cFrame', 'bignum', 'tList', 'thanks'], '自訂套裝應該保留存檔當下的版型');
+  /* 章節頁（bignum）沒有照片，套用時會換成不需要照片的 secPlain */
+  deepEq(got.applied.tpls, ['cFrame', 'secPlain', 'tList', 'thanks'], '自訂套裝套用後的版型');
   eq(got.left, 0, '刪不掉自訂套裝');
 });

@@ -51,7 +51,8 @@ test('套用套裝：版型照角色換、樣式跟著換、內容一個字都�
   })()`);
   /* 引言、表格、照片牆、結尾頁本來就是 annual 套裝要的版型，所以只有 2 頁真的被換掉 */
   eq(got.n, 2, '應該換掉 2 頁（cFrame→split、bignum→secStrip），實際 ' + got.n + ' 頁');
-  deepEq(got.after.map(p => p.tpl), ['split', 'secStrip', 'tQuote', 'tTable', 'wall', 'thanks'], '每頁應該照角色換成 annual 套裝的版型');
+  /* 章節頁沒有照片 → 新版型會改用不需要照片的 secPlain */
+  deepEq(got.after.map(p => p.tpl), ['split', 'secPlain', 'tQuote', 'tTable', 'wall', 'thanks'], '每頁應該照角色換成 annual 套裝的版型');
   deepEq(got.after.map(p => p.title), got.before.map(p => p.title), '標題被動到了');
   eq(got.after[3].items, got.before[3].items, '表格的項目被動到了');
   eq(got.again, 0, '套用第二次不該再變（可重複套用）');
