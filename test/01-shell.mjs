@@ -55,7 +55,8 @@ test('手機寬度沒有小於 44px 的主要按鈕（.btn 不含 .mini）', asy
 test('每個分類都有版型，而且分類鍵都對得上', async ({ page }) => {
   const got = await page.run(`(()=>{
     const by={};for(const t of TPL)by[t.cat]=(by[t.cat]||0)+1;
-    const catKeys=CATS.filter(([k])=>k!=='fit'&&k!=='all').map(([k])=>k);
+    /* recent／fav 是「最近使用」「收藏」的虛擬分類，沒用過就是空的，不算版型分類 */
+    const catKeys=CATS.filter(([k])=>!['fit','all','recent','fav'].includes(k)).map(([k])=>k);
     return {by,catKeys,unknown:Object.keys(by).filter(k=>!catKeys.includes(k))};
   })()`);
   for (const k of got.catKeys) ok(got.by[k] > 0, `分類 ${k} 沒有任何版型`);

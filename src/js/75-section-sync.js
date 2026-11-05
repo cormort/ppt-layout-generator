@@ -75,11 +75,16 @@ function drawGallery(force){
   }
   galSig=sig;
   const th=chosen('thumb');
-  $('gal').innerHTML=tplList().map(t=>{const svg=renderSVG(t,th,'g'+t.id+'_'),ov=!!overflowNote(svg);
-    return`<div class="card ${t.id===tpl.id?'on':''}" data-id="${t.id}" role="button" tabindex="0" aria-label="${esc(t.name)}${ov?'（文字放不下）':''}">${svg}${ov?'<span class="ov">放不下</span>':''}<div class="meta"><div class="nm">${esc(t.name)}</div><div class="hint">${esc(t.hint)}</div></div></div>`}).join('');
+  const list=tplList();
+  $('gal').innerHTML=list.length?list.map(t=>{const svg=renderSVG(t,th,'g'+t.id+'_'),ov=!!overflowNote(svg),fav=isFav(t.id);
+    return`<div class="card ${t.id===tpl.id?'on':''}" data-id="${t.id}" role="button" tabindex="0" aria-label="${esc(t.name)}${ov?'（文字放不下）':''}">${svg}${ov?'<span class="ov">放不下</span>':''}`
+      +`<button class="fav${fav?' on':''}" data-fav="${t.id}" aria-pressed="${fav}" aria-label="${fav?'取消收藏':'收藏'}${esc(t.name)}" title="${fav?'取消收藏':'收藏'}">${fav?'★':'☆'}</button>`
+      +`<div class="meta"><div class="nm">${esc(t.name)}</div><div class="hint">${esc(t.hint)}</div></div></div>`}).join('')
+    :`<p class="empty gal-empty">${S.cat==='fav'?'還沒有收藏任何版型：把滑鼠移到卡片右上角的 ☆ 按一下就會加進來。':S.cat==='recent'?'還沒有用過任何版型。':'這個分類在目前尺寸沒有版型。'}</p>`;
 }
 function drawAll(){drawStage();drawGallery(true);drawPages();if(typeof ribState==='function')ribState()}
 function pickTpl(id){
+  rememberTpl(tplFor(id));
   /* 左側有選取多頁時：套到那些頁（批次換版型） */
   if(typeof pageSel!=='undefined'&&pageSel.size>1){
     storePage();const t=tplFor(id);
@@ -94,6 +99,15 @@ function pickTpl(id){
   if(n)toast(`已套用到全部章節頁（另外 ${n} 頁，同一張照片）；不要同步可關掉「章節頁同步」或按復原`);
   else if(MQ.matches)toast('已套用：'+(TPLBY[id]?.name||''));
 }
-$('gal').onclick=e=>{const c=e.target.closest('.card');if(!c)return;pickTpl(c.dataset.id)};
+$('gal').onclick=e=>{
+  const st=e.target.closest('.fav');
+  if(st){const on=toggleFav(st.dataset.fav);st.classList.toggle('on',on);st.textContent=on?'★':'☆';st.setAttribute('aria-pressed',String(on));
+    if(S.cat==='fav'&&!on){drawGallery(true);drawFilters()}else drawFilters();
+    return}
+  const c=e.target.closest('.card');if(!c)return;pickTpl(c.dataset.id)};
+$('gal').onkeydown=e=>{
+  const st=e.target.closest('.fav');
+  if(st&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.stopPropagation();st.click();return}
+};
 $('gal').onkeydown=e=>{if(e.key!=='Enter'&&e.key!==' ')return;const c=e.target.closest('.card');if(!c)return;e.preventDefault();pickTpl(c.dataset.id)};
 

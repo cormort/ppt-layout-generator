@@ -216,6 +216,11 @@ details.more summary{cursor:pointer;font-size:13px;padding:6px 0}
 .lib .it.unused img{opacity:.55;filter:saturate(.6)}
 .lib .it .un{position:absolute;right:3px;top:3px;font-size:10px;line-height:1;padding:2px 4px;border-radius:4px;background:var(--chip);color:var(--muted)}
 .lib .it{position:relative}
+.card{position:relative}
+.card .fav{position:absolute;right:6px;top:6px;z-index:2;width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.92);color:var(--muted);font:inherit;font-size:14px;line-height:1;cursor:pointer;display:grid;place-items:center}
+.card .fav:hover{border-color:var(--acc);color:var(--acc)}
+.card .fav.on{color:#f0a020;border-color:#f0a020}
+.gal-empty{grid-column:1/-1;padding:18px 4px;color:var(--muted);font-size:13px}
 .scope{display:inline-block;font-size:11px;font-weight:400;background:var(--soft);color:var(--acc);border-radius:5px;padding:0 6px;margin-left:6px}
 
 dialog.dlg{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;padding:0;width:min(640px,94vw);max-height:86vh;background:var(--panel);color:var(--ink);box-shadow:0 20px 50px var(--shadow)}
@@ -227,6 +232,11 @@ dialog.chkdlg .chkl{flex:1 1 auto;min-height:0}
 .chkdlg .chks{margin:0;padding:10px 16px 0;font-size:13px;color:var(--muted)}
 .chkl{list-style:none;margin:10px 0 0;padding:0 12px 4px;max-height:min(56vh,460px);overflow:auto}
 .chkl li{margin:0 0 6px}
+.chkl .row2{display:flex;gap:6px;align-items:stretch}
+.chkl .go{flex:1 1 auto}
+.chkl .fx{flex:none;align-self:stretch;min-width:44px;border:1px solid var(--acc);border-radius:8px;background:var(--panel);color:var(--acc);font:inherit;font-size:13px;cursor:pointer}
+.chkl .fx:hover{background:var(--acc);color:#fff}
+.dfoot{display:flex;justify-content:flex-end;gap:8px;padding:0 16px 14px}
 .chkl li.ok{padding:14px 6px;color:var(--muted);font-size:13px}
 .chkl button{display:grid;grid-template-columns:auto auto 1fr;gap:2px 10px;width:100%;text-align:left;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:8px 10px;font:inherit;font-size:13px;cursor:pointer}
 .chkl button:hover{border-color:var(--acc)}
@@ -764,7 +774,8 @@ dialog.chkdlg .chkl{flex:1 1 auto;min-height:0}
   <div class="dh"><b id="chkT">簡報健檢</b><button class="btn ico" id="chkClose" aria-label="關閉"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
   <p class="chks" id="chkSum"></p>
   <ul class="chkl" id="chkList"></ul>
-  <p class="hintline">點任何一列直接跳到那一頁。健檢只讀不寫，不會動到內容。</p>
+  <p class="hintline">點任何一列直接跳到那一頁；有「修」的項目可以自動處理（換一個放得下的版型、補標題、重複標題加「（續）」）。修完可按復原。</p>
+  <div class="dfoot"><button class="btn" id="chkFixAll" hidden>一鍵修</button></div>
 </dialog>
 
 <dialog class="dlg" id="mdDlg" aria-labelledby="mdDlgT">
@@ -807,7 +818,7 @@ const DEF={title:'預算編製作業說明',subtitle:'行政院主計總處 · �
   focal:'xMidYMid',theme:'auto',cat:'fit',fmt:'png',scale:2,fname:'',fs:100,notes:'',pages:[],cur:0,pptText:'edit',pptQ:'std',ratio:'16:9',secSync:true,bullet:''};
 const BIZ=[['藏青金','#1f3a5f','#c9a24a'],['商務藍','#1d5fa8','#38b2e8'],['深灰橘','#3b3f46','#f08a24'],['墨綠米','#2f5a46','#d8b98a'],['酒紅灰','#7a2635','#a8a8a8'],['科技紫','#3b2f8f','#22c3c3']];
 const FOCAL=['xMinYMin','xMidYMin','xMaxYMin','xMinYMid','xMidYMid','xMaxYMid','xMinYMax','xMidYMax','xMaxYMax'];
-const CATS=[['fit','建議'],['all','全部'],['cover','封面／標題'],['text','文字頁'],['chart','圖表'],['map','地圖'],['card','圖卡'],['cmp','對比'],['wall','照片牆'],['mag','雜誌風'],['shape','形狀拼貼'],['sec','章節頁'],['toc','目錄'],['grid','圖文分格'],['biz','商務'],['cn','中國風']];
+const CATS=[['fit','建議'],['recent','最近'],['fav','收藏'],['all','全部'],['cover','封面／標題'],['text','文字頁'],['chart','圖表'],['map','地圖'],['card','圖卡'],['cmp','對比'],['wall','照片牆'],['mag','雜誌風'],['shape','形狀拼貼'],['sec','章節頁'],['toc','目錄'],['grid','圖文分格'],['biz','商務'],['cn','中國風']];
 
 /* 台灣縣市輪廓：由 scripts/gen-tw-map.mjs 產生，不要手改。
    來源 https://huggingface.co/spaces/cormort/tw_statistic_map/resolve/main/twCounty2010.geo.json
@@ -3205,10 +3216,30 @@ function fitList(){
   return fitCache.list;
 }
 /* 「全部」把封面／標題排在最前面，其餘照原本順序 */
-const ofCat=v=>{if(v==='fit')return fitList();const l=TPL.filter(t=>tplOK(t)&&(v==='all'||t.cat===v));return v==='all'?[...l.filter(t=>t.cat==='cover'),...l.filter(t=>t.cat!=='cover')]:l};
+/* 最近使用與收藏：都存在這台電腦，讓 70 個版型裡常用的那幾個浮上來 */
+const RECENT_KEY='lgRecent',FAV_KEY='lgFav';
+const recentIds=()=>{try{const a=JSON.parse(localStorage.getItem(RECENT_KEY)||'[]');return Array.isArray(a)?a.filter(id=>TPLBY[id]):[]}catch(e){return[]}};
+const favIds=()=>{try{const a=JSON.parse(localStorage.getItem(FAV_KEY)||'[]');return Array.isArray(a)?a.filter(id=>TPLBY[id]):[]}catch(e){return[]}};
+const isFav=id=>favIds().includes(id);
+function rememberTpl(id){
+  const a=recentIds().filter(x=>x!==id);a.unshift(id);
+  try{localStorage.setItem(RECENT_KEY,JSON.stringify(a.slice(0,8)))}catch(e){}
+}
+function toggleFav(id){
+  const a=favIds(),i=a.indexOf(id);
+  i>=0?a.splice(i,1):a.unshift(id);
+  try{localStorage.setItem(FAV_KEY,JSON.stringify(a))}catch(e){}
+  return i<0;
+}
+const ofCat=v=>{
+  if(v==='fit')return fitList();
+  if(v==='recent')return recentIds().map(id=>TPLBY[id]).filter(t=>t&&tplOK(t));
+  if(v==='fav')return favIds().map(id=>TPLBY[id]).filter(t=>t&&tplOK(t));
+  const l=TPL.filter(t=>tplOK(t)&&(v==='all'||t.cat===v));
+  return v==='all'?[...l.filter(t=>t.cat==='cover'),...l.filter(t=>t.cat!=='cover')]:l};
 function tplList(){return ofCat(S.cat)}
 function drawFilters(){
-  if(S.cat!=='fit'&&!ofCat(S.cat).length)S.cat='fit';
+  if(S.cat!=='fit'&&S.cat!=='recent'&&S.cat!=='fav'&&!ofCat(S.cat).length)S.cat='fit';
   $('filters').innerHTML=CATS.map(([v,n])=>{const c=ofCat(v).length;if(!c&&v!==S.cat)return'';
     return`<button data-v="${v}" class="${S.cat===v?'on':''}" aria-pressed="${S.cat===v}">${n} ${c}</button>`}).join('');
 }
@@ -3300,11 +3331,16 @@ function drawGallery(force){
   }
   galSig=sig;
   const th=chosen('thumb');
-  $('gal').innerHTML=tplList().map(t=>{const svg=renderSVG(t,th,'g'+t.id+'_'),ov=!!overflowNote(svg);
-    return`<div class="card ${t.id===tpl.id?'on':''}" data-id="${t.id}" role="button" tabindex="0" aria-label="${esc(t.name)}${ov?'（文字放不下）':''}">${svg}${ov?'<span class="ov">放不下</span>':''}<div class="meta"><div class="nm">${esc(t.name)}</div><div class="hint">${esc(t.hint)}</div></div></div>`}).join('');
+  const list=tplList();
+  $('gal').innerHTML=list.length?list.map(t=>{const svg=renderSVG(t,th,'g'+t.id+'_'),ov=!!overflowNote(svg),fav=isFav(t.id);
+    return`<div class="card ${t.id===tpl.id?'on':''}" data-id="${t.id}" role="button" tabindex="0" aria-label="${esc(t.name)}${ov?'（文字放不下）':''}">${svg}${ov?'<span class="ov">放不下</span>':''}`
+      +`<button class="fav${fav?' on':''}" data-fav="${t.id}" aria-pressed="${fav}" aria-label="${fav?'取消收藏':'收藏'}${esc(t.name)}" title="${fav?'取消收藏':'收藏'}">${fav?'★':'☆'}</button>`
+      +`<div class="meta"><div class="nm">${esc(t.name)}</div><div class="hint">${esc(t.hint)}</div></div></div>`}).join('')
+    :`<p class="empty gal-empty">${S.cat==='fav'?'還沒有收藏任何版型：把滑鼠移到卡片右上角的 ☆ 按一下就會加進來。':S.cat==='recent'?'還沒有用過任何版型。':'這個分類在目前尺寸沒有版型。'}</p>`;
 }
 function drawAll(){drawStage();drawGallery(true);drawPages();if(typeof ribState==='function')ribState()}
 function pickTpl(id){
+  rememberTpl(tplFor(id));
   /* 左側有選取多頁時：套到那些頁（批次換版型） */
   if(typeof pageSel!=='undefined'&&pageSel.size>1){
     storePage();const t=tplFor(id);
@@ -3319,7 +3355,16 @@ function pickTpl(id){
   if(n)toast(`已套用到全部章節頁（另外 ${n} 頁，同一張照片）；不要同步可關掉「章節頁同步」或按復原`);
   else if(MQ.matches)toast('已套用：'+(TPLBY[id]?.name||''));
 }
-$('gal').onclick=e=>{const c=e.target.closest('.card');if(!c)return;pickTpl(c.dataset.id)};
+$('gal').onclick=e=>{
+  const st=e.target.closest('.fav');
+  if(st){const on=toggleFav(st.dataset.fav);st.classList.toggle('on',on);st.textContent=on?'★':'☆';st.setAttribute('aria-pressed',String(on));
+    if(S.cat==='fav'&&!on){drawGallery(true);drawFilters()}else drawFilters();
+    return}
+  const c=e.target.closest('.card');if(!c)return;pickTpl(c.dataset.id)};
+$('gal').onkeydown=e=>{
+  const st=e.target.closest('.fav');
+  if(st&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.stopPropagation();st.click();return}
+};
 $('gal').onkeydown=e=>{if(e.key!=='Enter'&&e.key!==' ')return;const c=e.target.closest('.card');if(!c)return;e.preventDefault();pickTpl(c.dataset.id)};
 
 /* ---------- 頁面清單：S 的單頁欄位與 sel 永遠是「目前這一頁」，切頁時才跟 S.pages 互換 ---------- */
@@ -3457,13 +3502,14 @@ function deckCheck(){
     }catch(e){note=''}
     if(note)issues.push({i,kind:'overflow',
       text:note.replace(/^⚠\s*/,'').replace(/。可以換範本，或把文字縮短。$/,''),
-      hint:'縮短文字、拆成兩頁，或到「版型」換一個放得下的'});
+      hint:'縮短文字、拆成兩頁，或到「版型」換一個放得下的',fix:'tpl'});
     const needPhoto=usesPhoto(tpl);
     if(needPhoto)photoPages++;
     if(needPhoto&&!p.sel.length){placeholder++;issues.push({i,kind:'photo',text:'這個版型需要照片，目前用示意圖',hint:'到「照片」分頁選照片'})}
     const title=String(p.title||'').trim();
-    if(!title)issues.push({i,kind:'title',text:'沒有標題',hint:'在「內容」分頁補上標題'});
-    else if(seen.has(title))issues.push({i,kind:'dupe',text:'標題與第 '+(seen.get(title)+1)+' 頁重複：'+title,hint:'同一份簡報出現兩頁同名，很容易被誤認為重複頁'});
+    if(!title)issues.push({i,kind:'title',text:'沒有標題',hint:'在「內容」分頁補上標題',fix:'title'});
+    else if(seen.has(title))issues.push({i,kind:'dupe',text:'標題與第 '+(seen.get(title)+1)+' 頁重複：'+title,
+      hint:'同一份簡報出現兩頁同名，很容易被誤認為重複頁，一鍵修會加上「（續）」',fix:'dupe'});
     else seen.set(title,i);
     if(!String(p.notes||'').trim())noNotes++;
   });
@@ -3471,17 +3517,68 @@ function deckCheck(){
   return {issues,stats:{pages:S.pages.length,noNotes,photoPages,placeholder}};
 }
 const CHK_NAME={overflow:'文字放不下',photo:'缺照片',title:'沒有標題',dupe:'標題重複'};
+/* 找一個這一頁放得下的版型：先同分類，再全部；最多試 40 個 */
+function fitTplFor(p){
+  const base=TPLBY[tplFor(p.tpl)];
+  const pool=[...TPL.filter(t=>tplOK(t)&&base&&t.cat===base.cat),...TPL.filter(t=>tplOK(t))].slice(0,40);
+  for(const t of pool){
+    if(t.id===p.tpl)continue;
+    try{
+      const ok=withState({...ovOf(p),pageNo:S.cur,tpl:t.id},()=>!overflowNote(renderSVG(t,imgsOf(p.sel,'thumb'),'fx_'+t.id+'_')));
+      if(ok)return t.id;
+    }catch(e){}
+  }
+  return '';
+}
+/* 回傳「做了什麼」給 toast；不能自動修的回空字串 */
+function fixIssue(o){
+  const p=S.pages[o.i];if(!p)return '';
+  if(o.kind==='dupe'){
+    const t=String(p.title||'').trim();
+    p.title=/（續）$/.test(t)?t+'二':t+'（續）';
+    return `第 ${o.i+1} 頁改名為「${p.title}」`;
+  }
+  if(o.kind==='title'){
+    const n=TPLBY[tplFor(p.tpl)]?.name||'未命名';
+    p.title=n;return `第 ${o.i+1} 頁補上標題「${n}」`;
+  }
+  if(o.kind==='overflow'){
+    const id=fitTplFor(p);if(!id)return '';
+    p.tpl=id;if(S.cur===o.i)S.tpl=id;
+    return `第 ${o.i+1} 頁換成「${TPLBY[id].name}」`;
+  }
+  return '';
+}
+let chkLast=[];
 function openCheck(){
-  const r=deckCheck(),st=r.stats;
+  const r=deckCheck(),st=r.stats;chkLast=r.issues;
   $('chkSum').textContent=`${st.pages} 頁`
     +(r.issues.length?` · 找到 ${r.issues.length} 個問題`:' · 沒發現問題')
     +(st.noNotes?` · ${st.noNotes} 頁沒有逐字稿`:'');
+  const fixable=r.issues.filter(o=>o.fix).length;
   $('chkList').innerHTML=r.issues.length
-    ?r.issues.map(o=>`<li><button data-go="${o.i}"><b>第 ${o.i+1} 頁</b><span class="k k-${o.kind}">${CHK_NAME[o.kind]||o.kind}</span><span class="t">${esc(o.text)}</span><span class="h">${esc(o.hint)}</span></button></li>`).join('')
+    ?r.issues.map((o,k)=>`<li><div class="row2"><button class="go" data-go="${o.i}"><b>第 ${o.i+1} 頁</b><span class="k k-${o.kind}">${CHK_NAME[o.kind]||o.kind}</span><span class="t">${esc(o.text)}</span><span class="h">${esc(o.hint)}</span></button>`
+      +(o.fix?`<button class="fx" data-fix="${k}" title="自動修這一項">修</button>`:'')+`</div></li>`).join('')
     :`<li class="ok">沒有發現問題：${st.pages} 頁${st.noNotes?`（其中 ${st.noNotes} 頁沒有逐字稿，要不要補由你決定）`:'。'}</li>`;
-  $('chkDlg').showModal();
+  $('chkFixAll').hidden=!fixable;
+  $('chkFixAll').textContent=fixable?`一鍵修（${fixable}）`:'';
+  if(!$('chkDlg').open)$('chkDlg').showModal();
 }
+/* 一項一項修：修完重畫清單，讓使用者看到還剩什麼 */
+function fixOne(o){
+  const what=fixIssue(o);
+  if(!what){toast('這一項無法自動修，請手動處理');return false}
+  pageChanged(what);openCheck();return true;
+}
+$('chkFixAll').onclick=()=>{
+  let n=0;const msgs=[];
+  for(const o of chkLast.slice())if(o.fix){const w=fixIssue(o);if(w){n++;msgs.push(w)}}
+  if(!n){toast('沒有可以自動修的項目');return}
+  pageChanged(`已自動修 ${n} 處`);openCheck();
+};
 $('chkList').onclick=e=>{
+  const fx=e.target.closest('[data-fix]');
+  if(fx){fixOne(chkLast[+fx.dataset.fix]);return}
   const b=e.target.closest('[data-go]');if(!b)return;
   const i=+b.dataset.go;
   $('chkDlg').close();
@@ -3635,16 +3732,44 @@ async function play(start){
   catch(e){console.error(e);w.close();toast('播放失敗：'+e.message)}
 }
 $('playBtn').onclick=()=>play(S.cur);
+/* 匯出的 HTML 把圖壓成 WebP：畫質看不出差別，檔案常常小一半以上（瀏覽器不支援就原樣留著） */
+async function shrinkImgs(list,{max=1600,q=.82}={}){
+  let before=0,after=0;const out=[];
+  for(const src of list){
+    before+=src.length;
+    let next=src;
+    try{
+      const bmp=await createImageBitmap(await (await fetch(src)).blob());
+      const sc=Math.min(1,max/Math.max(bmp.width,bmp.height));
+      const cv=document.createElement('canvas');
+      cv.width=Math.max(1,Math.round(bmp.width*sc));cv.height=Math.max(1,Math.round(bmp.height*sc));
+      cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);
+      if(bmp.close)bmp.close();
+      const webp=cv.toDataURL('image/webp',q);
+      if(webp.startsWith('data:image/webp'))next=webp;
+    }catch(e){}
+    out.push(next);after+=next.length;
+  }
+  return {imgs:out,before,after,saved:before-after};
+}
+/* 產生播放用 HTML（順便把圖壓小）：回傳 html 與壓縮前後的位元組數 */
+async function deckHtml(deck,opts={}){
+  const r=await shrinkImgs(deck.imgs||[]);
+  const html=playerHtml({...deck,imgs:r.imgs},opts);
+  return {html,before:r.before,after:r.after,bytes:new Blob([html]).size};
+}
 async function exportHtml(btn,{pres=false}={}){
   btn.disabled=true;
   try{
     toast(pres?'產生「簡報者檢視」簡報中…':'產生 HTML 簡報中…');
-    const deck=await deckSlides(),html=playerHtml(deck,{title:deckName(),pres});
+    const deck=await deckSlides(),{html,before,bytes}=await deckHtml(deck,{title:deckName(),pres});
     const name=pres?`${deckName()}_簡報者檢視.html`:`${deckName()}_${deck.slides.length}頁.html`;
     saveBlob(new Blob([html],{type:'text/html;charset=utf-8'}),name);
-    const kb=new Blob([html]).size/1024,size=kb<1024?Math.max(1,Math.round(kb))+' KB':(kb/1024).toFixed(1)+' MB';
-    toast(pres?`已匯出簡報者檢視（${deck.slides.length} 頁，${size}）：開啟後點一下畫面就會多開一個講者視窗`
-      :`已匯出 HTML 簡報（${deck.slides.length} 頁，${size}）：用瀏覽器開啟即可播放`);
+    const mb=b=>b>=1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB';
+    const saved=before>0?Math.round((1-(before-bytes)/before)*100):0;
+    const note=saved>=10?`，圖片壓成 WebP 後小約 ${100-saved}%`:'';
+    toast(pres?`已匯出簡報者檢視（${deck.slides.length} 頁，${mb(bytes)}${note}）：開啟後點一下畫面就會多開一個講者視窗`
+      :`已匯出 HTML 簡報（${deck.slides.length} 頁，${mb(bytes)}${note}）：用瀏覽器開啟即可播放`);
   }catch(e){console.error(e);toast('匯出失敗：'+e.message)}finally{btn.disabled=false}
 }
 $('htmlOut').onclick=()=>exportHtml($('htmlOut'));

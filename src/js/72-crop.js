@@ -182,10 +182,30 @@ function fitList(){
   return fitCache.list;
 }
 /* 「全部」把封面／標題排在最前面，其餘照原本順序 */
-const ofCat=v=>{if(v==='fit')return fitList();const l=TPL.filter(t=>tplOK(t)&&(v==='all'||t.cat===v));return v==='all'?[...l.filter(t=>t.cat==='cover'),...l.filter(t=>t.cat!=='cover')]:l};
+/* 最近使用與收藏：都存在這台電腦，讓 70 個版型裡常用的那幾個浮上來 */
+const RECENT_KEY='lgRecent',FAV_KEY='lgFav';
+const recentIds=()=>{try{const a=JSON.parse(localStorage.getItem(RECENT_KEY)||'[]');return Array.isArray(a)?a.filter(id=>TPLBY[id]):[]}catch(e){return[]}};
+const favIds=()=>{try{const a=JSON.parse(localStorage.getItem(FAV_KEY)||'[]');return Array.isArray(a)?a.filter(id=>TPLBY[id]):[]}catch(e){return[]}};
+const isFav=id=>favIds().includes(id);
+function rememberTpl(id){
+  const a=recentIds().filter(x=>x!==id);a.unshift(id);
+  try{localStorage.setItem(RECENT_KEY,JSON.stringify(a.slice(0,8)))}catch(e){}
+}
+function toggleFav(id){
+  const a=favIds(),i=a.indexOf(id);
+  i>=0?a.splice(i,1):a.unshift(id);
+  try{localStorage.setItem(FAV_KEY,JSON.stringify(a))}catch(e){}
+  return i<0;
+}
+const ofCat=v=>{
+  if(v==='fit')return fitList();
+  if(v==='recent')return recentIds().map(id=>TPLBY[id]).filter(t=>t&&tplOK(t));
+  if(v==='fav')return favIds().map(id=>TPLBY[id]).filter(t=>t&&tplOK(t));
+  const l=TPL.filter(t=>tplOK(t)&&(v==='all'||t.cat===v));
+  return v==='all'?[...l.filter(t=>t.cat==='cover'),...l.filter(t=>t.cat!=='cover')]:l};
 function tplList(){return ofCat(S.cat)}
 function drawFilters(){
-  if(S.cat!=='fit'&&!ofCat(S.cat).length)S.cat='fit';
+  if(S.cat!=='fit'&&S.cat!=='recent'&&S.cat!=='fav'&&!ofCat(S.cat).length)S.cat='fit';
   $('filters').innerHTML=CATS.map(([v,n])=>{const c=ofCat(v).length;if(!c&&v!==S.cat)return'';
     return`<button data-v="${v}" class="${S.cat===v?'on':''}" aria-pressed="${S.cat===v}">${n} ${c}</button>`}).join('');
 }

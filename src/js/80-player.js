@@ -144,16 +144,44 @@ async function play(start){
   catch(e){console.error(e);w.close();toast('播放失敗：'+e.message)}
 }
 $('playBtn').onclick=()=>play(S.cur);
+/* 匯出的 HTML 把圖壓成 WebP：畫質看不出差別，檔案常常小一半以上（瀏覽器不支援就原樣留著） */
+async function shrinkImgs(list,{max=1600,q=.82}={}){
+  let before=0,after=0;const out=[];
+  for(const src of list){
+    before+=src.length;
+    let next=src;
+    try{
+      const bmp=await createImageBitmap(await (await fetch(src)).blob());
+      const sc=Math.min(1,max/Math.max(bmp.width,bmp.height));
+      const cv=document.createElement('canvas');
+      cv.width=Math.max(1,Math.round(bmp.width*sc));cv.height=Math.max(1,Math.round(bmp.height*sc));
+      cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);
+      if(bmp.close)bmp.close();
+      const webp=cv.toDataURL('image/webp',q);
+      if(webp.startsWith('data:image/webp'))next=webp;
+    }catch(e){}
+    out.push(next);after+=next.length;
+  }
+  return {imgs:out,before,after,saved:before-after};
+}
+/* 產生播放用 HTML（順便把圖壓小）：回傳 html 與壓縮前後的位元組數 */
+async function deckHtml(deck,opts={}){
+  const r=await shrinkImgs(deck.imgs||[]);
+  const html=playerHtml({...deck,imgs:r.imgs},opts);
+  return {html,before:r.before,after:r.after,bytes:new Blob([html]).size};
+}
 async function exportHtml(btn,{pres=false}={}){
   btn.disabled=true;
   try{
     toast(pres?'產生「簡報者檢視」簡報中…':'產生 HTML 簡報中…');
-    const deck=await deckSlides(),html=playerHtml(deck,{title:deckName(),pres});
+    const deck=await deckSlides(),{html,before,bytes}=await deckHtml(deck,{title:deckName(),pres});
     const name=pres?`${deckName()}_簡報者檢視.html`:`${deckName()}_${deck.slides.length}頁.html`;
     saveBlob(new Blob([html],{type:'text/html;charset=utf-8'}),name);
-    const kb=new Blob([html]).size/1024,size=kb<1024?Math.max(1,Math.round(kb))+' KB':(kb/1024).toFixed(1)+' MB';
-    toast(pres?`已匯出簡報者檢視（${deck.slides.length} 頁，${size}）：開啟後點一下畫面就會多開一個講者視窗`
-      :`已匯出 HTML 簡報（${deck.slides.length} 頁，${size}）：用瀏覽器開啟即可播放`);
+    const mb=b=>b>=1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB';
+    const saved=before>0?Math.round((1-(before-bytes)/before)*100):0;
+    const note=saved>=10?`，圖片壓成 WebP 後小約 ${100-saved}%`:'';
+    toast(pres?`已匯出簡報者檢視（${deck.slides.length} 頁，${mb(bytes)}${note}）：開啟後點一下畫面就會多開一個講者視窗`
+      :`已匯出 HTML 簡報（${deck.slides.length} 頁，${mb(bytes)}${note}）：用瀏覽器開啟即可播放`);
   }catch(e){console.error(e);toast('匯出失敗：'+e.message)}finally{btn.disabled=false}
 }
 $('htmlOut').onclick=()=>exportHtml($('htmlOut'));

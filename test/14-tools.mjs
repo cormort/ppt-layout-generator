@@ -158,3 +158,22 @@ test('講者檢視：有下一頁預覽，而且帶頁名', async ({ page }) => 
   eq(got.title, true, '下一頁沒有帶頁名');
   eq(got.cap, true, '預覽沒有設高度上限（會把逐字稿擠掉）');
 });
+
+test('HTML 播放檔：圖壓成 WebP，檔案明顯變小', async ({ page }) => {
+  const got = await page.run(`(async()=>{
+    /* 做一張 2000×1400 的雜訊圖，PNG 會很大、WebP 會小很多 */
+    const cv=document.createElement('canvas');cv.width=2000;cv.height=1400;
+    const x=cv.getContext('2d');const d=x.createImageData(2000,1400);
+    for(let i=0;i<d.data.length;i+=4){const v=(i*37)%255;d.data[i]=v;d.data[i+1]=(v*3)%255;d.data[i+2]=(v*7)%255;d.data[i+3]=255}
+    x.putImageData(d,0,0);
+    const png=cv.toDataURL('image/png');
+    const deck={title:'T',slides:[{svg:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"></svg>',notes:'',title:'一'}],imgs:[png,png]};
+    const plain=playerHtml(deck,{title:'T'});
+    const {html,before,after,bytes}=await deckHtml(deck,{title:'T'});
+    return {plainBytes:new Blob([plain]).size,bytes,webp:after<before,imgs:after,smaller:bytes<new Blob([plain]).size-1000,
+      hasWebp:html.includes('data:image/webp')};
+  })()`);
+  eq(got.webp, true, '壓縮後沒有變小（' + got.before + ' → ' + got.after + '）');
+  eq(got.hasWebp, true, '輸出的 HTML 裡沒有 WebP');
+  ok(got.smaller, '壓縮後的 HTML 應該比原本小（' + got.bytes + ' vs ' + got.plainBytes + '）');
+});

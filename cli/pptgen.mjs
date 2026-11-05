@@ -293,7 +293,7 @@ try {
     }
     if (flags.html) {
       const file = resolve(flags.html);
-      writeFileSync(file, await app.run(`(async()=>playerHtml(await deckSlides(),{title:deckName()}))()`));
+      writeFileSync(file, await app.run(`(async()=>(await deckHtml(await deckSlides(),{title:deckName()})).html)()`));
       result.files.html = file;
     }
     if (flags.project) {

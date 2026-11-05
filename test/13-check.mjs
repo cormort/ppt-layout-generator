@@ -69,3 +69,36 @@ test('簡報健檢：乾淨的簡報要說「沒發現問題」，不要亂報',
   deepEq(got.issues, [], '乾淨的內容不該被報問題：' + got.issues.join(', '));
   ok(got.ok, '沒有問題時的文案不對：' + got.sum);
 });
+
+test('簡報健檢：一鍵修（重複標題加「（續）」、沒有標題補版型名、放不下換版型）', async ({ page }) => {
+  await page.run(`(()=>{
+    S.ratio='16:9';S.footer=false;S.logo='';
+    S.pages=[
+      cleanPage({tpl:'tQuote',title:'同一句話',body:'',items:'',notes:'a'}),
+      cleanPage({tpl:'tQuote',title:'同一句話',body:'',items:'',notes:'b'}),
+      cleanPage({tpl:'tQuote',title:'',body:'',items:'',notes:'c'}),
+      cleanPage({tpl:'tTable',title:'各縣市',body:'',notes:'d',
+        items:[...Array(30)].map((_,k)=>'縣市'+(k+1)+'|'+(1000+k*10)).join('\\n')}),
+    ];
+    S.cur=0;return 1;
+  })()`);
+  const got = await page.run(`(()=>{
+    const before=S.pages.map(p=>p.tpl);
+    const r=deckCheck();
+    const fixable=r.issues.filter(o=>o.fix).length;
+    /* 一項一項修（模擬點「修」） */
+    for(const o of r.issues.slice())if(o.fix)fixIssue(o);
+    const after=deckCheck();
+    return {before,fixable,leftTable:after.issues.filter(o=>o.kind==='overflow').length,
+      titles:S.pages.map(p=>p.title),tpls:S.pages.map(p=>p.tpl),
+      dupeLeft:after.issues.filter(o=>o.kind==='dupe').length,
+      titleLeft:after.issues.filter(o=>o.kind==='title').length};
+  })()`);
+  ok(got.fixable >= 3, '應該至少有 3 項可以自動修（實際 ' + got.fixable + '）');
+  eq(got.dupeLeft, 0, '重複標題沒有修掉');
+  eq(got.titleLeft, 0, '沒有標題沒有補上');
+  eq(got.leftTable, 0, '文字放不下沒有換成放得下的版型');
+  ok(got.titles[1].includes('（續）'), '重複的那一頁沒有加上（續）：' + got.titles[1]);
+  ok(got.titles[2] && got.titles[2].length > 0, '空標題沒有補上');
+  ok(got.tpls[3] !== got.before[3], '表格那一頁應該換成別的版型');
+});
