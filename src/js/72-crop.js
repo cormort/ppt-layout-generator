@@ -222,7 +222,7 @@ function drawFilters(){
 }
 $('filters').onclick=e=>{
   const b=e.target.closest('button');if(!b)return;
-  S.cat=b.dataset.v;save();drawFilters();
+  S.cat=b.dataset.v;save();drawFilters();tplQuery='';$('tplQ').value='';
   /* 目前範本不在新分類裡就跳到該分類第一個，避免看不到自己正在用哪個 */
   const list=tplList();
   if(!['fit','recent','fav'].includes(S.cat)&&list.length&&!list.some(t=>t.id===S.tpl)){S.tpl=list[0].id;storePage();drawStage();drawPages()}

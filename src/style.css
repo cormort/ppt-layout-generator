@@ -207,7 +207,8 @@ details.more summary{cursor:pointer;font-size:13px;padding:6px 0}
 .gal-empty{grid-column:1/-1;padding:18px 4px;color:var(--muted);font-size:13px}
 .scope{display:inline-block;font-size:11px;font-weight:400;background:var(--soft);color:var(--acc);border-radius:5px;padding:0 6px;margin-left:6px}
 
-dialog.dlg{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;padding:0;width:min(640px,94vw);max-height:86vh;background:var(--panel);color:var(--ink);box-shadow:0 20px 50px var(--shadow)}
+dialog.dlg[open]{display:flex;flex-direction:column}
+dialog.dlg{border:1px solid var(--line);border-radius:14px;padding:0;width:min(640px,94vw);max-height:86vh;background:var(--panel);color:var(--ink);box-shadow:0 20px 50px var(--shadow)}
 dialog.dlg::backdrop{background:rgba(0,0,0,.35)}
 /* 簡報健檢 */
 dialog.chkdlg{width:min(780px,94vw)}

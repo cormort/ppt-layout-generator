@@ -26,6 +26,11 @@ test('程式碼裡用到的每個元素 id 都存在（播放器／簡報者檢�
   eq(missing.length, 0, '找不到的 id：' + missing.join(', '));
 });
 
+test('載入後沒有對話框是看得見的（CSS 的 display 不能蓋掉 dialog 的關閉狀態）', async ({ page }) => {
+  const shown = await page.run(`[...document.querySelectorAll('dialog')].filter(d=>!d.open&&d.getBoundingClientRect().height>0).map(d=>d.id)`);
+  eq(shown.length, 0, '沒開卻看得見的對話框：' + shown.join(', '));
+});
+
 test('版面尺寸按鈕與 RATIOS 一致', async ({ page }) => {
   const got = await page.run(`(()=>({
     keys:Object.keys(RATIOS),
