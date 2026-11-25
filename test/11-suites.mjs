@@ -126,3 +126,22 @@ test('套裝：目錄超過 8 章時改用清單式目錄（大字編號會被�
   eq(got.ten, 'mIndex', '10 章應該保留清單式目錄');
   eq(got.six, 'tocNum', '6 章應該換成大字編號');
 });
+
+test('紙底套裝連底色一起換；換回白底套裝時底色要關掉，自訂套裝也保留紙底', async ({ page }) => {
+  const got = await page.run(`(()=>{
+    localStorage.removeItem('lgSuites');
+    S.ratio='16:9';S.pages=[cleanPage({tpl:'cFrame',title:'封面',body:'',items:''})];S.cur=0;S.bgOn=false;
+    const paper=SUITES.filter(s=>s.bg),bad=paper.filter(s=>!HEXRE.test(s.bg)).map(s=>s.id);
+    applySuite('luxury');const lux={bgOn:S.bgOn,bg:S.bg,on:suiteOn(SUITEBY.luxury)};
+    const saved=saveCurrentAsSuite('紙底自訂');
+    applySuite('annual');const ann={bgOn:S.bgOn,on:suiteOn(SUITEBY.annual),lux:suiteOn(SUITEBY.luxury)};
+    applySuite(saved.id);const custom={bgOn:S.bgOn,bg:S.bg,ok:suiteOK(saved)};
+    deleteSuite(saved.id);
+    return {n:paper.length,bad,lux,ann,custom};
+  })()`);
+  eq(got.n >= 2, true, '紙底套裝應該至少 2 套');
+  deepEq(got.bad, [], '紙底顏色格式不對');
+  deepEq(got.lux, { bgOn: true, bg: '#f5efe6', on: true }, '套用質感品牌後應該打開紙底');
+  deepEq(got.ann, { bgOn: false, on: true, lux: false }, '換回年度報告應該關掉紙底');
+  deepEq(got.custom, { bgOn: true, bg: '#f5efe6', ok: true }, '自訂套裝應該記住紙底色');
+});

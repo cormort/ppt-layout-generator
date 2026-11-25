@@ -47,9 +47,9 @@ def({id:'cBar',cat:'chart',name:'圖表・直條圖',hint:'貼上表格：第一
   const h=hdr(c),d=chartData(c),k=FS,P=PAD(),ns=d.series.length,nc=Math.max(1,d.cats.length);
   const x0=P+90,x1=W-P,y0=h.y+(ns>1?60:10),y1=H-P-80-(d.axis?34:0)-(c.t.body?10:0);
   const all=d.series.flatMap(s=>s.vals).filter(v=>v!==null),sc=niceScale(Math.min(0,...all),Math.max(0,...all));
-  const Y=v=>y1-(v-sc.lo)/(sc.hi-sc.lo)*(y1-y0),yz=Y(Math.min(Math.max(0,sc.lo),sc.hi));
+  const Y=v=>y1-(v-sc.lo)/(sc.hi-sc.lo)*(y1-y0),yz=Y(Math.min(Math.max(0,sc.lo),sc.hi)),gridCol=c.col.dk?'rgba(255,255,255,.18)':'#d9dce1';
   let s=bg(c.col.paper||'#ffffff')+h.s+chartLegend(c,d,h.y+14);
-  for(const t of sc.ticks){const y=Y(t);s+=`<line x1="${x0}" y1="${f1(y)}" x2="${x1}" y2="${f1(y)}" stroke="${t===0?c.col.ink:'#d9dce1'}" stroke-width="${t===0?2:1}"${t===0?'':' stroke-dasharray="4 6"'}/>`+T([fmtN(t)],{x:x0-14,y:y+7,size:20,fill:c.col.mute,font:c.bf,anchor:'end'})}
+  for(const t of sc.ticks){const y=Y(t);s+=`<line x1="${x0}" y1="${f1(y)}" x2="${x1}" y2="${f1(y)}" stroke="${t===0?c.col.ink:gridCol}" stroke-width="${t===0?2:1}"${t===0?'':' stroke-dasharray="4 6"'}/>`+T([fmtN(t)],{x:x0-14,y:y+7,size:20,fill:c.col.mute,font:c.bf,anchor:'end'})}
   const gw=(x1-x0)/nc,bw=Math.min(96,gw*.72/ns),ls=Math.max(16,Math.min(26,gw/4.2));
   d.cats.forEach((cat,ci)=>{const cx=x0+gw*(ci+.5);
     d.series.forEach((se,si)=>{const v=se.vals[ci];if(v===null)return;const bx=cx-bw*ns/2+si*bw,yv=Y(v);
@@ -72,8 +72,9 @@ def({id:'cHbar',cat:'chart',name:'圖表・橫條圖',hint:'類別名稱長或�
   d.cats.forEach((cat,ci)=>{const cy=y0+rh*(ci+.5);
     s+=T(wrap(cat,lw-24,ls,c.bf).slice(0,1),{x:x0-18,y:cy+ls*.35,size:ls,fill:c.col.ink,font:c.bf,anchor:'end'});
     d.series.forEach((se,si)=>{const v=se.vals[ci];if(v===null)return;const by=cy-bh*ns/2+si*bh,xv=X(v);
+      const negLeft=v<0&&xv-x0>64,lx=negLeft?xv-10:Math.max(xv,xz)+12;
       s+=`<rect x="${f1(Math.min(xv,xz))}" y="${f1(by+2)}" width="${f1(Math.max(1,Math.abs(xv-xz)))}" height="${f1(Math.max(1,bh-4))}" rx="3" fill="${serCol(c,si)}"/>`;
-      s+=T([se.raw[ci]||fmtN(v)],{x:Math.max(xv,xz)+12,y:by+bh/2+ls*.32,size:f1(ls*.9),fill:c.col.ink,font:c.bf,weight:700})})});
+      s+=T([se.raw[ci]||fmtN(v)],{x:lx,y:by+bh/2+ls*.32,size:f1(ls*.9),fill:c.col.ink,font:c.bf,weight:700,anchor:negLeft?'end':'start'})})});
   return s+chartNote(c);
 }});
 
@@ -81,9 +82,9 @@ def({id:'cLine',cat:'chart',name:'圖表・折線圖',hint:'看趨勢（年度�
   const h=hdr(c),d=chartData(c),k=FS,P=PAD(),ns=d.series.length,nc=Math.max(1,d.cats.length);
   const x0=P+100,x1=W-P-(ns>1?40:20),y0=h.y+(ns>1?70:20),y1=H-P-70-(d.axis?34:0)-(c.t.body?10:0);
   const all=d.series.flatMap(s=>s.vals).filter(v=>v!==null),mn=Math.min(...all),mx=Math.max(...all);
-  const sc=niceScale(mn>=0&&mn<mx*.5?0:mn,mx),Y=v=>y1-(v-sc.lo)/(sc.hi-sc.lo)*(y1-y0),X=i=>nc>1?x0+i*(x1-x0)/(nc-1):(x0+x1)/2;
+  const sc=niceScale(mn>=0&&mn<mx*.5?0:mn,mx),Y=v=>y1-(v-sc.lo)/(sc.hi-sc.lo)*(y1-y0),X=i=>nc>1?x0+i*(x1-x0)/(nc-1):(x0+x1)/2,gridCol=c.col.dk?'rgba(255,255,255,.18)':'#d9dce1';
   let s=bg(c.col.paper||'#ffffff')+h.s+chartLegend(c,d,h.y+14);
-  for(const t of sc.ticks){const y=Y(t);s+=`<line x1="${x0}" y1="${f1(y)}" x2="${x1}" y2="${f1(y)}" stroke="#d9dce1" stroke-dasharray="4 6"/>`+T([fmtN(t)],{x:x0-16,y:y+7,size:20,fill:c.col.mute,font:c.bf,anchor:'end'})}
+  for(const t of sc.ticks){const y=Y(t);s+=`<line x1="${x0}" y1="${f1(y)}" x2="${x1}" y2="${f1(y)}" stroke="${gridCol}" stroke-dasharray="4 6"/>`+T([fmtN(t)],{x:x0-16,y:y+7,size:20,fill:c.col.mute,font:c.bf,anchor:'end'})}
   const step=nc>12?Math.ceil(nc/12):1,ls=Math.max(16,Math.min(24,(x1-x0)/Math.min(nc,12)/4));
   d.cats.forEach((cat,i)=>{if(i%step)return;s+=T([cat],{x:X(i),y:y1+ls+16,size:ls,fill:c.col.ink,font:c.bf,anchor:'middle'})});
   d.series.forEach((se,si)=>{const col=serCol(c,si);let seg=[];const segs=[];
@@ -105,7 +106,7 @@ def({id:'cPie',cat:'chart',name:'圖表・環圈圖',hint:'看比例；貼上表
   if(sl.length===1)s+=`<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1((R+r)/2)}" fill="none" stroke="${serCol(c,0)}" stroke-width="${f1(R-r)}"/>`;
   else sl.forEach((o,i)=>{const b=a+o.v/tot*Math.PI*2;s+=annular(cx,cy,R,r,a,b).el.replace('<path ',`<path fill="${serCol(c,i)}" stroke="${c.col.paper||'#ffffff'}" stroke-width="4" `);a=b});
   s+=T([fmtN(tot)],{x:cx,y:cy+12,size:f1(Math.min(64,r*.5)),fill:c.col.ink,font:c.tf,weight:800,anchor:'middle'})+T([se.name||d.axis||'合計'],{x:cx,y:cy+r*.5,size:22,fill:c.col.mute,font:c.bf,anchor:'middle'});
-  const lx=land?cx+R+90:P,ly0=land?cy-sl.length*30+20:cy+R+70,lh=land?Math.min(64,(bot-top)/Math.max(1,sl.length)):Math.min(60,(bot-ly0)/Math.max(1,sl.length)),lw=W-P-lx;
+  const lx=land?cx+R+90:P,lh=land?Math.min(64,(bot-top)/Math.max(1,sl.length)):Math.min(60,(bot-(cy+R+70))/Math.max(1,sl.length)),ly0=land?cy-(sl.length-1)*lh/2+8:cy+R+70,lw=W-P-lx;
   if(d.axis)s+=T([d.axis],{x:lx,y:ly0-lh*.9,size:20,fill:c.col.mute,font:c.bf});
   sl.forEach((o,i)=>{const y=ly0+i*lh;
     s+=`<rect x="${f1(lx)}" y="${f1(y-20)}" width="24" height="24" rx="5" fill="${serCol(c,i)}"/>`+T(wrap(o.cat,lw*.55,26,c.bf).slice(0,1),{x:lx+38,y,size:26,fill:c.col.ink,font:c.bf})

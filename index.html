@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="排版產生器">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="color-scheme" content="light dark">
-<meta name="description" content="免費的線上圖片排版產生器：上傳照片、選範本、打字，一鍵輸出 16:9 PNG／JPG／SVG 貼進 PPT，或用 Markdown 大綱做出含逐字稿的多頁 PPTX。71 組版型（含照片排成一朵花的花瓣扇、斜切時間軸、曲面拼貼、夜空羽化、下緣色帶、中央字標、無照片章節頁）、商務配色、Logo 與頁尾，圖片全程只在瀏覽器處理。">
+<meta name="description" content="免費的線上圖片排版產生器：上傳照片、選範本、打字，一鍵輸出 16:9 PNG／JPG／SVG 貼進 PPT，或用 Markdown 大綱做出含逐字稿的多頁 PPTX。73 組版型（含照片排成一朵花的花瓣扇、斜切時間軸、曲面拼貼、夜空羽化、下緣色帶、中央字標、無照片章節頁、雙欄對比與純文字流程）、商務配色、Logo 與頁尾，圖片全程只在瀏覽器處理。">
 <meta name="theme-color" content="#f3f1ed">
 <title>圖片排版產生器 · 16:9 簡報排版</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232f5d8a'/%3E%3Crect x='6' y='11' width='20' height='11' rx='2' fill='%23fff'/%3E%3Crect x='6' y='24' width='12' height='2.5' rx='1.2' fill='%23fff'/%3E%3C/svg%3E">
@@ -151,6 +151,7 @@ details.more summary{cursor:pointer;font-size:13px;padding:6px 0}
 .ied:empty{display:none}
 
 /* 版型 */
+.tplq{margin:0 0 8px}
 .filters{display:flex;gap:6px;flex-wrap:wrap}
 .filters button{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;min-height:32px;padding:0 12px;font:inherit;font-size:12px;cursor:pointer}
 .filters button.on{background:var(--ink);border-color:var(--ink);color:var(--panel);font-weight:700}
@@ -681,6 +682,7 @@ dialog.chkdlg .chkl{flex:1 1 auto;min-height:0}
     </section>
 
     <section class="pn" data-pn="tpl">
+      <input type="search" id="tplQ" class="tplq" placeholder="搜尋版型（對比、時間軸、圖表、地圖…）" aria-label="搜尋版型">
       <div class="filters" id="filters" role="group" aria-label="版型分類"></div>
       <div class="gal" id="gal"></div>
     </section>
@@ -1238,7 +1240,7 @@ def({id:'cmp',cat:'cmp',name:'對比・前後色帶',hint:'2 張照片並排；�
    +(wide?`<rect x="${f1(ax+aw)}" y="0" width="${gap}" height="${H}" fill="${c.col.paper||'#fff'}"/>`
          :`<rect x="0" y="${f1(ay+ah)}" width="${W}" height="${gap}" fill="${c.col.paper||'#fff'}"/>`);
   if(c.t.title){const tl=wrap(c.t.title,W-2*P,44,c.tf,700).slice(0,1);
-    s=`<rect x="0" y="0" width="${W}" height="${f1(92*k)}" fill="${c.col.dark}" opacity=".62"/>`+s
+    s+=`<rect x="0" y="0" width="${W}" height="${f1(92*k)}" fill="${c.col.dark}" opacity=".62"/>`
       +T(tl,{x:W/2,y:58*k,size:44,fill:'#fff',font:c.tf,weight:700,anchor:'middle'})}
   return s;
 }});
@@ -1302,12 +1304,12 @@ def({id:'cnTear',cat:'cn',name:'中國風・撕紙分界',hint:'1 張照片；�
      +VT(c.t.subtitle,{x:cut-206,y:P+90,size:28,gap:1.2,fill:c.col.mute,font:c.bf})
      +seal(cut-186+8,P+76+ch.length*ts*1.1,64);
   }else{
-    const ts=Math.min(84,Math.round(W*.085)),tl=wrap(c.t.title,W-2*P,ts,SERIF,700).slice(0,2);
+    const ts=Math.min(84,Math.round(W*.085)),tl=wrap(c.t.title,W-2*P,ts,SERIF,700).slice(0,2),th=(tl.length-1)*ts*k*1.25;
     let sy=cut*.30;
     s+=T(tl,{x:P,y:sy+ts,size:ts,lh:1.25,fill:c.col.ink,font:SERIF,weight:700})
-     +`<line x1="${P}" y1="${f1(sy+ts+34)}" x2="${P+96}" y2="${f1(sy+ts+34)}" stroke="${c.col.dark}" stroke-opacity=".3" stroke-width="3"/>`
-     +T(wrap(c.t.subtitle,W-2*P,26,c.bf).slice(0,2),{x:P,y:sy+ts+92,size:26,lh:1.5,fill:c.col.mute,font:c.bf})
-     +seal(W-P-64,sy+ts+40,60);
+     +`<line x1="${P}" y1="${f1(sy+ts+th+34)}" x2="${P+96}" y2="${f1(sy+ts+th+34)}" stroke="${c.col.dark}" stroke-opacity=".3" stroke-width="3"/>`
+     +T(wrap(c.t.subtitle,W-2*P,26,c.bf).slice(0,2),{x:P,y:sy+ts+th+92,size:26,lh:1.5,fill:c.col.mute,font:c.bf})
+     +seal(W-P-64,sy+ts+th+40,60);
   }
   return s;
 }});
@@ -1364,8 +1366,8 @@ def({id:'cutoutCard',cat:'card',name:'圖卡・去背主體',hint:'1 張照片�
   const bot=H-Math.max(P,footH()?footH()+22:0);
   const y0=wide?Math.round(H*.46-th/2):Math.round(bot-th-64);
   s+=T(tl,{x:tx,y:y0,size:ts,lh:1.16,fill:c.col.ink,font:c.tf,weight:800,anchor});
-  if(c.t.subtitle)s+=`<rect x="${f1(wide?tx:W-P-72)}" y="${f1(y0+32)}" width="72" height="5" rx="2.5" fill="${c.col.acc}"/>`
-   +T(wrap(c.t.subtitle,wide?tw0:W-2*P,28,c.bf,500).slice(0,2),{x:wide?tx:W-P,y:y0+90,size:28,lh:1.45,fill:c.col.mute,font:c.bf,anchor});
+  if(c.t.subtitle)s+=`<rect x="${f1(wide?tx:W-P-72)}" y="${f1(y0+th+32)}" width="72" height="5" rx="2.5" fill="${c.col.acc}"/>`
+   +T(wrap(c.t.subtitle,wide?tw0:W-2*P,28,c.bf,500).slice(0,2),{x:wide?tx:W-P,y:y0+th+90,size:28,lh:1.45,fill:c.col.mute,font:c.bf,anchor});
   return s;
 }});
 /* 雙色調：照片以主色增值壓暗，標題壓在下方漸層上（雜誌封面感） */
@@ -1376,8 +1378,10 @@ def({id:'duotone',cat:'cover',name:'封面・雙色調',hint:'1 張照片；照�
   s+=`<defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.col.dark}" stop-opacity="0"/><stop offset="1" stop-color="${c.col.dark}" stop-opacity=".85"/></linearGradient></defs>`
    +`<rect y="${f1(H*.48)}" width="${W}" height="${f1(H*.52)}" fill="url(#${g})"/>`;
   let ts=Math.min(wide?150:112,Math.round(W*.092));
-  while(ts>38&&tw(c.t.title,W-2*P,ts,c.tf,800)>W-2*P)ts-=6;
-  const tl=wrap(c.t.title,W-2*P,ts,c.tf,800).slice(0,wide?2:3),th=(tl.length-1)*ts*k*1.14;
+  const ml=wide?2:3;
+  let tl=wrap(c.t.title,W-2*P,ts,c.tf,800);
+  while(ts>38&&(tl.length>ml||Math.max(...tl.map(l=>tw(l,ts*k,c.tf,800)))>W-2*P)){ts-=6;tl=wrap(c.t.title,W-2*P,ts,c.tf,800)}
+  tl=tl.slice(0,ml);const th=(tl.length-1)*ts*k*1.14;
   /* 由下往上排：副標 → 細線 → 標題，細線才不會壓到副標 */
   const ruleY=bot-(c.t.subtitle?30*k+30:36),y0=ruleY-38-th;
   s+=T(tl,{x:P,y:y0,size:ts,lh:1.14,fill:'#fff',font:c.tf,weight:800})
@@ -1529,7 +1533,7 @@ def({id:'secPlain',cat:'sec',name:'章節頁・大數字色塊',hint:'不用照�
   const k=FS,wide=W>H,pad=PAD(),paper=c.col.paper||'#ffffff';
   const num=c.t.number||'01';
   /* 寬版面：左側色塊、右側文字；直式：上方色塊、下方文字 */
-  const bw=wide?W*.44:H*.42,bh=wide?H:bw;
+  const bw=wide?W*.44:W,bh=wide?H:H*.42;
   const ts=Math.min(wide?296:H*.2,Math.round(Math.min(bw,bh)*.46));
   const ink='#ffffff';
   let s=bg(paper);
@@ -1542,10 +1546,10 @@ def({id:'secPlain',cat:'sec',name:'章節頁・大數字色塊',hint:'不用照�
   while(ns>60&&numW()>bw-pad*1.1)ns-=6;
   if(wide){
     s+=T(['CHAPTER'],{x:pad*.6,y:bh-pad*1.05-ns*k*1.02,size:24,fill:ink,op:.62,font:c.bf,weight:700,ls:12})
-     +`<text x="${f1(pad*.6)}" y="${f1(bh-pad*.55)}" font-size="${f1(ns*k)}" font-family="${esc(c.tf)}" font-weight="900" fill="${ink}" letter-spacing="-4">${esc(num)}</text>`;
+     +T([num],{x:pad*.6,y:bh-pad*.55,size:f1(ns*k),fill:ink,font:c.tf,weight:900,ls:-4,fixed:true});
   }else{
     s+=T(['CHAPTER'],{x:pad*.6,y:pad*.9,size:22,fill:ink,op:.62,font:c.bf,weight:700,ls:10})
-     +`<text x="${f1(pad*.6)}" y="${f1(bh-pad*.7)}" font-size="${f1(ns*k)}" font-family="${esc(c.tf)}" font-weight="900" fill="${ink}" letter-spacing="-4">${esc(num)}</text>`;
+     +T([num],{x:pad*.6,y:bh-pad*.7,size:f1(ns*k),fill:ink,font:c.tf,weight:900,ls:-4,fixed:true});
   }
   /* 文字側：標題／副標／內文，垂直置中 */
   const tx=wide?bw+pad*1.1:pad,tw0=wide?W-bw-pad*1.6:W-2*pad;
@@ -1561,7 +1565,7 @@ def({id:'secPlain',cat:'sec',name:'章節頁・大數字色塊',hint:'不用照�
   s+=`<rect x="${f1(tx)}" y="${f1(y-tts*k*1.18)}" width="96" height="7" rx="3.5" fill="${c.col.acc}"/>`
    +T(tl,{x:tx,y,size:tts,lh:1.2,fill:c.col.ink,font:c.tf,weight:800});
   y+=(tl.length-1)*tts*k*1.2+tts*k*.3;
-  if(sl.length)s+=T(sl,{x:tx,y:y+36,size:wide?30:26,lh:1.5,fill:c.col.mt,font:c.bf,weight:600});y+=36+(sl.length-1)*(wide?30:26)*k*1.5;
+  if(sl.length){s+=T(sl,{x:tx,y:y+36,size:wide?30:26,lh:1.5,fill:c.col.mt,font:c.bf,weight:600});y+=36+(sl.length-1)*(wide?30:26)*k*1.5}
   if(bl.length)s+=T(bl,{x:tx,y:y+(sl.length?40:60),size:wide?24:22,lh:1.7,fill:c.col.mute,font:c.bf});
   return s;
 }});
@@ -1674,7 +1678,7 @@ def({id:'tText',cat:'text',name:'文字・標題＋段落',hint:'不用圖片；
   while(sz>18&&hh()>availT){sz-=1;lz=Math.min(64,Math.round(sz*1.26));L=lay(sz,lz)}
   /* 字少時把字放大填滿：下半頁一大片白，比字大一點更難看 */
   while(sz<54&&hh()<availT*.86){sz+=2;lz=Math.min(64,Math.round(sz*1.26));L=lay(sz,lz)}
-  let s='',y=top+Math.max(0,(availT-hh())*.4)+lz*k*.9;
+  let s='',y=top+Math.max(0,(availT-hh())*.4)+(L[0]?lz:sz)*k*.9;
   if(L[0]){s+=T(L[0],{x:P,y,size:lz,lh:1.5,fill:c.col.ink,font:c.bf});y+=L[0].length*lz*k*1.5+32}
   let bn=0;const bs=Math.min(40,sz*k*.95);
   rest.forEach((p,i)=>{if(y>TBOTTOM())return;const ls=(L[i+1]||[]).filter((_,j)=>y+j*sz*k*1.6<=TBOTTOM()+sz*k*.2);
@@ -1702,7 +1706,8 @@ def({id:'tQuote',cat:'text',name:'文字・引言金句',hint:'不用圖片；�
 def({id:'tStats',cat:'text',name:'文字・數據並列',hint:'不用圖片；項目填「數字|標籤|說明」，3–4 個並列最有力量',ratios:TXR,render(c){
   const h=hdr(c,{tMax:64}),k=FS,P=PAD(),it=items(c).slice(0,4),n=Math.max(1,it.length),wide=W>H;
   const nc=wide?n:Math.min(2,n),rows=Math.max(1,Math.ceil(n/nc)),gap=wide?(W>1600?72:46):34;
-  const rowH=(H-h.y-P)/rows,colW=(W-2*P-(nc-1)*gap)/nc;
+  const capH=c.t.body?wrap(c.t.body,W-2*P,20,c.bf).slice(0,2).length*20*k*1.5+44:0;
+  const rowH=(H-h.y-P-capH)/rows,colW=(W-2*P-(nc-1)*gap)/nc;
   /* 四個數字要同一個字級（不然「98.7%」比「0 件」小一號，整列輕重不一） */
   const fit=num=>{let s0=Math.min(wide?250:170,Math.round(colW*1.02));
     while(s0>44&&tw(num,s0*k,c.tf,800)>colW*.96)s0-=4;return s0};
@@ -1729,6 +1734,151 @@ def({id:'tStats',cat:'text',name:'文字・數據並列',hint:'不用圖片；�
   return s;
 }});
 
+/* ---------- 進階純文字商務版型：文字・雙欄對比、文字・流程步驟（不需要照片，任何尺寸都能用） ---------- */
+const lumOf=hex=>{const[r,g,b]=hex2rgb(hex);return(r*299+g*587+b*114)/1000};
+
+/* 文字・雙欄對比：2 項時做兩張大卡片＋VS 圓標；3 項以上第一行當左右欄標題、其餘為對照列 */
+def({id:'tCompare',cat:'cmp',name:'文字・雙欄對比',hint:'不用照片；2 項時做左右卡片對比，3 項以上第一行當左右欄標題、其餘為對照列',ratios:ALLR,render(c){
+  const P=PAD(),k=FS,h=hdr(c,{tMax:60}),it=items(c).slice(0,10),wide=W>H;
+  const bot=H-Math.max(P*.75,footH()?footH()+24:0),top=h.y;
+  const cardBg=c.col.dk?'rgba(255,255,255,.07)':'#ffffff',border=c.col.dk?'rgba(255,255,255,.16)':c.col.light;
+  const accInk=lumOf(c.col.acc)>150?c.col.dark:'#ffffff';
+  let s=bg(c.col.paper||(c.col.dk?c.col.dark:c.col.light))+h.s;
+
+  if(it.length<=2){
+    const A=it[0]||{a:'方案 A',b:'',c:''},B=it[1]||{a:'方案 B',b:'',c:''};
+    const gap=wide?48:32;
+    const boxes=wide?strip(P,W-P,2,gap).map(([a,b])=>({x:a,y:top,w:b-a,h:bot-top}))
+      :[0,1].map(i=>({x:P,y:top+i*((bot-top-gap)/2+gap),w:W-2*P,h:(bot-top-gap)/2}));
+    [A,B].forEach((o,i)=>{
+      const b=boxes[i],bar=i?c.col.acc:c.col.main,cid=c.id(),inP=wide?44:32,iw=b.w-2*inP;
+      const body=[o.b,o.c].filter(Boolean).join('　');
+      let ts=wide?44:36,tl=wrap(o.a||'',iw,ts,c.tf,700);
+      while(ts>24&&tl.length>2){ts-=2;tl=wrap(o.a||'',iw,ts,c.tf,700)}
+      tl=tl.slice(0,2);
+      const tH=tl.length*ts*k*1.25;
+      let bs=wide?26:23,bl=body?wrap(body,iw,bs,c.bf):[];
+      const room=Math.max(60,b.h-inP*2-tH-48);
+      while(bs>16&&bl.length*bs*k*1.6>room){bs-=1;bl=wrap(body,iw,bs,c.bf)}
+      const maxB=Math.max(0,Math.floor(room/(bs*k*1.6)));
+      bl=bl.slice(0,maxB);
+      const totH=tH+34+(bl.length?bl.length*bs*k*1.6+12:0);
+      const y0=b.y+12+Math.max(inP,(b.h-12-totH)/2);
+      s+=`<defs><clipPath id="${cid}"><rect x="${f1(b.x)}" y="${f1(b.y)}" width="${f1(b.w)}" height="${f1(b.h)}" rx="20"/></clipPath></defs>`
+       +`<rect x="${f1(b.x)}" y="${f1(b.y)}" width="${f1(b.w)}" height="${f1(b.h)}" rx="20" fill="${cardBg}" stroke="${border}" stroke-width="2" filter="url(#${c.sh})"/>`
+       +`<g clip-path="url(#${cid})"><rect x="${f1(b.x)}" y="${f1(b.y)}" width="${f1(b.w)}" height="12" fill="${bar}"/></g>`
+       +T(tl,{x:b.x+inP,y:y0+ts*k*.85,size:ts,lh:1.25,fill:c.col.ink,font:c.tf,weight:700})
+       +`<rect x="${f1(b.x+inP)}" y="${f1(y0+tH+12)}" width="64" height="5" rx="2.5" fill="${bar}"/>`;
+      if(bl.length)s+=T(bl,{x:b.x+inP,y:y0+tH+40+bs*k*.85,size:bs,lh:1.6,fill:c.col.mute,font:c.bf});
+    });
+    const vr=wide?42:34,vx=W/2,vy=wide?top+(bot-top)/2:top+(bot-top-gap)/2+gap/2;
+    s+=`<circle cx="${f1(vx)}" cy="${f1(vy)}" r="${vr}" fill="${c.col.acc}" stroke="${c.col.paper||c.col.light}" stroke-width="6"/>`
+     +T(['VS'],{x:vx,y:vy+vr*.34,size:f1(vr*.86),fill:accInk,font:c.bf,weight:900,anchor:'middle',fixed:true});
+    return s;
+  }
+
+  /* 3 項以上：雙欄卡片對照表 */
+  const hasRight=!!it[0].b;
+  const headA=hasRight?(it[0].a||'方案 A'):'方案 A',headB=hasRight?(it[0].b||'方案 B'):'方案 B';
+  const rows=hasRight?it.slice(1).map(r=>[r.a||'',[r.b,r.c].filter(Boolean).join('　')])
+    :(()=>{const half=Math.ceil(it.length/2);return[...Array(half)].map((_,i)=>{
+      const L=it[i],R=it[i+half];
+      return[L?[L.a,L.b,L.c].filter(Boolean).join('：'):'',R?[R.a,R.b,R.c].filter(Boolean).join('：'):''];
+    })})();
+  const gap=wide?40:22,cols=strip(P,W-P,2,gap),colW=cols[0][1]-cols[0][0],cardH=bot-top;
+  const inP=wide?34:22,iw=colW-2*inP,hh=wide?76*k:64*k,avail=cardH-hh-24;
+  let hs=wide?32:26;
+  while(hs>18&&(tw(headA,hs*k,c.tf,700)>iw||tw(headB,hs*k,c.tf,700)>iw))hs-=2;
+  let sz=wide?26:21,L=[];
+  const measure=s0=>rows.map(([a,b])=>{const la=a?wrap(a,iw,s0,c.bf):[],lb=b?wrap(b,iw,s0,c.bf):[];return{la,lb,h:Math.max(1,la.length,lb.length)*s0*k*1.45+s0*k*.9}});
+  L=measure(sz);
+  while(sz>15&&L.reduce((a,r)=>a+r.h,0)>avail){sz-=1;L=measure(sz)}
+  const nat=L.reduce((a,r)=>a+r.h,0),scaleH=nat>0&&nat<avail*.88?Math.min(1.8,avail*.88/nat):1;
+  [0,1].forEach(ci=>{
+    const[x]=cols[ci],cid=c.id(),bar=ci?c.col.acc:c.col.main,hFill=ci?accInk:'#ffffff',hTxt=ci?headB:headA;
+    s+=`<defs><clipPath id="${cid}"><rect x="${f1(x)}" y="${f1(top)}" width="${f1(colW)}" height="${f1(cardH)}" rx="18"/></clipPath></defs>`
+     +`<rect x="${f1(x)}" y="${f1(top)}" width="${f1(colW)}" height="${f1(cardH)}" rx="18" fill="${cardBg}" stroke="${border}" stroke-width="2" filter="url(#${c.sh})"/>`
+     +`<g clip-path="url(#${cid})"><rect x="${f1(x)}" y="${f1(top)}" width="${f1(colW)}" height="${f1(hh)}" fill="${bar}"/></g>`
+     +T(wrap(hTxt,iw,hs,c.tf,700).slice(0,1),{x:x+inP,y:top+hh/2+hs*k*.34,size:hs,fill:hFill,font:c.tf,weight:700});
+    let y=top+hh+12;
+    for(let ri=0;ri<L.length;ri++){
+      const rh=L[ri].h*scaleH;if(y+rh>top+cardH-4)break;
+      const lines=ci?L[ri].lb:L[ri].la,th=lines.length*sz*k*1.45;
+      if(ri)s+=`<line x1="${f1(x+inP)}" y1="${f1(y)}" x2="${f1(x+colW-inP)}" y2="${f1(y)}" stroke="${border}" stroke-width="1.5"/>`;
+      if(lines.length)s+=T(lines,{x:x+inP,y:y+(rh-th)/2+sz*k*.85,size:sz,lh:1.45,fill:c.col.ink,font:c.bf});
+      y+=rh;
+    }
+  });
+  return s;
+}});
+
+/* 文字・流程步驟：不用照片；項目填「步驟|說明」或「時間|步驟|說明」，2–6 步自動橫排／直排 */
+def({id:'tSteps',cat:'biz',name:'文字・流程步驟',hint:'不用照片；項目填「步驟|說明」或「時間|步驟|說明」，2–6 步自動橫排／直排',maxItems:6,ratios:ALLR,render(c){
+  const P=PAD(),k=FS,h=hdr(c,{tMax:60}),it=items(c).slice(0,6),n=Math.max(1,it.length),wide=W>H;
+  const bot=H-Math.max(P*.75,footH()?footH()+24:0),top=h.y;
+  const hasTag=it.some(o=>o.c),steps=it.map(o=>({tag:hasTag?o.a:'',title:hasTag?(o.b||o.a):o.a,desc:hasTag?o.c:o.b}));
+  const accInk=lumOf(c.col.acc)>150?c.col.dark:'#ffffff',lineCol=c.col.dk?'rgba(255,255,255,.22)':c.col.soft;
+  let s=bg(c.col.paper||'#ffffff')+h.s;
+
+  if(wide){
+    const gap=Math.max(20,44-n*4),cols=strip(P,W-P,n,gap),colW=cols[0][1]-cols[0][0],r=Math.min(46,Math.max(28,Math.round(colW*.22)));
+    const tagH=hasTag?40*k:0,avail=bot-top;
+    let ts=32,ds=22;
+    const lay=(ts0,ds0)=>steps.map(st=>{
+      const tg=st.tag?wrap(st.tag,colW,20,c.bf,700).slice(0,1):[];
+      const tl=wrap(st.title,colW,ts0,c.tf,700).slice(0,2);
+      const dl=st.desc?wrap(st.desc,colW,ds0,c.bf).slice(0,5):[];
+      const h0=tagH+2*r+36+tl.length*ts0*k*1.22+22+(dl.length?dl.length*ds0*k*1.55:0);
+      return{tg,tl,dl,h0};
+    });
+    let L=lay(ts,ds);
+    while((ts>20||ds>15)&&Math.max(...L.map(x=>x.h0))>avail){if(ts>20)ts-=2;if(ds>15)ds-=1;L=lay(ts,ds)}
+    const maxH=Math.max(...L.map(x=>x.h0)),yStart=top+Math.max(0,(avail-maxH)*.42),cy=yStart+tagH+r;
+    if(n>1){
+      const xA=(cols[0][0]+cols[0][1])/2,xB=(cols[n-1][0]+cols[n-1][1])/2;
+      s+=`<line x1="${f1(xA)}" y1="${f1(cy)}" x2="${f1(xB)}" y2="${f1(cy)}" stroke="${lineCol}" stroke-width="6" stroke-linecap="round"/>`;
+    }
+    cols.forEach(([a,b],i)=>{
+      const xc=(a+b)/2,last=i===n-1,fill=last?c.col.acc:c.col.main,txtFill=last?accInk:'#ffffff',st=L[i];
+      if(st.tg.length)s+=T(st.tg,{x:xc,y:cy-r-18,size:20,fill:c.col.mt,font:c.bf,weight:700,anchor:'middle',ls:1});
+      s+=`<circle cx="${f1(xc)}" cy="${f1(cy)}" r="${r}" fill="${fill}" stroke="${c.col.paper||'#fff'}" stroke-width="5"/>`
+       +T([pad2(i)],{x:xc,y:cy+r*.28,size:f1(r*.72),fill:txtFill,font:c.tf,weight:800,anchor:'middle',fixed:true});
+      const ty=cy+r+34+ts*k*.82;
+      s+=T(st.tl,{x:xc,y:ty,size:ts,lh:1.22,fill:c.col.ink,font:c.tf,weight:700,anchor:'middle'});
+      const ruleY=ty+(st.tl.length-1)*ts*k*1.22+ts*k*.4+10;
+      s+=`<rect x="${f1(xc-18)}" y="${f1(ruleY)}" width="36" height="4" rx="2" fill="${last?c.col.main:c.col.acc}"/>`;
+      if(st.dl.length)s+=T(st.dl,{x:xc,y:ruleY+20+ds*k*.85,size:ds,lh:1.55,fill:c.col.mute,font:c.bf,anchor:'middle'});
+    });
+    return s;
+  }
+
+  /* 直式／方形：垂直步驟軸 */
+  const avail=bot-top,r=Math.min(36,Math.max(22,Math.round(avail/(n*4.2)))),cx=P+r,tx=cx+r+30,tw0=W-P-tx;
+  let ts=34,ds=24,rg=26;
+  const lay=(ts0,ds0,g0)=>steps.map(st=>{
+    const tl=wrap((st.tag?st.tag+' · ':'')+st.title,tw0,ts0,c.tf,700).slice(0,2);
+    const dl=st.desc?wrap(st.desc,tw0,ds0,c.bf).slice(0,4):[];
+    const bh=Math.max(2*r,tl.length*ts0*k*1.22+(dl.length?10+dl.length*ds0*k*1.5:0));
+    return{tl,dl,bh,stepH:bh+g0};
+  });
+  let L=lay(ts,ds,rg);
+  while((ts>20||ds>16||rg>14)&&L.reduce((a,x)=>a+x.stepH,0)-rg>avail){
+    if(ts>20)ts-=2;if(ds>16)ds-=1;if(rg>14)rg-=2;L=lay(ts,ds,rg);
+  }
+  const tot=L.reduce((a,x)=>a+x.stepH,0)-rg;
+  let y=top+Math.max(0,(avail-tot)*.42);
+  const cys=L.map(x=>{const cy=y+r;y+=x.stepH;return cy});
+  if(n>1)s+=`<line x1="${f1(cx)}" y1="${f1(cys[0])}" x2="${f1(cx)}" y2="${f1(cys[n-1])}" stroke="${lineCol}" stroke-width="5" stroke-linecap="round"/>`;
+  L.forEach((st,i)=>{
+    const cy=cys[i],last=i===n-1,fill=last?c.col.acc:c.col.main,txtFill=last?accInk:'#ffffff';
+    s+=`<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${r}" fill="${fill}" stroke="${c.col.paper||'#fff'}" stroke-width="4"/>`
+     +T([pad2(i)],{x:cx,y:cy+r*.28,size:f1(r*.72),fill:txtFill,font:c.tf,weight:800,anchor:'middle',fixed:true});
+    const ty=cy-r+ts*k*.85;
+    s+=T(st.tl,{x:tx,y:ty,size:ts,lh:1.22,fill:c.col.ink,font:c.tf,weight:700});
+    if(st.dl.length)s+=T(st.dl,{x:tx,y:ty+(st.tl.length-1)*ts*k*1.22+ts*k*.4+10+ds*k*.85,size:ds,lh:1.5,fill:c.col.mute,font:c.bf});
+  });
+  return s;
+}});
 /* ---------- 文字封面：不用圖片，靠字級、字距、線條做出封面感；任何尺寸都能用 ---------- */
 const coverBot=()=>H-Math.max(PAD(),footH()?footH()+26:0);
 /* 標題取最大字級（行數 ≤ml、ok() 通過），再把行寬收窄到行數不變為止，讓各行等長、不會剩一個字孤零零在最後一行 */
@@ -1893,7 +2043,7 @@ function hdr(c,{tMax=64}={}){
 
 /* ---------- 套裝：一鍵把整份簡報換成同一套設計（配色＋字型＋每頁角色對應的版型） ----------
    單一版型好看，不代表整份簡報好看：一份簡報要「封面→章節→內容→數據→結語」都在
-   同一個語言裡。這裡把這件事包成 8 套，套用時只換版型與樣式，內容一個字都不動。
+   同一個語言裡。這裡把這件事包成 10 套，套用時只換版型與樣式（有 bg 的套裝連底色一起換，沒有的回到白底），內容一個字都不動。
    只換「結構頁」（封面、章節、目錄、一般文字、引言、表格、照片、結尾）。圖表、地圖、數據並列、重點方格、圖卡、
    商務（時間軸、流程、數據亮點…）、對比、直排的版型本身就是內容的形狀（折線換成直條、地圖換成長條、時間軸換成
    照片拼貼就錯了），所以不在 roles 裡：保留原版型，只吃新的配色與字型。 */
@@ -1922,6 +2072,13 @@ const SUITES=[
   {id:'pitch',name:'新創提案',hint:'青綠橘・螢光標記封面＋霧面豎板目錄，年輕俐落，適合提案與募資',
    color:'#0f5f5a',accent:'#f2a541',tf:0,bf:0,
    roles:{cover:'cMarker',sec:'secStrip',toc:'glass',text:'tList',quote:'tQuote',table:'tTable',photo:'waveBand',wall:'posterWall',closing:'thanks'}},
+  /* 安靜的紙底套裝：底色是紙、主色只當細線與點綴，標題襯線＋內文黑體，大留白 */
+  {id:'luxury',name:'質感品牌',hint:'暖米紙底・柔棕細框封面＋細線目錄，安靜、留白多，適合品牌簡介、高端提案',
+   color:'#a68a64',accent:'#3a3a3a',tf:3,bf:0,bg:'#f5efe6',
+   roles:{cover:'cFrame',sec:'secStrip',toc:'mIndex',text:'tText',quote:'tQuote',table:'tTable',photo:'arch',wall:'wall',closing:'thanks'}},
+  {id:'washi',name:'和紙人文',hint:'和紙底・靛藍巨字封面＋淡出章節，溫和內斂，適合理念、策略、人文故事',
+   color:'#2c3e50',accent:'#8995b7',tf:3,bf:0,bg:'#f4f1ea',
+   roles:{cover:'cBig',sec:'secFade',toc:'tocNum',text:'tList',quote:'tQuote',table:'tTable',photo:'waveBand',wall:'wall',closing:'thanks'}},
 ];
 const SUITEBY=Object.fromEntries(SUITES.map(s=>[s.id,s]));
 /* 上一次套用套裝之後，有幾頁的內容對新版型來說太多（套裝只換版型，不知道你的內容有多長） */
@@ -1929,10 +2086,10 @@ let LAST_SUITE_FIT=0;
 function countOverflow(only){
   if(!only)return 0;
   let bad=0;
-  for(const p of S.pages){
-    const tpl=TPLBY[tplFor(p.tpl)];if(!tpl)continue;
+  for(let i=0;i<S.pages.length;i++){
+    const p=S.pages[i],tpl=TPLBY[tplFor(p.tpl)];if(!tpl)continue;
     try{
-      const over=withState({...ovOf(p),pageNo:S.cur},()=>overflowNote(renderSVG(tpl,imgsOf(p.sel,'thumb'),'sf'+p.tpl+'_')));
+      const over=withState({...ovOf(p),pageNo:i},()=>overflowNote(renderSVG(tpl,imgsOf(p.sel,'thumb'),'sf'+p.tpl+'_'),tpl));
       if(over)bad++;
     }catch(e){}
   }
@@ -1955,13 +2112,14 @@ function saveCurrentAsSuite(name){
   for(const p of S.pages){const r=roleOf(p);if(r&&!byRole[r])byRole[r]=p.tpl}
   const roles={...SUITEBY.annual.roles,...byRole};
   const su={id:'my-'+Date.now().toString(36),name:nm,color:S.color,accent:S.accent,tf:S.tf,bf:S.bf,
+    ...(S.bgOn&&HEXRE.test(S.bg)?{bg:S.bg}:{}),
     hint:'自訂・'+nm+'（'+S.pages.length+' 頁的樣式）',roles};
   const list=customSuites();list.push(su);writeCustom(list);
   return su;
 }
 /* 合併一批自訂套裝（匯入檔、專案檔共用）：只收合法的、同 id 不覆蓋 */
 const suiteOK=s=>s&&typeof s.id==='string'&&typeof s.name==='string'&&s.roles&&typeof s.roles==='object'
-  &&HEXRE.test(s.color)&&HEXRE.test(s.accent)
+  &&HEXRE.test(s.color)&&HEXRE.test(s.accent)&&(!s.bg||HEXRE.test(s.bg))
   &&Number.isInteger(s.tf)&&s.tf>=0&&s.tf<FONTS.length&&Number.isInteger(s.bf)&&s.bf>=0&&s.bf<FONTS.length;
 function mergeSuites(list){
   const add=(Array.isArray(list)?list:[]).filter(suiteOK);
@@ -2005,7 +2163,7 @@ const suiteFrom=v=>{v=String(v||'').trim();if(!v)return null;
 /* 套用：opts.colors=false 時只換版型（命令列已經先套過顏色時用） */
 function applySuite(id,{colors=true}={}){
   const su=suiteFrom(id);if(!su)return 0;
-  if(colors){S.color=su.color;S.accent=su.accent;S.tf=su.tf;S.bf=su.bf}
+  if(colors){S.color=su.color;S.accent=su.accent;S.tf=su.tf;S.bf=su.bf;S.bgOn=!!su.bg;if(su.bg)S.bg=su.bg}
   let n=0;
   for(const p of S.pages){
     const role=roleOf(p);
@@ -2032,7 +2190,7 @@ function applySuite(id,{colors=true}={}){
    只做計算，做完把狀態還原（頁面、配色、字型、目前版型）。 */
 function suggestSuites(){
   storePage();
-  const snap=JSON.stringify(S.pages),keep={color:S.color,accent:S.accent,tf:S.tf,bf:S.bf,tpl:S.tpl};
+  const snap=JSON.stringify(S.pages),keep={color:S.color,accent:S.accent,tf:S.tf,bf:S.bf,bgOn:S.bgOn,bg:S.bg,tpl:S.tpl};
   const base=deckCheck();
   const baseOf=r=>({issues:r.issues.length,photo:r.stats.placeholder,overflow:r.issues.filter(o=>o.kind==='overflow').length,dupe:r.issues.filter(o=>o.kind==='dupe').length});
   const rows=[];
@@ -2048,7 +2206,7 @@ function suggestSuites(){
 
 /* 樣式窗格的套裝按鈕：用第 1 頁的內容、套裝的配色字型畫出它的封面，先看再套；目前樣式符合的那套標成選取。
    跟著頁面縮圖一起重畫（drawPages），內容沒變就不重畫 */
-const suiteOn=su=>!!su&&S.color===su.color&&S.accent===su.accent&&S.tf===su.tf&&S.bf===su.bf;
+const suiteOn=su=>!!su&&S.color===su.color&&S.accent===su.accent&&S.tf===su.tf&&S.bf===su.bf&&S.bgOn===!!su.bg&&(!su.bg||S.bg===su.bg);
 let suiteSig='';
 function drawSuites(){
   const p=S.pages[0];if(!p)return;
@@ -2057,7 +2215,7 @@ function drawSuites(){
   if(sig!==suiteSig){
     suiteSig=sig;const imgs=imgsOf(ids,'thumb');
     $('suites').innerHTML=allSuites().map(su=>{const tpl=tplFor(su.roles.cover);
-      const svg=withState({...ovOf(p),pageNo:0,tpl,color:su.color,accent:su.accent,tf:su.tf,bf:su.bf},()=>renderSVG(TPLBY[tpl],imgs,'su'+su.id+'_'));
+      const svg=withState({...ovOf(p),pageNo:0,tpl,color:su.color,accent:su.accent,tf:su.tf,bf:su.bf,bgOn:!!su.bg,bg:su.bg||S.bg},()=>renderSVG(TPLBY[tpl],imgs,'su'+su.id+'_'));
       const del=isCustom(su.id)?`<span class="del" data-del="${su.id}" role="button" tabindex="0" aria-label="刪除 ${esc(su.name)}" title="刪除這個自訂套裝">✕</span>`:'';
       return`<button data-suite="${su.id}" title="${esc(su.hint)}">${svg}<span class="nm"><i style="background:${su.color}"></i><i style="background:${su.accent}"></i>${esc(su.name)}</span><span class="hint">${esc(su.hint)}</span>${del}</button>`}).join('');
   }
@@ -2113,9 +2271,9 @@ def({id:'cBar',cat:'chart',name:'圖表・直條圖',hint:'貼上表格：第一
   const h=hdr(c),d=chartData(c),k=FS,P=PAD(),ns=d.series.length,nc=Math.max(1,d.cats.length);
   const x0=P+90,x1=W-P,y0=h.y+(ns>1?60:10),y1=H-P-80-(d.axis?34:0)-(c.t.body?10:0);
   const all=d.series.flatMap(s=>s.vals).filter(v=>v!==null),sc=niceScale(Math.min(0,...all),Math.max(0,...all));
-  const Y=v=>y1-(v-sc.lo)/(sc.hi-sc.lo)*(y1-y0),yz=Y(Math.min(Math.max(0,sc.lo),sc.hi));
+  const Y=v=>y1-(v-sc.lo)/(sc.hi-sc.lo)*(y1-y0),yz=Y(Math.min(Math.max(0,sc.lo),sc.hi)),gridCol=c.col.dk?'rgba(255,255,255,.18)':'#d9dce1';
   let s=bg(c.col.paper||'#ffffff')+h.s+chartLegend(c,d,h.y+14);
-  for(const t of sc.ticks){const y=Y(t);s+=`<line x1="${x0}" y1="${f1(y)}" x2="${x1}" y2="${f1(y)}" stroke="${t===0?c.col.ink:'#d9dce1'}" stroke-width="${t===0?2:1}"${t===0?'':' stroke-dasharray="4 6"'}/>`+T([fmtN(t)],{x:x0-14,y:y+7,size:20,fill:c.col.mute,font:c.bf,anchor:'end'})}
+  for(const t of sc.ticks){const y=Y(t);s+=`<line x1="${x0}" y1="${f1(y)}" x2="${x1}" y2="${f1(y)}" stroke="${t===0?c.col.ink:gridCol}" stroke-width="${t===0?2:1}"${t===0?'':' stroke-dasharray="4 6"'}/>`+T([fmtN(t)],{x:x0-14,y:y+7,size:20,fill:c.col.mute,font:c.bf,anchor:'end'})}
   const gw=(x1-x0)/nc,bw=Math.min(96,gw*.72/ns),ls=Math.max(16,Math.min(26,gw/4.2));
   d.cats.forEach((cat,ci)=>{const cx=x0+gw*(ci+.5);
     d.series.forEach((se,si)=>{const v=se.vals[ci];if(v===null)return;const bx=cx-bw*ns/2+si*bw,yv=Y(v);
@@ -2138,8 +2296,9 @@ def({id:'cHbar',cat:'chart',name:'圖表・橫條圖',hint:'類別名稱長或�
   d.cats.forEach((cat,ci)=>{const cy=y0+rh*(ci+.5);
     s+=T(wrap(cat,lw-24,ls,c.bf).slice(0,1),{x:x0-18,y:cy+ls*.35,size:ls,fill:c.col.ink,font:c.bf,anchor:'end'});
     d.series.forEach((se,si)=>{const v=se.vals[ci];if(v===null)return;const by=cy-bh*ns/2+si*bh,xv=X(v);
+      const negLeft=v<0&&xv-x0>64,lx=negLeft?xv-10:Math.max(xv,xz)+12;
       s+=`<rect x="${f1(Math.min(xv,xz))}" y="${f1(by+2)}" width="${f1(Math.max(1,Math.abs(xv-xz)))}" height="${f1(Math.max(1,bh-4))}" rx="3" fill="${serCol(c,si)}"/>`;
-      s+=T([se.raw[ci]||fmtN(v)],{x:Math.max(xv,xz)+12,y:by+bh/2+ls*.32,size:f1(ls*.9),fill:c.col.ink,font:c.bf,weight:700})})});
+      s+=T([se.raw[ci]||fmtN(v)],{x:lx,y:by+bh/2+ls*.32,size:f1(ls*.9),fill:c.col.ink,font:c.bf,weight:700,anchor:negLeft?'end':'start'})})});
   return s+chartNote(c);
 }});
 
@@ -2147,9 +2306,9 @@ def({id:'cLine',cat:'chart',name:'圖表・折線圖',hint:'看趨勢（年度�
   const h=hdr(c),d=chartData(c),k=FS,P=PAD(),ns=d.series.length,nc=Math.max(1,d.cats.length);
   const x0=P+100,x1=W-P-(ns>1?40:20),y0=h.y+(ns>1?70:20),y1=H-P-70-(d.axis?34:0)-(c.t.body?10:0);
   const all=d.series.flatMap(s=>s.vals).filter(v=>v!==null),mn=Math.min(...all),mx=Math.max(...all);
-  const sc=niceScale(mn>=0&&mn<mx*.5?0:mn,mx),Y=v=>y1-(v-sc.lo)/(sc.hi-sc.lo)*(y1-y0),X=i=>nc>1?x0+i*(x1-x0)/(nc-1):(x0+x1)/2;
+  const sc=niceScale(mn>=0&&mn<mx*.5?0:mn,mx),Y=v=>y1-(v-sc.lo)/(sc.hi-sc.lo)*(y1-y0),X=i=>nc>1?x0+i*(x1-x0)/(nc-1):(x0+x1)/2,gridCol=c.col.dk?'rgba(255,255,255,.18)':'#d9dce1';
   let s=bg(c.col.paper||'#ffffff')+h.s+chartLegend(c,d,h.y+14);
-  for(const t of sc.ticks){const y=Y(t);s+=`<line x1="${x0}" y1="${f1(y)}" x2="${x1}" y2="${f1(y)}" stroke="#d9dce1" stroke-dasharray="4 6"/>`+T([fmtN(t)],{x:x0-16,y:y+7,size:20,fill:c.col.mute,font:c.bf,anchor:'end'})}
+  for(const t of sc.ticks){const y=Y(t);s+=`<line x1="${x0}" y1="${f1(y)}" x2="${x1}" y2="${f1(y)}" stroke="${gridCol}" stroke-dasharray="4 6"/>`+T([fmtN(t)],{x:x0-16,y:y+7,size:20,fill:c.col.mute,font:c.bf,anchor:'end'})}
   const step=nc>12?Math.ceil(nc/12):1,ls=Math.max(16,Math.min(24,(x1-x0)/Math.min(nc,12)/4));
   d.cats.forEach((cat,i)=>{if(i%step)return;s+=T([cat],{x:X(i),y:y1+ls+16,size:ls,fill:c.col.ink,font:c.bf,anchor:'middle'})});
   d.series.forEach((se,si)=>{const col=serCol(c,si);let seg=[];const segs=[];
@@ -2171,7 +2330,7 @@ def({id:'cPie',cat:'chart',name:'圖表・環圈圖',hint:'看比例；貼上表
   if(sl.length===1)s+=`<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1((R+r)/2)}" fill="none" stroke="${serCol(c,0)}" stroke-width="${f1(R-r)}"/>`;
   else sl.forEach((o,i)=>{const b=a+o.v/tot*Math.PI*2;s+=annular(cx,cy,R,r,a,b).el.replace('<path ',`<path fill="${serCol(c,i)}" stroke="${c.col.paper||'#ffffff'}" stroke-width="4" `);a=b});
   s+=T([fmtN(tot)],{x:cx,y:cy+12,size:f1(Math.min(64,r*.5)),fill:c.col.ink,font:c.tf,weight:800,anchor:'middle'})+T([se.name||d.axis||'合計'],{x:cx,y:cy+r*.5,size:22,fill:c.col.mute,font:c.bf,anchor:'middle'});
-  const lx=land?cx+R+90:P,ly0=land?cy-sl.length*30+20:cy+R+70,lh=land?Math.min(64,(bot-top)/Math.max(1,sl.length)):Math.min(60,(bot-ly0)/Math.max(1,sl.length)),lw=W-P-lx;
+  const lx=land?cx+R+90:P,lh=land?Math.min(64,(bot-top)/Math.max(1,sl.length)):Math.min(60,(bot-(cy+R+70))/Math.max(1,sl.length)),ly0=land?cy-(sl.length-1)*lh/2+8:cy+R+70,lw=W-P-lx;
   if(d.axis)s+=T([d.axis],{x:lx,y:ly0-lh*.9,size:20,fill:c.col.mute,font:c.bf});
   sl.forEach((o,i)=>{const y=ly0+i*lh;
     s+=`<rect x="${f1(lx)}" y="${f1(y-20)}" width="24" height="24" rx="5" fill="${serCol(c,i)}"/>`+T(wrap(o.cat,lw*.55,26,c.bf).slice(0,1),{x:lx+38,y,size:26,fill:c.col.ink,font:c.bf})
@@ -2357,7 +2516,7 @@ def({id:'kAnnounce',cat:'card',name:'圖卡・活動公告',hint:'上方色塊�
   const tl=wrap(c.t.title,W-2*P,80,c.tf,800).slice(0,3),ty=bh-P*.7-(tl.length-1)*80*k*1.15;
   if(c.t.subtitle)s+=T([c.t.subtitle],{x:P,y:ty-80*k-16,size:28,fill:'#fff',op:.85,font:c.bf,weight:700,ls:3});
   s+=T(tl,{x:P,y:ty,size:80,lh:1.15,fill:'#fff',font:c.tf,weight:800});
-  let y=bh+P*.9;const lab=Math.max(...it.map(o=>tw(o.a,32*k,c.tf,700)))+40;
+  let y=bh+P*.9;const lab=Math.min((W-2*P)*.45,Math.max(...it.map(o=>tw(o.a,32*k,c.tf,700)))+40);
   for(const o of it){const bl=wrap(o.b||'',W-2*P-lab-24,32,c.bf).slice(0,2);
     s+=`<rect x="${P}" y="${f1(y-26)}" width="8" height="34" rx="4" fill="${c.col.acc}"/>`+T([o.a],{x:P+26,y,size:32,fill:c.col.ink,font:c.tf,weight:700})+T(bl,{x:P+26+lab,y,size:32,lh:1.35,fill:c.col.ink,font:c.bf});
     y+=Math.max(1,bl.length)*32*k*1.35+30}
@@ -2469,7 +2628,7 @@ def({id:'petalFan',cat:'card',name:'花瓣扇・圖文',hint:'5–8 張（一片
   let bs=wide?28:Math.round(W*.03),bl=wrap(c.t.body,tmax,bs,c.bf);
   while(bs>18&&bl.length>(wide?3:4)){bs-=2;bl=wrap(c.t.body,tmax,bs,c.bf)}
   bl=bl.slice(0,wide?3:4);
-  const eh=esl.length?es*k*1.25+34:0,th=(tl.length-1)*ts*k*1.16+ts*k,
+  const eh=esl.length?esl.length*es*k*1.25+34:0,th=(tl.length-1)*ts*k*1.16+ts*k,
         bh=bl.length?44+(bl.length-1)*bs*k*1.68+bs*k:0,tot=eh+th+bh;
   /* 直式的文字塊擺在花朵下面的剩餘空間中間；空間不夠時貼著下緣（不要頂到頁尾） */
   const bot=H-Math.max(pad,footH()?footH()+24:0),spaceTop=flowerBot+40;
@@ -2704,8 +2863,8 @@ def({id:'nightWall',cat:'wall',name:'照片牆・夜空羽化',hint:'第一張�
   const sub=wrap(c.t.subtitle,W-2*W*.10,Math.round(H*.019),c.bf,600).slice(0,1);
   const lh1=Math.round(H*.030)*k*1.62,capBot=H-H*.055;
   const capTop=capBot-(cap.length-1)*lh1;
-  s+=`<rect x="0" y="${f1(H*.66)}" width="${W}" height="${f1(H*.34)}" fill="url(#${gr}b)"/>`;
-  s+=`<defs><linearGradient id="${gr}b" gradientUnits="userSpaceOnUse" x1="0" y1="${f1(H*.64)}" x2="0" y2="${H}"><stop offset="0" stop-color="${base}" stop-opacity="0"/><stop offset=".5" stop-color="${base}" stop-opacity=".74"/><stop offset="1" stop-color="${base}" stop-opacity=".97"/></linearGradient></defs>`;
+  s+=`<defs><linearGradient id="${gr}b" gradientUnits="userSpaceOnUse" x1="0" y1="${f1(H*.64)}" x2="0" y2="${H}"><stop offset="0" stop-color="${base}" stop-opacity="0"/><stop offset=".5" stop-color="${base}" stop-opacity=".74"/><stop offset="1" stop-color="${base}" stop-opacity=".97"/></linearGradient></defs>`
+   +`<rect x="0" y="${f1(H*.66)}" width="${W}" height="${f1(H*.34)}" fill="url(#${gr}b)"/>`;
   if(cap.length)s+=T(cap,{x:W/2,y:capTop,size:Math.round(H*.030),lh:1.62,fill:paper,op:.94,font:c.bf,weight:500,anchor:'middle',ls:1});
   if(sub.length)s+=T(sub,{x:W/2,y:capTop-(sub.length?Math.round(H*.019)*k*2.2:0),size:Math.round(H*.019),fill:paper,op:.62,font:c.bf,weight:600,anchor:'middle',ls:6});
   return s;
@@ -2789,7 +2948,7 @@ const TPLBY=Object.fromEntries(TPL.map(t=>[t.id,t]));
 /* 版型是否支援目前的版面尺寸；不支援時換成相近的版型（16:9 ↔ 圖卡） */
 const tplOK=t=>(t.ratios||['16:9']).includes(S.ratio);
 /* 會用到照片的版型（沒選照片時以示意圖代替） */
-const usesPhoto=t=>!(t.cat==='text'||t.cat==='chart'||t.cat==='map'||['secPlain','kAnnounce','kList','kNumber','kQuote','cnQuote','thanks','mColumns','mIndex','tocNum'].includes(t.id));
+const usesPhoto=t=>!(t.cat==='text'||t.cat==='chart'||t.cat==='map'||['secPlain','tCompare','tSteps','kAnnounce','kList','kNumber','kQuote','cnQuote','thanks','mColumns','mIndex','tocNum'].includes(t.id));
 const TO_CARD={text:'tList',cover:'kPhoto',shape:'kPhoto',sec:'kNumber',toc:'kList',grid:'kPhoto',biz:'kAnnounce',cn:'kPhoto',mag:'kPhoto',chart:'tList',map:'tList'};
 const TO_WIDE={kList:'tList',kPhoto:'split',kNumber:'bignum',kQuote:'tQuote',kAnnounce:'tText'};
 function tplFor(id){
@@ -3061,7 +3220,7 @@ const flatOf=s=>String(s).replace(/臺/g,'台');
 function plainOf(svg){return flatOf(unesc(String(svg).replace(/<[^>]*>/g,' ')).replace(/\s+/g,'').toLowerCase())}
 /* 只在「開頭有出現、結尾沒出現」時判定被截斷，
    所以範本根本沒用到某個欄位時不會誤報 */
-function overflowNote(svg){
+function overflowNote(svg,tpl=TPLBY[S.tpl]){
   /* 頁尾（單位｜日期｜頁碼）不算版面內容：先拿掉，免得「2026 年度計畫」的開頭剛好撞到日期 2026.10 而誤報 */
   let flat=plainOf(svg);const miss=[];
   if(S.footer)for(const f of[S.company,S.date,pageLabel()]){const v=flatOf(String(f||'').replace(/\s+/g,'').toLowerCase());if(v)flat=flat.split(v).join(' ')}
@@ -3081,7 +3240,7 @@ function overflowNote(svg){
     if(flat.includes(head))shown++;
   }
   /* 有些版型本來就只吃前幾個項目（對比頁只取 2 個、數據亮點只取 1 個），用 maxItems 宣告，不要誤報 */
-  const cap=(TPLBY[S.tpl]||{}).maxItems;
+  const cap=(tpl||{}).maxItems;
   const expect=cap?Math.min(lines.length,cap):lines.length;
   if(lines.length&&shown>0&&shown<expect)miss.push('項目清單');
   if(!miss.length)return '';
@@ -3223,7 +3382,7 @@ $('suites').onclick=e=>{
   const b=e.target.closest('button');if(!b)return;
   const su=suiteFrom(b.dataset.suite);if(!su)return;
   const n=applySuite(su.id);
-  $('color').value=S.color;$('accent').value=S.accent;$('tf').value=S.tf;$('bf').value=S.bf;
+  $('color').value=S.color;$('accent').value=S.accent;$('tf').value=S.tf;$('bf').value=S.bf;$('bg').value=S.bg;$('bgOn').checked=S.bgOn;
   pageChanged(n?`${su.name}套裝：換了 ${n} 頁`
     +(LAST_SUITE_FIT?`，其中 ${LAST_SUITE_FIT} 頁內容對新版型太多（可開「檢視 → 簡報健檢」一鍵修）`:'')
     :`${su.name}套裝：每一頁都已經是這個版型`);};
@@ -3290,11 +3449,11 @@ for(const k of['pptText','pptQ']){$(k).value=S[k];$(k).onchange=()=>{S[k]=$(k).v
 
 /* 範本分類 */
 /* 「建議」：用這一頁的內容把每個版型試排一次，只列出放得下的；項目多、內文長或沒放照片時文字頁排前面 */
-let fitCache={sig:'',list:TPL};
+let fitCache={sig:'',list:TPL},tplQuery='';
 function fitList(){
   const sig=contentSig();if(fitCache.sig===sig)return fitCache.list;
   const th=chosen('thumb'),n=String(S.items||'').split('\n').filter(s=>s.trim()).length,wordy=n>=4||String(S.body||'').length>80||!sel.length;
-  const pool=TPL.filter(tplOK),ok=pool.filter(t=>!overflowNote(renderSVG(t,th,'f'+t.id+'_')));
+  const pool=TPL.filter(tplOK),ok=pool.filter(t=>!overflowNote(renderSVG(t,th,'f'+t.id+'_'),t));
   /* 項目是數字表格時圖表排最前面 */
   const numeric=isNumericTable(S.items);
   const rank=t=>numeric&&t.cat==='chart'?-1:(t.cat==='text'||t.cat==='card')?(wordy?0:2):t.cat==='chart'?3:1;
@@ -3323,7 +3482,16 @@ const ofCat=v=>{
   if(v==='fav')return favIds().map(id=>TPLBY[id]).filter(t=>t&&tplOK(t));
   const l=TPL.filter(t=>tplOK(t)&&(v==='all'||t.cat===v));
   return v==='all'?[...l.filter(t=>t.cat==='cover'),...l.filter(t=>t.cat!=='cover')]:l};
-function tplList(){return ofCat(S.cat)}
+function tplMatch(t,q){
+  if(t.name.toLowerCase().includes(q)||t.hint.toLowerCase().includes(q)||t.id.toLowerCase().includes(q))return true;
+  if(typeof TPL_ALIAS!=='undefined')for(const[k,v]of Object.entries(TPL_ALIAS))if(v===t.id&&k.toLowerCase().includes(q))return true;
+  return false;
+}
+function tplList(){
+  if(tplQuery)return TPL.filter(t=>tplOK(t)&&tplMatch(t,tplQuery));
+  return ofCat(S.cat);
+}
+$('tplQ').oninput=()=>{tplQuery=$('tplQ').value.trim().toLowerCase();drawGallery(true)};
 function drawFilters(){
   if(S.cat!=='fit'&&S.cat!=='recent'&&S.cat!=='fav'&&!ofCat(S.cat).length)S.cat='fit';
   $('filters').innerHTML=CATS.map(([v,n])=>{const c=ofCat(v).length;if(!c&&v!==S.cat)return'';
@@ -3334,7 +3502,7 @@ $('filters').onclick=e=>{
   S.cat=b.dataset.v;save();drawFilters();
   /* 目前範本不在新分類裡就跳到該分類第一個，避免看不到自己正在用哪個 */
   const list=tplList();
-  if(S.cat!=='fit'&&list.length&&!list.some(t=>t.id===S.tpl)){S.tpl=list[0].id;storePage();drawStage();drawPages()}
+  if(!['fit','recent','fav'].includes(S.cat)&&list.length&&!list.some(t=>t.id===S.tpl)){S.tpl=list[0].id;storePage();drawStage();drawPages()}
   drawGallery(true);
 };
 
@@ -3396,7 +3564,7 @@ function drawStage(){
   $('stage').innerHTML=svg;
   /* 屬性面板上方的「目前版型」卡片 */
   $('tplName').textContent=tpl.name;$('tplHint').textContent=tpl.hint;$('tplThumb').innerHTML=renderSVG(tpl,chosen('thumb'),'tc_');
-  const n=overflowNote(svg),photo=usesPhoto(tpl)&&!sel.length;
+  const n=overflowNote(svg,tpl),photo=usesPhoto(tpl)&&!sel.length;
   $('note').textContent=n||(photo?'目前用示意圖：到「照片」上傳並點選照片就會換上。':'✓ 文字都放得下');
   $('note').classList.toggle('warn',!!n);$('note').classList.toggle('ok',!n&&!photo);
   $('secSyncRow').hidden=tpl.cat!=='sec';
@@ -3405,8 +3573,8 @@ let galSig='';
 /* 內容＋樣式的簽章（不含分類）：建議清單用；縮圖牆再加上分類 */
 function contentSig(){return galSignature(true)}
 function galSignature(noCat){
-  return [sel.join(','),noCat?'':S.cat,S.ratio,S.title,S.subtitle,S.body,S.items,S.number,S.color,S.accent,S.bgOn,S.bg,S.single,S.focal,S.tf,S.bf,S.logo,S.logoSize,S.logoPos,S.logoBg,S.footer,S.company,S.date,S.page,S.fs,S.bullet,
-    sel.map(id=>JSON.stringify(lib.find(x=>x.id===id)?.crop||0)).join()].join('\u0001');
+  return [sel.join(','),noCat?'':S.cat,noCat?'':tplQuery,S.ratio,S.title,S.subtitle,S.body,S.items,S.number,S.color,S.accent,S.bgOn,S.bg,S.single,S.focal,S.tf,S.bf,S.logo,S.logoSize,S.logoPos,S.logoBg,S.footer,S.company,S.date,S.page,S.fs,S.bullet,
+    sel.map(id=>{const it=lib.find(x=>x.id===id);return it?JSON.stringify([it.crop||0,it.blend||'',it.op??1,!!it.cutout]):'0'}).join()].join('\u0001');
 }
 function drawGallery(force){
   const tpl=TPLBY[tplFor(S.tpl)];S.tpl=tpl.id;
@@ -3418,11 +3586,11 @@ function drawGallery(force){
   galSig=sig;
   const th=chosen('thumb');
   const list=tplList();
-  $('gal').innerHTML=list.length?list.map(t=>{const svg=renderSVG(t,th,'g'+t.id+'_'),ov=!!overflowNote(svg),fav=isFav(t.id);
+  $('gal').innerHTML=list.length?list.map(t=>{const svg=renderSVG(t,th,'g'+t.id+'_'),ov=!!overflowNote(svg,t),fav=isFav(t.id);
     return`<div class="card ${t.id===tpl.id?'on':''}" data-id="${t.id}" role="button" tabindex="0" aria-label="${esc(t.name)}${ov?'（文字放不下）':''}">${svg}${ov?'<span class="ov">放不下</span>':''}`
       +`<button class="fav${fav?' on':''}" data-fav="${t.id}" aria-pressed="${fav}" aria-label="${fav?'取消收藏':'收藏'}${esc(t.name)}" title="${fav?'取消收藏':'收藏'}">${fav?'★':'☆'}</button>`
       +`<div class="meta"><div class="nm">${esc(t.name)}</div><div class="hint">${esc(t.hint)}</div></div></div>`}).join('')
-    :`<p class="empty gal-empty">${S.cat==='fav'?'還沒有收藏任何版型：把滑鼠移到卡片右上角的 ☆ 按一下就會加進來。':S.cat==='recent'?'還沒有用過任何版型。':'這個分類在目前尺寸沒有版型。'}</p>`;
+    :`<p class="empty gal-empty">${tplQuery?`找不到符合「${esc(tplQuery)}」的版型。`:S.cat==='fav'?'還沒有收藏任何版型：把滑鼠移到卡片右上角的 ☆ 按一下就會加進來。':S.cat==='recent'?'還沒有用過任何版型。':'這個分類在目前尺寸沒有版型。'}</p>`;
 }
 function drawAll(){drawStage();drawGallery(true);drawPages();if(typeof ribState==='function')ribState();if(typeof scheduleIssues==='function')scheduleIssues()}
 function pickTpl(id){
@@ -3448,10 +3616,11 @@ $('gal').onclick=e=>{
     return}
   const c=e.target.closest('.card');if(!c)return;pickTpl(c.dataset.id)};
 $('gal').onkeydown=e=>{
+  if(e.key!=='Enter'&&e.key!==' ')return;
   const st=e.target.closest('.fav');
-  if(st&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.stopPropagation();st.click();return}
+  if(st){e.preventDefault();e.stopPropagation();st.click();return}
+  const c=e.target.closest('.card');if(!c)return;e.preventDefault();pickTpl(c.dataset.id);
 };
-$('gal').onkeydown=e=>{if(e.key!=='Enter'&&e.key!==' ')return;const c=e.target.closest('.card');if(!c)return;e.preventDefault();pickTpl(c.dataset.id)};
 
 /* ---------- 頁面清單：S 的單頁欄位與 sel 永遠是「目前這一頁」，切頁時才跟 S.pages 互換 ---------- */
 const ovOf=p=>Object.fromEntries(PAGE_KEYS.map(k=>[k,p[k]]));
@@ -3486,7 +3655,7 @@ function movePage(i,j){
 const pgCache=new Map();
 function pageSVG(p,i){
   const ids=p.sel.filter(id=>lib.some(x=>x.id===id));
-  const sig=[S.ratio,JSON.stringify(ovOf(p)),ids.join(),ids.map(id=>JSON.stringify(lib.find(x=>x.id===id).crop||0)).join(),
+  const sig=[S.ratio,JSON.stringify(ovOf(p)),ids.join(),ids.map(id=>{const it=lib.find(x=>x.id===id);return it?JSON.stringify([it.crop||0,it.blend||'',it.op??1,!!it.cutout]):'0'}).join(),
     S.color,S.accent,S.bgOn,S.bg,S.single,S.focal,S.tf,S.bf,S.logo,S.logoSize,S.logoPos,S.logoBg,S.footer,S.company,S.date,S.page,S.fs,S.bullet].join('\u0001');
   const c=pgCache.get(i);if(c&&c.sig===sig)return c.svg;
   const svg=withState({...ovOf(p),pageNo:i},()=>renderSVG(TPLBY[tplFor(p.tpl)],imgsOf(ids,'thumb'),'pg'+i+'_'));
@@ -3602,7 +3771,7 @@ function deckCheck(){
     try{
       note=withState({...ovOf(p),pageNo:i},()=>{
         const svg=renderSVG(tpl,imgsOf(p.sel,'thumb'),'ck'+i+'_');
-        return overflowNote(svg)||'';
+        return overflowNote(svg,tpl)||'';
       });
     }catch(e){note=''}
     if(note)issues.push({i,kind:'overflow',
@@ -3632,12 +3801,12 @@ function deckCheck(){
 const CHK_NAME={overflow:'文字放不下',photo:'缺照片',title:'沒有標題',dupe:'標題重複'};
 /* 找一個這一頁放得下的版型：先同分類，再全部；最多試 40 個 */
 function fitTplFor(p){
-  const base=TPLBY[tplFor(p.tpl)];
-  const pool=[...TPL.filter(t=>tplOK(t)&&base&&t.cat===base.cat),...TPL.filter(t=>tplOK(t))].slice(0,40);
+  const base=TPLBY[tplFor(p.tpl)],seen=new Set();
+  const pool=[...TPL.filter(t=>tplOK(t)&&base&&t.cat===base.cat),...TPL.filter(t=>tplOK(t))].filter(t=>!seen.has(t.id)&&seen.add(t.id)).slice(0,40);
   for(const t of pool){
     if(t.id===p.tpl)continue;
     try{
-      const ok=withState({...ovOf(p),pageNo:S.cur,tpl:t.id},()=>!overflowNote(renderSVG(t,imgsOf(p.sel,'thumb'),'fx_'+t.id+'_')));
+      const ok=withState({...ovOf(p),pageNo:S.cur,tpl:t.id},()=>!overflowNote(renderSVG(t,imgsOf(p.sel,'thumb'),'fx_'+t.id+'_'),t));
       if(ok)return t.id;
     }catch(e){}
   }
@@ -3647,19 +3816,23 @@ function fitTplFor(p){
 function fixIssue(o){
   const p=S.pages[o.i];if(!p)return '';
   if(o.kind==='dupe'){
-    const t=String(p.title||'').trim();
-    p.title=/（續）$/.test(t)?t+'二':t+'（續）';
+    const t=String(p.title||'').trim(),used=new Set(S.pages.map(x=>String(x.title||'').trim()));
+    let cand=t+'（續）',k=2;while(used.has(cand))cand=`${t}（續 ${k++}）`;
+    p.title=cand;if(S.cur===o.i)S.title=p.title;
     return `第 ${o.i+1} 頁改名為「${p.title}」`;
   }
   if(o.kind==='title'){
     const n=TPLBY[tplFor(p.tpl)]?.name||'未命名';
-    p.title=n;return `第 ${o.i+1} 頁補上標題「${n}」`;
+    p.title=n;if(S.cur===o.i)S.title=p.title;return `第 ${o.i+1} 頁補上標題「${n}」`;
   }
   if(o.kind==='photo'){
     /* 只有封面有「不需要照片」的版本；章節頁那種沒有照片就是沒辦法 */
-    if(typeof roleOf==='function'&&roleOf(p)==='cover'){
-      const id=tplFor('cBig');
-      if(TPLBY[id]){p.tpl=id;if(S.cur===o.i)S.tpl=id;return `第 ${o.i+1} 頁換成純文字封面「${TPLBY[id].name}」`}
+    const targets=(o.pages&&o.pages.length?o.pages:[o.i]).filter(idx=>S.pages[idx]&&typeof roleOf==='function'&&roleOf(S.pages[idx])==='cover');
+    const id=tplFor('cBig');
+    if(targets.length&&TPLBY[id]){
+      for(const idx of targets){S.pages[idx].tpl=id;if(S.cur===idx)S.tpl=id}
+      const list=targets.slice(0,5).map(idx=>idx+1).join('、')+(targets.length>5?'…':'');
+      return `第 ${list} 頁換成純文字封面「${TPLBY[id].name}」`;
     }
     return '';
   }
@@ -3884,12 +4057,12 @@ async function exportHtml(btn,{pres=false}={}){
   btn.disabled=true;
   try{
     toast(pres?'產生「簡報者檢視」簡報中…':'產生 HTML 簡報中…');
-    const deck=await deckSlides(),{html,before,bytes}=await deckHtml(deck,{title:deckName(),pres});
+    const deck=await deckSlides(),{html,before,after,bytes}=await deckHtml(deck,{title:deckName(),pres});
     const name=pres?`${deckName()}_簡報者檢視.html`:`${deckName()}_${deck.slides.length}頁.html`;
     saveBlob(new Blob([html],{type:'text/html;charset=utf-8'}),name);
     const mb=b=>b>=1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB';
-    const saved=before>0?Math.round((1-(before-bytes)/before)*100):0;
-    const note=saved>=10?`，圖片壓成 WebP 後小約 ${100-saved}%`:'';
+    const saved=before>0?Math.round((1-after/before)*100):0;
+    const note=saved>=10?`，圖片壓成 WebP 後小約 ${saved}%`:'';
     toast(pres?`已匯出簡報者檢視（${deck.slides.length} 頁，${mb(bytes)}${note}）：開啟後點一下畫面就會多開一個講者視窗`
       :`已匯出 HTML 簡報（${deck.slides.length} 頁，${mb(bytes)}${note}）：用瀏覽器開啟即可播放`);
   }catch(e){console.error(e);toast('匯出失敗：'+e.message)}finally{btn.disabled=false}
@@ -3911,7 +4084,10 @@ const TPL_ALIAS={封面:'split',章節:'bignum',條列:'tList',方格:'tGrid',�
   曲面拼貼:'posterWall',海報拼貼:'posterWall',拼貼牆:'posterWall',截圖牆:'posterWall',倒影:'posterWall',海報牆:'posterWall',
   夜空羽化:'nightWall',星空牆:'nightWall',夜景牆:'nightWall',夜牆:'nightWall',羽化:'nightWall',截圖牆夜景:'nightWall',
   下緣色帶:'cBand',色帶封面:'cBand',底部色帶:'cBand',色帶:'cBand',
-  中央字標:'cLockup',置中封面:'cLockup',海報字標:'cLockup',電影海報:'cLockup',字標:'cLockup'};
+  中央字標:'cLockup',置中封面:'cLockup',海報字標:'cLockup',電影海報:'cLockup',字標:'cLockup',
+  無圖章節:'secPlain',色塊章節:'secPlain',純色章節:'secPlain',
+  文字對比:'tCompare',雙欄對比:'tCompare',優缺點:'tCompare',方案比較:'tCompare',
+  文字流程:'tSteps',文字步驟:'tSteps',純文字流程:'tSteps',步驟:'tSteps',流程:'tSteps'};
 function tplFrom(v){
   v=String(v||'').trim();if(!v)return '';
   if(TPLBY[v])return v;if(TPL_ALIAS[v])return TPL_ALIAS[v];
@@ -4507,7 +4683,7 @@ $('projSave').onclick=async()=>{
     toast('整理專案中…');storePage();
     /* v2：存所有頁面用到的圖，每頁的 sel 改存成 images 陣列的索引 */
     const L=[...new Set(S.pages.flatMap(p=>p.sel))].map(id=>lib.find(x=>x.id===id)).filter(Boolean),at=new Map(L.map((it,i)=>[it.id,i]));
-    const imgs=await Promise.all(L.map(async it=>({name:it.name,crop:it.crop,data:it.data||(it.data=await blobToData(it.blob))})));
+    const imgs=await Promise.all(L.map(async it=>({name:it.name,crop:it.crop,cutout:!!it.cutout,blend:it.blend||'',op:it.op??1,data:it.data||(it.data=await blobToData(it.blob))})));
     const state={...S,pages:S.pages.map(p=>({...p,sel:p.sel.filter(id=>at.has(id)).map(id=>at.get(id))}))};
     /* 自訂套裝也一起存：換電腦才不會只剩內建的 8 套 */
     const pkg={app:'ppt-layout-generator',v:3,state,images:imgs,suites:customSuites()};
@@ -4528,7 +4704,7 @@ $('projFile').onchange=async e=>{
       toast(`載入 ${pkg.images.length} 張圖片…`);
       for(const im of pkg.images){
         let id=0;
-        try{const blob=await(await fetch(im.data)).blob();const bmp=await createImageBitmap(blob);const it=await makeItem(im.name||'image',bmp,im.crop);if(bmp.close)bmp.close();id=it.id}catch(err){console.warn(err)}
+        try{const blob=await(await fetch(im.data)).blob();const bmp=await createImageBitmap(blob);const it=await makeItem(im.name||'image',bmp,im.crop,{cutout:!!im.cutout});it.blend=String(im.blend||'');it.op=typeof im.op==='number'?im.op:1;libSave(it);if(bmp.close)bmp.close();id=it.id}catch(err){console.warn(err)}
         ids.push(id);
       }
     }
@@ -4773,7 +4949,7 @@ $('rRatio').innerHTML=RATIO_NAMES.map(([v,n])=>`<option value="${v}">${n}</optio
 $('rRatio').onchange=()=>{$('ratioSeg').querySelector(`[data-v="${$('rRatio').value}"]`).click();ribState()};
 $('rTheme').innerHTML=THEMES.map(([v,n])=>`<button class="rb lg" data-theme="${v}"><svg viewBox="0 0 24 24">${v==='dark'?'<path class="a f" d="M19 14A8 8 0 019 4a8 8 0 1010 10z"/>':v==='light'?'<circle class="a" cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/>':'<circle cx="12" cy="12" r="8"/><path class="a f" d="M12 4a8 8 0 000 16z"/>'}</svg>${n}</button>`).join('');
 function ribSuites(){
-  $('rSuite').innerHTML=allSuites().map(su=>`<button class="rb lg" data-suite="${su.id}" title="${esc(su.hint)}"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="12" height="14" rx="2" fill="${su.color}" stroke="none"/><rect x="16" y="5" width="5" height="14" rx="1.5" fill="${su.accent}" stroke="none"/></svg>${esc(su.name)}</button>`).join('');
+  $('rSuite').innerHTML=allSuites().map(su=>`<button class="rb lg" data-suite="${su.id}" title="${esc(su.hint)}"><svg viewBox="0 0 24 24">${su.bg?`<rect x="1" y="3" width="22" height="18" rx="2" fill="${su.bg}" stroke="#0002"/>`:''}<rect x="3" y="5" width="12" height="14" rx="2" fill="${su.color}" stroke="none"/><rect x="16" y="5" width="5" height="14" rx="1.5" fill="${su.accent}" stroke="none"/></svg>${esc(su.name)}</button>`).join('');
   ribState();
 }
 ribSuites();

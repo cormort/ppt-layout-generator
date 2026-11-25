@@ -14,7 +14,7 @@ function deckCheck(){
     try{
       note=withState({...ovOf(p),pageNo:i},()=>{
         const svg=renderSVG(tpl,imgsOf(p.sel,'thumb'),'ck'+i+'_');
-        return overflowNote(svg)||'';
+        return overflowNote(svg,tpl)||'';
       });
     }catch(e){note=''}
     if(note)issues.push({i,kind:'overflow',
@@ -44,12 +44,12 @@ function deckCheck(){
 const CHK_NAME={overflow:'文字放不下',photo:'缺照片',title:'沒有標題',dupe:'標題重複'};
 /* 找一個這一頁放得下的版型：先同分類，再全部；最多試 40 個 */
 function fitTplFor(p){
-  const base=TPLBY[tplFor(p.tpl)];
-  const pool=[...TPL.filter(t=>tplOK(t)&&base&&t.cat===base.cat),...TPL.filter(t=>tplOK(t))].slice(0,40);
+  const base=TPLBY[tplFor(p.tpl)],seen=new Set();
+  const pool=[...TPL.filter(t=>tplOK(t)&&base&&t.cat===base.cat),...TPL.filter(t=>tplOK(t))].filter(t=>!seen.has(t.id)&&seen.add(t.id)).slice(0,40);
   for(const t of pool){
     if(t.id===p.tpl)continue;
     try{
-      const ok=withState({...ovOf(p),pageNo:S.cur,tpl:t.id},()=>!overflowNote(renderSVG(t,imgsOf(p.sel,'thumb'),'fx_'+t.id+'_')));
+      const ok=withState({...ovOf(p),pageNo:S.cur,tpl:t.id},()=>!overflowNote(renderSVG(t,imgsOf(p.sel,'thumb'),'fx_'+t.id+'_'),t));
       if(ok)return t.id;
     }catch(e){}
   }
@@ -59,19 +59,23 @@ function fitTplFor(p){
 function fixIssue(o){
   const p=S.pages[o.i];if(!p)return '';
   if(o.kind==='dupe'){
-    const t=String(p.title||'').trim();
-    p.title=/（續）$/.test(t)?t+'二':t+'（續）';
+    const t=String(p.title||'').trim(),used=new Set(S.pages.map(x=>String(x.title||'').trim()));
+    let cand=t+'（續）',k=2;while(used.has(cand))cand=`${t}（續 ${k++}）`;
+    p.title=cand;if(S.cur===o.i)S.title=p.title;
     return `第 ${o.i+1} 頁改名為「${p.title}」`;
   }
   if(o.kind==='title'){
     const n=TPLBY[tplFor(p.tpl)]?.name||'未命名';
-    p.title=n;return `第 ${o.i+1} 頁補上標題「${n}」`;
+    p.title=n;if(S.cur===o.i)S.title=p.title;return `第 ${o.i+1} 頁補上標題「${n}」`;
   }
   if(o.kind==='photo'){
     /* 只有封面有「不需要照片」的版本；章節頁那種沒有照片就是沒辦法 */
-    if(typeof roleOf==='function'&&roleOf(p)==='cover'){
-      const id=tplFor('cBig');
-      if(TPLBY[id]){p.tpl=id;if(S.cur===o.i)S.tpl=id;return `第 ${o.i+1} 頁換成純文字封面「${TPLBY[id].name}」`}
+    const targets=(o.pages&&o.pages.length?o.pages:[o.i]).filter(idx=>S.pages[idx]&&typeof roleOf==='function'&&roleOf(S.pages[idx])==='cover');
+    const id=tplFor('cBig');
+    if(targets.length&&TPLBY[id]){
+      for(const idx of targets){S.pages[idx].tpl=id;if(S.cur===idx)S.tpl=id}
+      const list=targets.slice(0,5).map(idx=>idx+1).join('、')+(targets.length>5?'…':'');
+      return `第 ${list} 頁換成純文字封面「${TPLBY[id].name}」`;
     }
     return '';
   }

@@ -12,7 +12,10 @@ const TPL_ALIAS={封面:'split',章節:'bignum',條列:'tList',方格:'tGrid',�
   曲面拼貼:'posterWall',海報拼貼:'posterWall',拼貼牆:'posterWall',截圖牆:'posterWall',倒影:'posterWall',海報牆:'posterWall',
   夜空羽化:'nightWall',星空牆:'nightWall',夜景牆:'nightWall',夜牆:'nightWall',羽化:'nightWall',截圖牆夜景:'nightWall',
   下緣色帶:'cBand',色帶封面:'cBand',底部色帶:'cBand',色帶:'cBand',
-  中央字標:'cLockup',置中封面:'cLockup',海報字標:'cLockup',電影海報:'cLockup',字標:'cLockup'};
+  中央字標:'cLockup',置中封面:'cLockup',海報字標:'cLockup',電影海報:'cLockup',字標:'cLockup',
+  無圖章節:'secPlain',色塊章節:'secPlain',純色章節:'secPlain',
+  文字對比:'tCompare',雙欄對比:'tCompare',優缺點:'tCompare',方案比較:'tCompare',
+  文字流程:'tSteps',文字步驟:'tSteps',純文字流程:'tSteps',步驟:'tSteps',流程:'tSteps'};
 function tplFrom(v){
   v=String(v||'').trim();if(!v)return '';
   if(TPLBY[v])return v;if(TPL_ALIAS[v])return TPL_ALIAS[v];

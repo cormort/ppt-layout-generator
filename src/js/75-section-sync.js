@@ -54,7 +54,7 @@ function drawStage(){
   $('stage').innerHTML=svg;
   /* 屬性面板上方的「目前版型」卡片 */
   $('tplName').textContent=tpl.name;$('tplHint').textContent=tpl.hint;$('tplThumb').innerHTML=renderSVG(tpl,chosen('thumb'),'tc_');
-  const n=overflowNote(svg),photo=usesPhoto(tpl)&&!sel.length;
+  const n=overflowNote(svg,tpl),photo=usesPhoto(tpl)&&!sel.length;
   $('note').textContent=n||(photo?'目前用示意圖：到「照片」上傳並點選照片就會換上。':'✓ 文字都放得下');
   $('note').classList.toggle('warn',!!n);$('note').classList.toggle('ok',!n&&!photo);
   $('secSyncRow').hidden=tpl.cat!=='sec';
@@ -63,8 +63,8 @@ let galSig='';
 /* 內容＋樣式的簽章（不含分類）：建議清單用；縮圖牆再加上分類 */
 function contentSig(){return galSignature(true)}
 function galSignature(noCat){
-  return [sel.join(','),noCat?'':S.cat,S.ratio,S.title,S.subtitle,S.body,S.items,S.number,S.color,S.accent,S.bgOn,S.bg,S.single,S.focal,S.tf,S.bf,S.logo,S.logoSize,S.logoPos,S.logoBg,S.footer,S.company,S.date,S.page,S.fs,S.bullet,
-    sel.map(id=>JSON.stringify(lib.find(x=>x.id===id)?.crop||0)).join()].join('\u0001');
+  return [sel.join(','),noCat?'':S.cat,noCat?'':tplQuery,S.ratio,S.title,S.subtitle,S.body,S.items,S.number,S.color,S.accent,S.bgOn,S.bg,S.single,S.focal,S.tf,S.bf,S.logo,S.logoSize,S.logoPos,S.logoBg,S.footer,S.company,S.date,S.page,S.fs,S.bullet,
+    sel.map(id=>{const it=lib.find(x=>x.id===id);return it?JSON.stringify([it.crop||0,it.blend||'',it.op??1,!!it.cutout]):'0'}).join()].join('\u0001');
 }
 function drawGallery(force){
   const tpl=TPLBY[tplFor(S.tpl)];S.tpl=tpl.id;
@@ -76,11 +76,11 @@ function drawGallery(force){
   galSig=sig;
   const th=chosen('thumb');
   const list=tplList();
-  $('gal').innerHTML=list.length?list.map(t=>{const svg=renderSVG(t,th,'g'+t.id+'_'),ov=!!overflowNote(svg),fav=isFav(t.id);
+  $('gal').innerHTML=list.length?list.map(t=>{const svg=renderSVG(t,th,'g'+t.id+'_'),ov=!!overflowNote(svg,t),fav=isFav(t.id);
     return`<div class="card ${t.id===tpl.id?'on':''}" data-id="${t.id}" role="button" tabindex="0" aria-label="${esc(t.name)}${ov?'（文字放不下）':''}">${svg}${ov?'<span class="ov">放不下</span>':''}`
       +`<button class="fav${fav?' on':''}" data-fav="${t.id}" aria-pressed="${fav}" aria-label="${fav?'取消收藏':'收藏'}${esc(t.name)}" title="${fav?'取消收藏':'收藏'}">${fav?'★':'☆'}</button>`
       +`<div class="meta"><div class="nm">${esc(t.name)}</div><div class="hint">${esc(t.hint)}</div></div></div>`}).join('')
-    :`<p class="empty gal-empty">${S.cat==='fav'?'還沒有收藏任何版型：把滑鼠移到卡片右上角的 ☆ 按一下就會加進來。':S.cat==='recent'?'還沒有用過任何版型。':'這個分類在目前尺寸沒有版型。'}</p>`;
+    :`<p class="empty gal-empty">${tplQuery?`找不到符合「${esc(tplQuery)}」的版型。`:S.cat==='fav'?'還沒有收藏任何版型：把滑鼠移到卡片右上角的 ☆ 按一下就會加進來。':S.cat==='recent'?'還沒有用過任何版型。':'這個分類在目前尺寸沒有版型。'}</p>`;
 }
 function drawAll(){drawStage();drawGallery(true);drawPages();if(typeof ribState==='function')ribState();if(typeof scheduleIssues==='function')scheduleIssues()}
 function pickTpl(id){
@@ -106,8 +106,9 @@ $('gal').onclick=e=>{
     return}
   const c=e.target.closest('.card');if(!c)return;pickTpl(c.dataset.id)};
 $('gal').onkeydown=e=>{
+  if(e.key!=='Enter'&&e.key!==' ')return;
   const st=e.target.closest('.fav');
-  if(st&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.stopPropagation();st.click();return}
+  if(st){e.preventDefault();e.stopPropagation();st.click();return}
+  const c=e.target.closest('.card');if(!c)return;e.preventDefault();pickTpl(c.dataset.id);
 };
-$('gal').onkeydown=e=>{if(e.key!=='Enter'&&e.key!==' ')return;const c=e.target.closest('.card');if(!c)return;e.preventDefault();pickTpl(c.dataset.id)};
 

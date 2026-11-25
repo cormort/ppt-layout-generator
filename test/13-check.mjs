@@ -161,3 +161,24 @@ test('缺照片一鍵修：封面換成純文字封面（章節頁不亂動）',
   eq(got.tpl, 'cBig', '封面沒有換成純文字封面');
   eq(got.secFixable, false, '章節頁缺照片不該提供一鍵修');
 });
+
+test('簡報健檢修目前這一頁：補標題／改名不該被 storePage 寫回空值，三頁同名一次修乾淨', async ({ page }) => {
+  const got = await page.run(`(()=>{
+    S.ratio='16:9';S.footer=false;S.logo='';
+    S.pages=[
+      cleanPage({tpl:'tQuote',title:'',body:'缺標題目前頁',items:'',notes:'a'}),
+      cleanPage({tpl:'tQuote',title:'同名',body:'',items:'',notes:'b'}),
+      cleanPage({tpl:'tQuote',title:'同名',body:'',items:'',notes:'c'}),
+      cleanPage({tpl:'tQuote',title:'同名',body:'',items:'',notes:'d'}),
+    ];
+    usePage(0);syncUI();
+    openCheck();
+    for(const o of chkLast.slice())if(o.fix)fixOne(o);
+    $('chkDlg').close();
+    const after=deckCheck();
+    return {title0:S.pages[0].title,sTitle:S.title,titles:S.pages.map(p=>p.title),left:after.issues.filter(o=>o.kind==='title'||o.kind==='dupe').length};
+  })()`);
+  ok(got.title0.length > 0 && got.sTitle === got.title0, '目前頁補標題應該同步 S.title 才不會被寫回空值');
+  eq(new Set(got.titles).size, 4, '三頁同名修完應該各不相同：' + JSON.stringify(got.titles));
+  eq(got.left, 0, '修完不該還有缺標題或重複標題');
+});

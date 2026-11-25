@@ -270,7 +270,7 @@ def({id:'cmp',cat:'cmp',name:'對比・前後色帶',hint:'2 張照片並排；�
    +(wide?`<rect x="${f1(ax+aw)}" y="0" width="${gap}" height="${H}" fill="${c.col.paper||'#fff'}"/>`
          :`<rect x="0" y="${f1(ay+ah)}" width="${W}" height="${gap}" fill="${c.col.paper||'#fff'}"/>`);
   if(c.t.title){const tl=wrap(c.t.title,W-2*P,44,c.tf,700).slice(0,1);
-    s=`<rect x="0" y="0" width="${W}" height="${f1(92*k)}" fill="${c.col.dark}" opacity=".62"/>`+s
+    s+=`<rect x="0" y="0" width="${W}" height="${f1(92*k)}" fill="${c.col.dark}" opacity=".62"/>`
       +T(tl,{x:W/2,y:58*k,size:44,fill:'#fff',font:c.tf,weight:700,anchor:'middle'})}
   return s;
 }});
@@ -334,12 +334,12 @@ def({id:'cnTear',cat:'cn',name:'中國風・撕紙分界',hint:'1 張照片；�
      +VT(c.t.subtitle,{x:cut-206,y:P+90,size:28,gap:1.2,fill:c.col.mute,font:c.bf})
      +seal(cut-186+8,P+76+ch.length*ts*1.1,64);
   }else{
-    const ts=Math.min(84,Math.round(W*.085)),tl=wrap(c.t.title,W-2*P,ts,SERIF,700).slice(0,2);
+    const ts=Math.min(84,Math.round(W*.085)),tl=wrap(c.t.title,W-2*P,ts,SERIF,700).slice(0,2),th=(tl.length-1)*ts*k*1.25;
     let sy=cut*.30;
     s+=T(tl,{x:P,y:sy+ts,size:ts,lh:1.25,fill:c.col.ink,font:SERIF,weight:700})
-     +`<line x1="${P}" y1="${f1(sy+ts+34)}" x2="${P+96}" y2="${f1(sy+ts+34)}" stroke="${c.col.dark}" stroke-opacity=".3" stroke-width="3"/>`
-     +T(wrap(c.t.subtitle,W-2*P,26,c.bf).slice(0,2),{x:P,y:sy+ts+92,size:26,lh:1.5,fill:c.col.mute,font:c.bf})
-     +seal(W-P-64,sy+ts+40,60);
+     +`<line x1="${P}" y1="${f1(sy+ts+th+34)}" x2="${P+96}" y2="${f1(sy+ts+th+34)}" stroke="${c.col.dark}" stroke-opacity=".3" stroke-width="3"/>`
+     +T(wrap(c.t.subtitle,W-2*P,26,c.bf).slice(0,2),{x:P,y:sy+ts+th+92,size:26,lh:1.5,fill:c.col.mute,font:c.bf})
+     +seal(W-P-64,sy+ts+th+40,60);
   }
   return s;
 }});
@@ -396,8 +396,8 @@ def({id:'cutoutCard',cat:'card',name:'圖卡・去背主體',hint:'1 張照片�
   const bot=H-Math.max(P,footH()?footH()+22:0);
   const y0=wide?Math.round(H*.46-th/2):Math.round(bot-th-64);
   s+=T(tl,{x:tx,y:y0,size:ts,lh:1.16,fill:c.col.ink,font:c.tf,weight:800,anchor});
-  if(c.t.subtitle)s+=`<rect x="${f1(wide?tx:W-P-72)}" y="${f1(y0+32)}" width="72" height="5" rx="2.5" fill="${c.col.acc}"/>`
-   +T(wrap(c.t.subtitle,wide?tw0:W-2*P,28,c.bf,500).slice(0,2),{x:wide?tx:W-P,y:y0+90,size:28,lh:1.45,fill:c.col.mute,font:c.bf,anchor});
+  if(c.t.subtitle)s+=`<rect x="${f1(wide?tx:W-P-72)}" y="${f1(y0+th+32)}" width="72" height="5" rx="2.5" fill="${c.col.acc}"/>`
+   +T(wrap(c.t.subtitle,wide?tw0:W-2*P,28,c.bf,500).slice(0,2),{x:wide?tx:W-P,y:y0+th+90,size:28,lh:1.45,fill:c.col.mute,font:c.bf,anchor});
   return s;
 }});
 /* 雙色調：照片以主色增值壓暗，標題壓在下方漸層上（雜誌封面感） */
@@ -408,8 +408,10 @@ def({id:'duotone',cat:'cover',name:'封面・雙色調',hint:'1 張照片；照�
   s+=`<defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.col.dark}" stop-opacity="0"/><stop offset="1" stop-color="${c.col.dark}" stop-opacity=".85"/></linearGradient></defs>`
    +`<rect y="${f1(H*.48)}" width="${W}" height="${f1(H*.52)}" fill="url(#${g})"/>`;
   let ts=Math.min(wide?150:112,Math.round(W*.092));
-  while(ts>38&&tw(c.t.title,W-2*P,ts,c.tf,800)>W-2*P)ts-=6;
-  const tl=wrap(c.t.title,W-2*P,ts,c.tf,800).slice(0,wide?2:3),th=(tl.length-1)*ts*k*1.14;
+  const ml=wide?2:3;
+  let tl=wrap(c.t.title,W-2*P,ts,c.tf,800);
+  while(ts>38&&(tl.length>ml||Math.max(...tl.map(l=>tw(l,ts*k,c.tf,800)))>W-2*P)){ts-=6;tl=wrap(c.t.title,W-2*P,ts,c.tf,800)}
+  tl=tl.slice(0,ml);const th=(tl.length-1)*ts*k*1.14;
   /* 由下往上排：副標 → 細線 → 標題，細線才不會壓到副標 */
   const ruleY=bot-(c.t.subtitle?30*k+30:36),y0=ruleY-38-th;
   s+=T(tl,{x:P,y:y0,size:ts,lh:1.14,fill:'#fff',font:c.tf,weight:800})

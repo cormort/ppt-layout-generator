@@ -121,7 +121,12 @@ export async function openPage(session, url, { width = 1720, height = 1200 } = {
       await send('Page.reload', { ignoreCache: true });
       for (let i = 0; i < 150; i++) {
         await sleep(100);
-        try { if (await run(`document.readyState==='complete' && typeof renderSVG==='function'`)) return; } catch { }
+        try {
+          if (await run(`document.readyState==='complete' && typeof renderSVG==='function'`)) {
+            await run(`(async()=>{if(typeof READY!=='undefined')await READY;return 1})()`);
+            return;
+          }
+        } catch { }
       }
       throw new Error('重新載入後 App 沒起來');
     },

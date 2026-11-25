@@ -134,6 +134,7 @@ details.more summary{cursor:pointer;font-size:13px;padding:6px 0}
 .ied:empty{display:none}
 
 /* 版型 */
+.tplq{margin:0 0 8px}
 .filters{display:flex;gap:6px;flex-wrap:wrap}
 .filters button{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;min-height:32px;padding:0 12px;font:inherit;font-size:12px;cursor:pointer}
 .filters button.on{background:var(--ink);border-color:var(--ink);color:var(--panel);font-weight:700}

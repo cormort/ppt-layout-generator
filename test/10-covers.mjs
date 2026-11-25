@@ -107,3 +107,23 @@ test('套裝：沒照片的章節頁改用「大數字色塊」', async ({ page 
   })()`);
   eq(got.tpl, 'secPlain', '沒照片的章節頁應該換成不需要照片的版本');
 });
+
+test('修正驗證：secPlain 直式滿版色塊／無副標不飄、duotone 大標題字級、cmp 標題在照片上方', async ({ page }) => {
+  const got = await page.run(`(()=>{
+    S.ratio='3:4';S.title='預算執行情形';S.subtitle='';S.body='說明段落。';S.number='02';S.footer=false;
+    const spSvg=renderSVG(TPLBY.secPlain,[],'sp34_');
+    const spDoc=new DOMParser().parseFromString(spSvg,'image/svg+xml');
+    const spPaths=[...spDoc.querySelectorAll('path')].map(p=>p.getAttribute('d'));
+    S.ratio='16:9';S.title='雙色調測試';S.subtitle='副標';
+    const dtSvg=renderSVG(TPLBY.duotone,${IMGS},'dt_');
+    const dtDoc=new DOMParser().parseFromString(dtSvg,'image/svg+xml');
+    const dtBig=Math.max(...[...dtDoc.querySelectorAll('text')].map(t=>+t.getAttribute('font-size')||0));
+    S.title='前後對比標題';S.items='之前|舊流程\\n之後|新流程';
+    const cmpSvg=renderSVG(TPLBY.cmp,${IMGS},'cm_');
+    const lastImg=cmpSvg.lastIndexOf('<image '),hdrIdx=cmpSvg.indexOf('opacity=".62"');
+    return {spPaths,dtBig,hdrAboveImg:hdrIdx>lastImg&&lastImg>=0};
+  })()`);
+  ok(got.spPaths.some(d=>d.includes('1080')), '直式 secPlain 色塊寬度應為 1080 滿寬：' + JSON.stringify(got.spPaths));
+  ok(got.dtBig >= 100, 'duotone 短標題字級應大於 100（實際 ' + got.dtBig + '）');
+  eq(got.hdrAboveImg, true, 'cmp 標題暗色帶應該畫在照片上方');
+});

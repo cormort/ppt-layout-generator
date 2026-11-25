@@ -105,7 +105,7 @@ $('suites').onclick=e=>{
   const b=e.target.closest('button');if(!b)return;
   const su=suiteFrom(b.dataset.suite);if(!su)return;
   const n=applySuite(su.id);
-  $('color').value=S.color;$('accent').value=S.accent;$('tf').value=S.tf;$('bf').value=S.bf;
+  $('color').value=S.color;$('accent').value=S.accent;$('tf').value=S.tf;$('bf').value=S.bf;$('bg').value=S.bg;$('bgOn').checked=S.bgOn;
   pageChanged(n?`${su.name}套裝：換了 ${n} 頁`
     +(LAST_SUITE_FIT?`，其中 ${LAST_SUITE_FIT} 頁內容對新版型太多（可開「檢視 → 簡報健檢」一鍵修）`:'')
     :`${su.name}套裝：每一頁都已經是這個版型`);};
@@ -172,11 +172,11 @@ for(const k of['pptText','pptQ']){$(k).value=S[k];$(k).onchange=()=>{S[k]=$(k).v
 
 /* 範本分類 */
 /* 「建議」：用這一頁的內容把每個版型試排一次，只列出放得下的；項目多、內文長或沒放照片時文字頁排前面 */
-let fitCache={sig:'',list:TPL};
+let fitCache={sig:'',list:TPL},tplQuery='';
 function fitList(){
   const sig=contentSig();if(fitCache.sig===sig)return fitCache.list;
   const th=chosen('thumb'),n=String(S.items||'').split('\n').filter(s=>s.trim()).length,wordy=n>=4||String(S.body||'').length>80||!sel.length;
-  const pool=TPL.filter(tplOK),ok=pool.filter(t=>!overflowNote(renderSVG(t,th,'f'+t.id+'_')));
+  const pool=TPL.filter(tplOK),ok=pool.filter(t=>!overflowNote(renderSVG(t,th,'f'+t.id+'_'),t));
   /* 項目是數字表格時圖表排最前面 */
   const numeric=isNumericTable(S.items);
   const rank=t=>numeric&&t.cat==='chart'?-1:(t.cat==='text'||t.cat==='card')?(wordy?0:2):t.cat==='chart'?3:1;
@@ -205,7 +205,16 @@ const ofCat=v=>{
   if(v==='fav')return favIds().map(id=>TPLBY[id]).filter(t=>t&&tplOK(t));
   const l=TPL.filter(t=>tplOK(t)&&(v==='all'||t.cat===v));
   return v==='all'?[...l.filter(t=>t.cat==='cover'),...l.filter(t=>t.cat!=='cover')]:l};
-function tplList(){return ofCat(S.cat)}
+function tplMatch(t,q){
+  if(t.name.toLowerCase().includes(q)||t.hint.toLowerCase().includes(q)||t.id.toLowerCase().includes(q))return true;
+  if(typeof TPL_ALIAS!=='undefined')for(const[k,v]of Object.entries(TPL_ALIAS))if(v===t.id&&k.toLowerCase().includes(q))return true;
+  return false;
+}
+function tplList(){
+  if(tplQuery)return TPL.filter(t=>tplOK(t)&&tplMatch(t,tplQuery));
+  return ofCat(S.cat);
+}
+$('tplQ').oninput=()=>{tplQuery=$('tplQ').value.trim().toLowerCase();drawGallery(true)};
 function drawFilters(){
   if(S.cat!=='fit'&&S.cat!=='recent'&&S.cat!=='fav'&&!ofCat(S.cat).length)S.cat='fit';
   $('filters').innerHTML=CATS.map(([v,n])=>{const c=ofCat(v).length;if(!c&&v!==S.cat)return'';
@@ -216,7 +225,7 @@ $('filters').onclick=e=>{
   S.cat=b.dataset.v;save();drawFilters();
   /* 目前範本不在新分類裡就跳到該分類第一個，避免看不到自己正在用哪個 */
   const list=tplList();
-  if(S.cat!=='fit'&&list.length&&!list.some(t=>t.id===S.tpl)){S.tpl=list[0].id;storePage();drawStage();drawPages()}
+  if(!['fit','recent','fav'].includes(S.cat)&&list.length&&!list.some(t=>t.id===S.tpl)){S.tpl=list[0].id;storePage();drawStage();drawPages()}
   drawGallery(true);
 };
 

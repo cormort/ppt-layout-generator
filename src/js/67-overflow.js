@@ -4,7 +4,7 @@ const flatOf=s=>String(s).replace(/臺/g,'台');
 function plainOf(svg){return flatOf(unesc(String(svg).replace(/<[^>]*>/g,' ')).replace(/\s+/g,'').toLowerCase())}
 /* 只在「開頭有出現、結尾沒出現」時判定被截斷，
    所以範本根本沒用到某個欄位時不會誤報 */
-function overflowNote(svg){
+function overflowNote(svg,tpl=TPLBY[S.tpl]){
   /* 頁尾（單位｜日期｜頁碼）不算版面內容：先拿掉，免得「2026 年度計畫」的開頭剛好撞到日期 2026.10 而誤報 */
   let flat=plainOf(svg);const miss=[];
   if(S.footer)for(const f of[S.company,S.date,pageLabel()]){const v=flatOf(String(f||'').replace(/\s+/g,'').toLowerCase());if(v)flat=flat.split(v).join(' ')}
@@ -24,7 +24,7 @@ function overflowNote(svg){
     if(flat.includes(head))shown++;
   }
   /* 有些版型本來就只吃前幾個項目（對比頁只取 2 個、數據亮點只取 1 個），用 maxItems 宣告，不要誤報 */
-  const cap=(TPLBY[S.tpl]||{}).maxItems;
+  const cap=(tpl||{}).maxItems;
   const expect=cap?Math.min(lines.length,cap):lines.length;
   if(lines.length&&shown>0&&shown<expect)miss.push('項目清單');
   if(!miss.length)return '';

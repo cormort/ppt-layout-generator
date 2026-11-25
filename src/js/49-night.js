@@ -65,8 +65,8 @@ def({id:'nightWall',cat:'wall',name:'照片牆・夜空羽化',hint:'第一張�
   const sub=wrap(c.t.subtitle,W-2*W*.10,Math.round(H*.019),c.bf,600).slice(0,1);
   const lh1=Math.round(H*.030)*k*1.62,capBot=H-H*.055;
   const capTop=capBot-(cap.length-1)*lh1;
-  s+=`<rect x="0" y="${f1(H*.66)}" width="${W}" height="${f1(H*.34)}" fill="url(#${gr}b)"/>`;
-  s+=`<defs><linearGradient id="${gr}b" gradientUnits="userSpaceOnUse" x1="0" y1="${f1(H*.64)}" x2="0" y2="${H}"><stop offset="0" stop-color="${base}" stop-opacity="0"/><stop offset=".5" stop-color="${base}" stop-opacity=".74"/><stop offset="1" stop-color="${base}" stop-opacity=".97"/></linearGradient></defs>`;
+  s+=`<defs><linearGradient id="${gr}b" gradientUnits="userSpaceOnUse" x1="0" y1="${f1(H*.64)}" x2="0" y2="${H}"><stop offset="0" stop-color="${base}" stop-opacity="0"/><stop offset=".5" stop-color="${base}" stop-opacity=".74"/><stop offset="1" stop-color="${base}" stop-opacity=".97"/></linearGradient></defs>`
+   +`<rect x="0" y="${f1(H*.66)}" width="${W}" height="${f1(H*.34)}" fill="url(#${gr}b)"/>`;
   if(cap.length)s+=T(cap,{x:W/2,y:capTop,size:Math.round(H*.030),lh:1.62,fill:paper,op:.94,font:c.bf,weight:500,anchor:'middle',ls:1});
   if(sub.length)s+=T(sub,{x:W/2,y:capTop-(sub.length?Math.round(H*.019)*k*2.2:0),size:Math.round(H*.019),fill:paper,op:.62,font:c.bf,weight:600,anchor:'middle',ls:6});
   return s;

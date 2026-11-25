@@ -17,7 +17,7 @@ def({id:'kAnnounce',cat:'card',name:'圖卡・活動公告',hint:'上方色塊�
   const tl=wrap(c.t.title,W-2*P,80,c.tf,800).slice(0,3),ty=bh-P*.7-(tl.length-1)*80*k*1.15;
   if(c.t.subtitle)s+=T([c.t.subtitle],{x:P,y:ty-80*k-16,size:28,fill:'#fff',op:.85,font:c.bf,weight:700,ls:3});
   s+=T(tl,{x:P,y:ty,size:80,lh:1.15,fill:'#fff',font:c.tf,weight:800});
-  let y=bh+P*.9;const lab=Math.max(...it.map(o=>tw(o.a,32*k,c.tf,700)))+40;
+  let y=bh+P*.9;const lab=Math.min((W-2*P)*.45,Math.max(...it.map(o=>tw(o.a,32*k,c.tf,700)))+40);
   for(const o of it){const bl=wrap(o.b||'',W-2*P-lab-24,32,c.bf).slice(0,2);
     s+=`<rect x="${P}" y="${f1(y-26)}" width="8" height="34" rx="4" fill="${c.col.acc}"/>`+T([o.a],{x:P+26,y,size:32,fill:c.col.ink,font:c.tf,weight:700})+T(bl,{x:P+26+lab,y,size:32,lh:1.35,fill:c.col.ink,font:c.bf});
     y+=Math.max(1,bl.length)*32*k*1.35+30}

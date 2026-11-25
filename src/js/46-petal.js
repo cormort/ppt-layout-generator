@@ -65,7 +65,7 @@ def({id:'petalFan',cat:'card',name:'花瓣扇・圖文',hint:'5–8 張（一片
   let bs=wide?28:Math.round(W*.03),bl=wrap(c.t.body,tmax,bs,c.bf);
   while(bs>18&&bl.length>(wide?3:4)){bs-=2;bl=wrap(c.t.body,tmax,bs,c.bf)}
   bl=bl.slice(0,wide?3:4);
-  const eh=esl.length?es*k*1.25+34:0,th=(tl.length-1)*ts*k*1.16+ts*k,
+  const eh=esl.length?esl.length*es*k*1.25+34:0,th=(tl.length-1)*ts*k*1.16+ts*k,
         bh=bl.length?44+(bl.length-1)*bs*k*1.68+bs*k:0,tot=eh+th+bh;
   /* 直式的文字塊擺在花朵下面的剩餘空間中間；空間不夠時貼著下緣（不要頂到頁尾） */
   const bot=H-Math.max(pad,footH()?footH()+24:0),spaceTop=flowerBot+40;

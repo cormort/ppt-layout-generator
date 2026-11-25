@@ -4,7 +4,7 @@ $('projSave').onclick=async()=>{
     toast('整理專案中…');storePage();
     /* v2：存所有頁面用到的圖，每頁的 sel 改存成 images 陣列的索引 */
     const L=[...new Set(S.pages.flatMap(p=>p.sel))].map(id=>lib.find(x=>x.id===id)).filter(Boolean),at=new Map(L.map((it,i)=>[it.id,i]));
-    const imgs=await Promise.all(L.map(async it=>({name:it.name,crop:it.crop,data:it.data||(it.data=await blobToData(it.blob))})));
+    const imgs=await Promise.all(L.map(async it=>({name:it.name,crop:it.crop,cutout:!!it.cutout,blend:it.blend||'',op:it.op??1,data:it.data||(it.data=await blobToData(it.blob))})));
     const state={...S,pages:S.pages.map(p=>({...p,sel:p.sel.filter(id=>at.has(id)).map(id=>at.get(id))}))};
     /* 自訂套裝也一起存：換電腦才不會只剩內建的 8 套 */
     const pkg={app:'ppt-layout-generator',v:3,state,images:imgs,suites:customSuites()};
@@ -25,7 +25,7 @@ $('projFile').onchange=async e=>{
       toast(`載入 ${pkg.images.length} 張圖片…`);
       for(const im of pkg.images){
         let id=0;
-        try{const blob=await(await fetch(im.data)).blob();const bmp=await createImageBitmap(blob);const it=await makeItem(im.name||'image',bmp,im.crop);if(bmp.close)bmp.close();id=it.id}catch(err){console.warn(err)}
+        try{const blob=await(await fetch(im.data)).blob();const bmp=await createImageBitmap(blob);const it=await makeItem(im.name||'image',bmp,im.crop,{cutout:!!im.cutout});it.blend=String(im.blend||'');it.op=typeof im.op==='number'?im.op:1;libSave(it);if(bmp.close)bmp.close();id=it.id}catch(err){console.warn(err)}
         ids.push(id);
       }
     }

@@ -1,6 +1,6 @@
 /* ---------- 套裝：一鍵把整份簡報換成同一套設計（配色＋字型＋每頁角色對應的版型） ----------
    單一版型好看，不代表整份簡報好看：一份簡報要「封面→章節→內容→數據→結語」都在
-   同一個語言裡。這裡把這件事包成 8 套，套用時只換版型與樣式，內容一個字都不動。
+   同一個語言裡。這裡把這件事包成 10 套，套用時只換版型與樣式（有 bg 的套裝連底色一起換，沒有的回到白底），內容一個字都不動。
    只換「結構頁」（封面、章節、目錄、一般文字、引言、表格、照片、結尾）。圖表、地圖、數據並列、重點方格、圖卡、
    商務（時間軸、流程、數據亮點…）、對比、直排的版型本身就是內容的形狀（折線換成直條、地圖換成長條、時間軸換成
    照片拼貼就錯了），所以不在 roles 裡：保留原版型，只吃新的配色與字型。 */
@@ -29,6 +29,13 @@ const SUITES=[
   {id:'pitch',name:'新創提案',hint:'青綠橘・螢光標記封面＋霧面豎板目錄，年輕俐落，適合提案與募資',
    color:'#0f5f5a',accent:'#f2a541',tf:0,bf:0,
    roles:{cover:'cMarker',sec:'secStrip',toc:'glass',text:'tList',quote:'tQuote',table:'tTable',photo:'waveBand',wall:'posterWall',closing:'thanks'}},
+  /* 安靜的紙底套裝：底色是紙、主色只當細線與點綴，標題襯線＋內文黑體，大留白 */
+  {id:'luxury',name:'質感品牌',hint:'暖米紙底・柔棕細框封面＋細線目錄，安靜、留白多，適合品牌簡介、高端提案',
+   color:'#a68a64',accent:'#3a3a3a',tf:3,bf:0,bg:'#f5efe6',
+   roles:{cover:'cFrame',sec:'secStrip',toc:'mIndex',text:'tText',quote:'tQuote',table:'tTable',photo:'arch',wall:'wall',closing:'thanks'}},
+  {id:'washi',name:'和紙人文',hint:'和紙底・靛藍巨字封面＋淡出章節，溫和內斂，適合理念、策略、人文故事',
+   color:'#2c3e50',accent:'#8995b7',tf:3,bf:0,bg:'#f4f1ea',
+   roles:{cover:'cBig',sec:'secFade',toc:'tocNum',text:'tList',quote:'tQuote',table:'tTable',photo:'waveBand',wall:'wall',closing:'thanks'}},
 ];
 const SUITEBY=Object.fromEntries(SUITES.map(s=>[s.id,s]));
 /* 上一次套用套裝之後，有幾頁的內容對新版型來說太多（套裝只換版型，不知道你的內容有多長） */
@@ -36,10 +43,10 @@ let LAST_SUITE_FIT=0;
 function countOverflow(only){
   if(!only)return 0;
   let bad=0;
-  for(const p of S.pages){
-    const tpl=TPLBY[tplFor(p.tpl)];if(!tpl)continue;
+  for(let i=0;i<S.pages.length;i++){
+    const p=S.pages[i],tpl=TPLBY[tplFor(p.tpl)];if(!tpl)continue;
     try{
-      const over=withState({...ovOf(p),pageNo:S.cur},()=>overflowNote(renderSVG(tpl,imgsOf(p.sel,'thumb'),'sf'+p.tpl+'_')));
+      const over=withState({...ovOf(p),pageNo:i},()=>overflowNote(renderSVG(tpl,imgsOf(p.sel,'thumb'),'sf'+p.tpl+'_'),tpl));
       if(over)bad++;
     }catch(e){}
   }
@@ -62,13 +69,14 @@ function saveCurrentAsSuite(name){
   for(const p of S.pages){const r=roleOf(p);if(r&&!byRole[r])byRole[r]=p.tpl}
   const roles={...SUITEBY.annual.roles,...byRole};
   const su={id:'my-'+Date.now().toString(36),name:nm,color:S.color,accent:S.accent,tf:S.tf,bf:S.bf,
+    ...(S.bgOn&&HEXRE.test(S.bg)?{bg:S.bg}:{}),
     hint:'自訂・'+nm+'（'+S.pages.length+' 頁的樣式）',roles};
   const list=customSuites();list.push(su);writeCustom(list);
   return su;
 }
 /* 合併一批自訂套裝（匯入檔、專案檔共用）：只收合法的、同 id 不覆蓋 */
 const suiteOK=s=>s&&typeof s.id==='string'&&typeof s.name==='string'&&s.roles&&typeof s.roles==='object'
-  &&HEXRE.test(s.color)&&HEXRE.test(s.accent)
+  &&HEXRE.test(s.color)&&HEXRE.test(s.accent)&&(!s.bg||HEXRE.test(s.bg))
   &&Number.isInteger(s.tf)&&s.tf>=0&&s.tf<FONTS.length&&Number.isInteger(s.bf)&&s.bf>=0&&s.bf<FONTS.length;
 function mergeSuites(list){
   const add=(Array.isArray(list)?list:[]).filter(suiteOK);
@@ -112,7 +120,7 @@ const suiteFrom=v=>{v=String(v||'').trim();if(!v)return null;
 /* 套用：opts.colors=false 時只換版型（命令列已經先套過顏色時用） */
 function applySuite(id,{colors=true}={}){
   const su=suiteFrom(id);if(!su)return 0;
-  if(colors){S.color=su.color;S.accent=su.accent;S.tf=su.tf;S.bf=su.bf}
+  if(colors){S.color=su.color;S.accent=su.accent;S.tf=su.tf;S.bf=su.bf;S.bgOn=!!su.bg;if(su.bg)S.bg=su.bg}
   let n=0;
   for(const p of S.pages){
     const role=roleOf(p);
@@ -139,7 +147,7 @@ function applySuite(id,{colors=true}={}){
    只做計算，做完把狀態還原（頁面、配色、字型、目前版型）。 */
 function suggestSuites(){
   storePage();
-  const snap=JSON.stringify(S.pages),keep={color:S.color,accent:S.accent,tf:S.tf,bf:S.bf,tpl:S.tpl};
+  const snap=JSON.stringify(S.pages),keep={color:S.color,accent:S.accent,tf:S.tf,bf:S.bf,bgOn:S.bgOn,bg:S.bg,tpl:S.tpl};
   const base=deckCheck();
   const baseOf=r=>({issues:r.issues.length,photo:r.stats.placeholder,overflow:r.issues.filter(o=>o.kind==='overflow').length,dupe:r.issues.filter(o=>o.kind==='dupe').length});
   const rows=[];
@@ -155,7 +163,7 @@ function suggestSuites(){
 
 /* 樣式窗格的套裝按鈕：用第 1 頁的內容、套裝的配色字型畫出它的封面，先看再套；目前樣式符合的那套標成選取。
    跟著頁面縮圖一起重畫（drawPages），內容沒變就不重畫 */
-const suiteOn=su=>!!su&&S.color===su.color&&S.accent===su.accent&&S.tf===su.tf&&S.bf===su.bf;
+const suiteOn=su=>!!su&&S.color===su.color&&S.accent===su.accent&&S.tf===su.tf&&S.bf===su.bf&&S.bgOn===!!su.bg&&(!su.bg||S.bg===su.bg);
 let suiteSig='';
 function drawSuites(){
   const p=S.pages[0];if(!p)return;
@@ -164,7 +172,7 @@ function drawSuites(){
   if(sig!==suiteSig){
     suiteSig=sig;const imgs=imgsOf(ids,'thumb');
     $('suites').innerHTML=allSuites().map(su=>{const tpl=tplFor(su.roles.cover);
-      const svg=withState({...ovOf(p),pageNo:0,tpl,color:su.color,accent:su.accent,tf:su.tf,bf:su.bf},()=>renderSVG(TPLBY[tpl],imgs,'su'+su.id+'_'));
+      const svg=withState({...ovOf(p),pageNo:0,tpl,color:su.color,accent:su.accent,tf:su.tf,bf:su.bf,bgOn:!!su.bg,bg:su.bg||S.bg},()=>renderSVG(TPLBY[tpl],imgs,'su'+su.id+'_'));
       const del=isCustom(su.id)?`<span class="del" data-del="${su.id}" role="button" tabindex="0" aria-label="刪除 ${esc(su.name)}" title="刪除這個自訂套裝">✕</span>`:'';
       return`<button data-suite="${su.id}" title="${esc(su.hint)}">${svg}<span class="nm"><i style="background:${su.color}"></i><i style="background:${su.accent}"></i>${esc(su.name)}</span><span class="hint">${esc(su.hint)}</span>${del}</button>`}).join('');
   }

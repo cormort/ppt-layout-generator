@@ -170,10 +170,34 @@ test('HTML 播放檔：圖壓成 WebP，檔案明顯變小', async ({ page }) =>
     const deck={title:'T',slides:[{svg:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"></svg>',notes:'',title:'一'}],imgs:[png,png]};
     const plain=playerHtml(deck,{title:'T'});
     const {html,before,after,bytes}=await deckHtml(deck,{title:'T'});
+    const pct=before>0?Math.round((1-after/before)*100):0;
     return {plainBytes:new Blob([plain]).size,bytes,webp:after<before,imgs:after,smaller:bytes<new Blob([plain]).size-1000,
-      hasWebp:html.includes('data:image/webp')};
+      hasWebp:html.includes('data:image/webp'),pct};
   })()`);
   eq(got.webp, true, '壓縮後沒有變小（' + got.before + ' → ' + got.after + '）');
   eq(got.hasWebp, true, '輸出的 HTML 裡沒有 WebP');
   ok(got.smaller, '壓縮後的 HTML 應該比原本小（' + got.bytes + ' vs ' + got.plainBytes + '）');
+  ok(got.pct > 0 && got.pct <= 100, 'WebP 省下比例應落在 1..100：' + got.pct);
+});
+
+test('純文字新雙版型（雙欄對比／流程步驟）不需要照片且各尺寸正常', async ({ page }) => {
+  const got = await page.run(`(()=>{
+    const out=[];
+    for(const ratio of Object.keys(RATIOS)){
+      S.ratio=ratio;S.title='新功能對比';S.subtitle='副標';S.body='';S.footer=false;
+      S.items='現況|未來目標\\n耗時長|一鍵自動化\\n易錯位|自動縮字檢查';
+      const s1=renderSVG(TPLBY.tCompare,[],'tc_'+ratio.replace(':','')+'_');
+      S.items='蒐集需求|訪談整理\\n設計規劃|建立版型\\n開發測試|自動化驗證';
+      const s2=renderSVG(TPLBY.tSteps,[],'ts_'+ratio.replace(':','')+'_');
+      out.push({ratio,nan:/NaN|Infinity/.test(s1+s2),c1:s1.includes('現況')&&s1.includes('一鍵自動化'),c2:s2.includes('03')&&s2.includes('自動化驗證')});
+    }
+    S.ratio='16:9';
+    return {out,p1:usesPhoto(TPLBY.tCompare),p2:usesPhoto(TPLBY.tSteps)};
+  })()`);
+  eq(got.p1, false, 'tCompare 不該需要照片');
+  eq(got.p2, false, 'tSteps 不該需要照片');
+  for (const r of got.out) {
+    eq(r.nan, false, r.ratio + ' 出現 NaN');
+    ok(r.c1 && r.c2, r.ratio + ' 內容沒有畫出來');
+  }
 });

@@ -57,3 +57,30 @@ test('按星號不會套用版型（不會改到目前這一頁）', async ({ pa
   eq(got.after, got.before, '按星號不該改到頁面的版型');
   eq(got.cur, got.before, '按星號不該改到目前版型');
 });
+
+test('版型搜尋框、鍵盤按星號不套用、切換到最近／收藏分類不改版型', async ({ page }) => {
+  const got = await page.run(`(()=>{
+    localStorage.removeItem('lgFav');localStorage.removeItem('lgRecent');
+    S.ratio='16:9';S.pages=[cleanPage({tpl:'cFrame',title:'封面',body:'',items:''})];S.cur=0;usePage(0);syncUI();drawAll();
+    $('tplQ').value='對比';$('tplQ').oninput();
+    const hit=[...$('gal').querySelectorAll('.card')].map(c=>c.dataset.id);
+    $('tplQ').value='';$('tplQ').oninput();
+    /* 用鍵盤 Enter 按其他卡片的星號 */
+    S.cat='all';drawFilters();drawGallery(true);
+    const card=[...$('gal').querySelectorAll('.card')].find(c=>c.dataset.id!=='cFrame');
+    const favBtn=card.querySelector('.fav');
+    favBtn.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));
+    const afterFavKey={tpl:S.pages[0].tpl,fav:favIds()};
+    /* 切到 recent（假設只有 tList），目前這一頁仍是 cFrame */
+    rememberTpl('tList');
+    drawFilters();
+    $('filters').querySelector('[data-v="recent"]').click();
+    const afterRecentTpl=S.pages[0].tpl;
+    S.cat='all';drawFilters();drawGallery(true);
+    return {hit,afterFavKey,afterRecentTpl};
+  })()`);
+  ok(got.hit.includes('tCompare') && got.hit.includes('cmp'), '搜尋「對比」應該找到對比版型：' + got.hit.join(','));
+  eq(got.afterFavKey.tpl, 'cFrame', '鍵盤按星號不該改到目前版型');
+  ok(got.afterFavKey.fav.length === 1, '鍵盤按星號應該加入收藏');
+  eq(got.afterRecentTpl, 'cFrame', '切到「最近」分類不該改寫目前頁面的版型');
+});

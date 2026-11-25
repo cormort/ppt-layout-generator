@@ -30,7 +30,7 @@ const HELP = `排版產生器 CLI — Markdown 大綱 → 含逐字稿的 PPTX
   --project <檔案>       另存成網頁版可載入的專案檔（.pptgen.json），可在網頁上微調
   --html <檔案>          另存成單一 HTML 簡報（瀏覽器開啟即可播放；P 鍵開簡報者檢視含逐字稿與計時）
   --palette <名稱>       商務配色：藏青金、商務藍、深灰橘、墨綠米、酒紅灰、科技紫
-  --suite <名稱>         整套版型：年度報告、課程講義、品牌提案、專案回顧、科技發表、東方雅韻、活動紀錄、新創提案（一次套好配色＋字型＋每頁版型，
+  --suite <名稱>         整套版型：年度報告、課程講義、品牌提案、專案回顧、科技發表、東方雅韻、活動紀錄、新創提案、質感品牌、和紙人文（一次套好配色＋字型＋每頁版型，
                          大綱裡自己指定的版型會被覆蓋；想保留就別加這個參數）
   --color <#hex>         主色；--accent <#hex> 輔色；--bg <#hex> 底色
   --font <名稱>          標題字體（例如 標楷體）；--body-font <名稱> 內文字體
@@ -207,7 +207,7 @@ try {
     if (flags.json) out(JSON.stringify(r, null, 1));
     else {
       for (const [c, cn] of r.cats) {
-        if (c === 'all' || c === 'fit') continue;
+        if (['all', 'fit', 'recent', 'fav'].includes(c)) continue;
         out(`\n【${cn}】`);
         for (const t of r.tpls.filter(t => t.cat === c)) out(`  ${t.id.padEnd(10)} ${t.name} — ${t.hint}`);
       }
@@ -244,7 +244,7 @@ try {
       let suiteId='';
       if(st.suite){const su=suiteFrom(st.suite);
         if(!su)bad.push('套裝「'+st.suite+'」不存在');
-        else{suiteId=su.id;if(!st.color)ov.color=su.color;if(!st.accent)ov.accent=su.accent;if(!st.font)ov.tf=su.tf;if(!st.bodyFont)ov.bf=su.bf}}
+        else{suiteId=su.id;if(!st.color)ov.color=su.color;if(!st.accent)ov.accent=su.accent;if(!st.font)ov.tf=su.tf;if(!st.bodyFont)ov.bf=su.bf;if(!st.bg){ov.bgOn=!!su.bg;if(su.bg)ov.bg=su.bg}}}
       if(st.pptText)ov.pptText=st.pptText;if(st.pptQ)ov.pptQ=st.pptQ;if(st.ratio)ov.ratio=st.ratio;
       Object.assign(S,sanitise({...S,...ov}));
       /* 記下大綱裡不認得的版型名稱 */

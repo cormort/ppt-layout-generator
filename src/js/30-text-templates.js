@@ -107,7 +107,7 @@ def({id:'tText',cat:'text',name:'文字・標題＋段落',hint:'不用圖片；
   while(sz>18&&hh()>availT){sz-=1;lz=Math.min(64,Math.round(sz*1.26));L=lay(sz,lz)}
   /* 字少時把字放大填滿：下半頁一大片白，比字大一點更難看 */
   while(sz<54&&hh()<availT*.86){sz+=2;lz=Math.min(64,Math.round(sz*1.26));L=lay(sz,lz)}
-  let s='',y=top+Math.max(0,(availT-hh())*.4)+lz*k*.9;
+  let s='',y=top+Math.max(0,(availT-hh())*.4)+(L[0]?lz:sz)*k*.9;
   if(L[0]){s+=T(L[0],{x:P,y,size:lz,lh:1.5,fill:c.col.ink,font:c.bf});y+=L[0].length*lz*k*1.5+32}
   let bn=0;const bs=Math.min(40,sz*k*.95);
   rest.forEach((p,i)=>{if(y>TBOTTOM())return;const ls=(L[i+1]||[]).filter((_,j)=>y+j*sz*k*1.6<=TBOTTOM()+sz*k*.2);
@@ -135,7 +135,8 @@ def({id:'tQuote',cat:'text',name:'文字・引言金句',hint:'不用圖片；�
 def({id:'tStats',cat:'text',name:'文字・數據並列',hint:'不用圖片；項目填「數字|標籤|說明」，3–4 個並列最有力量',ratios:TXR,render(c){
   const h=hdr(c,{tMax:64}),k=FS,P=PAD(),it=items(c).slice(0,4),n=Math.max(1,it.length),wide=W>H;
   const nc=wide?n:Math.min(2,n),rows=Math.max(1,Math.ceil(n/nc)),gap=wide?(W>1600?72:46):34;
-  const rowH=(H-h.y-P)/rows,colW=(W-2*P-(nc-1)*gap)/nc;
+  const capH=c.t.body?wrap(c.t.body,W-2*P,20,c.bf).slice(0,2).length*20*k*1.5+44:0;
+  const rowH=(H-h.y-P-capH)/rows,colW=(W-2*P-(nc-1)*gap)/nc;
   /* 四個數字要同一個字級（不然「98.7%」比「0 件」小一號，整列輕重不一） */
   const fit=num=>{let s0=Math.min(wide?250:170,Math.round(colW*1.02));
     while(s0>44&&tw(num,s0*k,c.tf,800)>colW*.96)s0-=4;return s0};
